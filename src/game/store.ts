@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState } from '../types';
+import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState, HealthBoxState, LevelTheme } from '../types';
 import { LEVELS } from './levels';
 import { SFX, Music } from './sounds';
 
@@ -13,9 +13,11 @@ interface ExplosionEffect {
 interface GameState {
   phase: GamePhase;
   levelIndex: number;
+  theme: LevelTheme;
   player: PlayerState | null;
   enemies: EnemyState[];
   barrels: BarrelState[];
+  healthBoxes: HealthBoxState[];
   walls: Position[];
   gridSize: { width: number; height: number };
   exitPos: Position | null;
@@ -30,6 +32,7 @@ interface GameState {
   
   // Continuous actions
   damageEntity: (id: string, amount: number, pos?: Position) => void;
+  collectHealth: (id: string) => void;
   playerShoot: (spawnPos: Position, direction: Position) => void;
   enemyShoot: (spawnPos: Position, direction: Position, damage: number) => void;
   addProjectile: (proj: Omit<ProjectileState, 'id'>) => void;
@@ -45,9 +48,11 @@ const defaultWeapon: Weapon = { name: 'Pistol', ammo: 24, maxAmmo: 24, damage: 1
 export const useGameStore = create<GameState>((set, get) => ({
   phase: 'main_menu',
   levelIndex: 0,
+  theme: 'industrial',
   player: null,
   enemies: [],
   barrels: [],
+  healthBoxes: [],
   walls: [],
   gridSize: { width: 10, height: 10 },
   exitPos: null,
@@ -94,6 +99,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       phase: 'playing',
       levelIndex: index,
+      theme: level.theme || 'industrial',
       player: newPlayer,
       enemies: level.enemies.map(e => {
         const dx = level.playerSpawn.x - e.pos.x;
@@ -102,6 +108,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         return { type: 'enemy', id: e.id, pos: e.pos, rotation, hp: e.hp, maxHp: e.hp, weapon: { ...e.weapon } };
       }),
       barrels: level.barrels.map(b => ({ type: 'barrel', id: b.id, pos: b.pos, rotation: 0, hp: 1, maxHp: 1 })),
+      healthBoxes: (level.healthBoxes || []).map(h => ({ type: 'health_box', id: h.id, pos: h.pos, rotation: 0, hp: 1, maxHp: 1 })),
       walls: level.walls,
       gridSize: level.gridSize,
       exitPos: level.exit,
@@ -131,7 +138,6 @@ export const useGameStore = create<GameState>((set, get) => ({
         hit = true;
         if (pos) get().addParticle([pos.x, 0.5, pos.z], '#ff0000');
         const hp = Math.max(0, e.hp - amount);
-        // Check if all enemies dead after this
         return { ...e, hp };
       }
       return e;
@@ -155,7 +161,6 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     if (hit) {
       set({ barrels: newBarrels });
-      // Priority to the barrel's actual position over the hit position (which might be the shooter's pos)
       const exPos = explodedBarrel?.pos || pos;
       if (exPos) {
         // Create AoE visual
@@ -199,6 +204,21 @@ export const useGameStore = create<GameState>((set, get) => ({
             }
           }
         });
+      }
+    }
+  },
+
+  collectHealth: (id) => {
+    const state = get();
+    const box = state.healthBoxes.find(h => h.id === id);
+    if (box && state.player) {
+      set({
+        player: { ...state.player, hp: Math.min(state.player.maxHp, state.player.hp + 50) },
+        healthBoxes: state.healthBoxes.filter(h => h.id !== id)
+      });
+      // Add green particles
+      for (let i = 0; i < 10; i++) {
+        get().addParticle([box.pos.x, 0.5, box.pos.z], '#22c55e');
       }
     }
   },

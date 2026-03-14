@@ -1,7 +1,15 @@
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import type { Position } from '../../types';
+import { useGameStore } from '../../game/store';
 
 export function Wall({ pos }: { pos: Position }) {
+  const theme = useGameStore(s => s.theme);
+
+  const colors = {
+    industrial: "#6d769a",
+    garden: "#1b5e20" // Hedge green
+  }[theme];
+
   return (
     <RigidBody 
       type="fixed" 
@@ -13,8 +21,7 @@ export function Wall({ pos }: { pos: Position }) {
       <CuboidCollider args={[0.5, 0.5, 0.5]} />
       <mesh castShadow receiveShadow>
         <boxGeometry args={[1, 1, 1]} />
-        {/* Brighter Industrial Grey for visibility through CRT */}
-        <meshStandardMaterial color="#6d769a" roughness={0.5} metalness={0.2} />
+        <meshStandardMaterial color={colors} roughness={theme === 'garden' ? 1.0 : 0.5} metalness={theme === 'garden' ? 0 : 0.2} />
       </mesh>
     </RigidBody>
   );
