@@ -32,10 +32,13 @@ function ProjectileItem({ p }: { p: ProjectileState }) {
           if (p.isEnemy && userData.type === 'enemy') return;
           if (!p.isEnemy && userData.type === 'player') return;
           
+          // Get current physics position for precise impact reporting
+          const currentPos = rb.current ? rb.current.translation() : p.pos;
+
           if (userData.id) {
-            damageEntity(userData.id, p.damage, { x: p.pos.x, z: p.pos.z });
+            damageEntity(userData.id, p.damage, { x: currentPos.x, z: currentPos.z });
           } else if (userData.type === 'player') {
-            damageEntity('player', p.damage, { x: p.pos.x, z: p.pos.z });
+            damageEntity('player', p.damage, { x: currentPos.x, z: currentPos.z });
           }
         }
         removeProjectile(p.id);

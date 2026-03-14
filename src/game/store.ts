@@ -155,7 +155,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     if (hit) {
       set({ barrels: newBarrels });
-      const exPos = pos || explodedBarrel?.pos;
+      // Priority to the barrel's actual position over the hit position (which might be the shooter's pos)
+      const exPos = explodedBarrel?.pos || pos;
       if (exPos) {
         // Create AoE visual
         const explosionRadius = 3;
