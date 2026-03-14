@@ -80,7 +80,7 @@ function CameraRig() {
   const { camera, scene } = useThree();
   const lastDamageTime = useGameStore(s => s.lastDamageTime);
 
-  useFrame(({ clock }) => {
+  useFrame(() => {
     let playerObj: THREE.Object3D | undefined;
     scene.traverse(child => {
       if (child.name === 'player') playerObj = child;
