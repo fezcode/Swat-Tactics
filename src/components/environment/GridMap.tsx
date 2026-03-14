@@ -66,7 +66,7 @@ export function GridMap() {
       grid: 0x4fd1c5
     },
     garden: {
-      floor: "#33691e",
+      floor: "#5d4037", // Dirt road color
       grid: 0x8bc34a
     }
   }[theme];

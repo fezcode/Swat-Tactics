@@ -142,6 +142,9 @@ export function HUD() {
         <div className="flex items-center gap-2">
           <span className="bg-zinc-800 px-2 py-1 text-white">CLICK</span> FIRE
         </div>
+        <div className="flex items-center gap-2">
+          <span className="bg-zinc-800 px-2 py-1 text-white">ESC</span> PAUSE
+        </div>
         <div className="flex items-center gap-2 text-pink-500">
           <span className="animate-pulse">●</span> LIVE FEED
         </div>
