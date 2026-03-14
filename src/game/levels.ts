@@ -674,3 +674,4 @@ export const LEVELS: LevelData[] = [
     healthBoxes: [{ id: 'h40', pos: { x: 13, z: 20 } }],
     exit: { x: 13, z: 1 },
   },
+];
