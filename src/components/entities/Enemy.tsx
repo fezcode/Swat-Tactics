@@ -4,6 +4,7 @@ import { RigidBody, RapierRigidBody, useRapier, BallCollider } from '@react-thre
 import type { EnemyState } from '../../types';
 import { useGameStore } from '../../game/store';
 import * as THREE from 'three';
+import { SFX } from '../../game/sounds';
 
 export function Enemy({ state }: { state: EnemyState }) {
   const rb = useRef<RapierRigidBody>(null);
@@ -74,6 +75,7 @@ export function Enemy({ state }: { state: EnemyState }) {
           lastShootTime.current = clock.getElapsedTime();
           const spawnPos = { x: myPos.x + dir.x * 0.8, z: myPos.z + dir.z * 0.8 };
           enemyShoot(spawnPos, dir, state.weapon.damage);
+          SFX.enemyShoot();
         }
 
         if (dist > 3) {

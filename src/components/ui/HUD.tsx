@@ -1,5 +1,6 @@
 import { useGameStore } from '../../game/store';
 import { MainMenu } from './MainMenu';
+import { SFX } from '../../game/sounds';
 
 export function HUD() {
   const phase = useGameStore(s => s.phase);
@@ -7,6 +8,11 @@ export function HUD() {
   const levelIndex = useGameStore(s => s.levelIndex);
   const loadLevel = useGameStore(s => s.loadLevel);
   const restartGame = useGameStore(s => s.restartGame);
+
+  const handleClick = (action: () => void) => {
+    SFX.buttonClick();
+    action();
+  };
 
   if (phase === 'main_menu') {
     return <MainMenu />;
@@ -21,13 +27,13 @@ export function HUD() {
         <div className="flex flex-col gap-4 items-center transform -skew-x-12">
           <button 
             className="px-12 py-4 bg-white text-black text-2xl font-black hover:bg-red-600 hover:text-white transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none"
-            onClick={() => restartGame()}
+            onClick={() => handleClick(() => restartGame())}
           >
             RETRY DEPLOYMENT
           </button>
           <button 
             className="text-zinc-400 font-bold hover:text-white transition-colors cursor-pointer"
-            onClick={() => useGameStore.setState({ phase: 'main_menu' })}
+            onClick={() => handleClick(() => useGameStore.setState({ phase: 'main_menu' }))}
           >
             RETURN TO BASE
           </button>
@@ -44,7 +50,7 @@ export function HUD() {
         </h1>
         <button 
           className="px-12 py-4 bg-pink-600 text-white text-2xl font-black hover:bg-pink-500 transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none transform -skew-x-12"
-          onClick={() => loadLevel(levelIndex + 1)}
+          onClick={() => handleClick(() => loadLevel(levelIndex + 1))}
         >
           NEXT MISSION
         </button>
@@ -63,7 +69,7 @@ export function HUD() {
         </p>
         <button 
           className="px-12 py-4 bg-white text-black text-2xl font-black hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] transform -skew-x-12"
-          onClick={() => restartGame()}
+          onClick={() => handleClick(() => restartGame())}
         >
           BACK TO MENU
         </button>

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState } from '../types';
 import { LEVELS } from './levels';
+import { SFX } from './sounds';
 
 interface GameState {
   phase: GamePhase;
@@ -42,11 +43,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   particles: [],
   projectiles: [],
 
-  setPhase: (phase) => set({ phase }),
+  setPhase: (phase) => {
+    set({ phase });
+    if (phase === 'level_complete' || phase === 'victory') SFX.levelEnd();
+    if (phase === 'game_over') SFX.levelEnd();
+  },
 
   loadLevel: (index) => {
     if (index >= LEVELS.length) {
-      set({ phase: 'victory' });
+      get().setPhase('victory');
       return;
     }
     const level = LEVELS[index];
@@ -73,6 +78,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       particles: [],
       projectiles: [],
     });
+    SFX.levelStart();
   },
 
   damageEntity: (id, amount, pos) => {
@@ -82,7 +88,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         const hp = Math.max(0, state.player.hp - amount);
         set({ player: { ...state.player, hp } });
         if (pos) get().addParticle([pos.x, 0.5, pos.z], '#ff0000');
-        if (hp === 0) set({ phase: 'game_over' });
+        if (hp === 0) get().setPhase('game_over');
       }
       return;
     }
@@ -102,7 +108,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     
     if (hit) {
       set({ enemies: newEnemies });
-      // Check level exit condition if all enemies dead (handled in tick or collision with exit)
       return;
     }
 
@@ -121,7 +126,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({ barrels: newBarrels });
       const exPos = pos || explodedBarrel?.pos;
       if (exPos) {
-        // Explosion particles
         for (let i = 0; i < 20; i++) {
           get().addParticle([exPos.x, 0.5, exPos.z], '#ff4400');
           get().addParticle([exPos.x, 0.5, exPos.z], '#ffaa00');
@@ -130,7 +134,6 @@ export const useGameStore = create<GameState>((set, get) => ({
         const explosionRadius = 3;
         const explosionDamage = 50;
 
-        // Damage player
         if (state.player && state.player.hp > 0) {
           const dx = state.player.pos.x - exPos.x;
           const dz = state.player.pos.z - exPos.z;
@@ -139,7 +142,6 @@ export const useGameStore = create<GameState>((set, get) => ({
           }
         }
 
-        // Damage enemies
         state.enemies.forEach(e => {
           if (e.hp > 0) {
             const dx = e.pos.x - exPos.x;
@@ -150,7 +152,6 @@ export const useGameStore = create<GameState>((set, get) => ({
           }
         });
 
-        // Chain react barrels
         state.barrels.forEach(b => {
           if (b.hp > 0 && b.id !== id) {
             const dx = b.pos.x - exPos.x;
@@ -172,7 +173,6 @@ export const useGameStore = create<GameState>((set, get) => ({
         return;
     }
 
-    // Decrease ammo
     const newPlayer = { ...state.player, weapon: { ...state.player.weapon, ammo: state.player.weapon.ammo - 1 } };
     set({ player: newPlayer });
 
@@ -188,7 +188,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   enemyShoot: (spawnPos, direction, damage) => {
     get().addProjectile({
       pos: spawnPos,
-      velocity: { x: direction.x * 20, z: direction.z * 20 }, // slower enemy bullets too
+      velocity: { x: direction.x * 20, z: direction.z * 20 },
       damage,
       life: 2.0,
       isEnemy: true

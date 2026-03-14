@@ -11,6 +11,7 @@ import { Barrel } from './components/entities/Barrel';
 import { HUD } from './components/ui/HUD';
 import { ParticleSystem } from './components/entities/ParticleSystem';
 import { Projectiles } from './components/entities/Projectile';
+import { Music } from './game/sounds';
 
 function GameLoop() {
   const tick = useGameStore(s => s.tick);
@@ -87,8 +88,22 @@ function App() {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
     };
+    
+    const handleInteraction = () => {
+      Music.play();
+      window.removeEventListener('mousedown', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousedown', handleInteraction);
+    window.addEventListener('keydown', handleInteraction);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousedown', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+    };
   }, []);
 
   return (

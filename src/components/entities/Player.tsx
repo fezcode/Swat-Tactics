@@ -4,6 +4,7 @@ import { RigidBody, RapierRigidBody, BallCollider } from '@react-three/rapier';
 import type { PlayerState } from '../../types';
 import { useGameStore } from '../../game/store';
 import * as THREE from 'three';
+import { SFX } from '../../game/sounds';
 
 export function Player({ state }: { state: PlayerState }) {
   const rb = useRef<RapierRigidBody>(null);
@@ -34,6 +35,7 @@ export function Player({ state }: { state: PlayerState }) {
       const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(meshRef.current.quaternion).normalize();
       const spawnPos = { x: pos.x + direction.x * 0.6, z: pos.z + direction.z * 0.6 };
       playerShoot(spawnPos, { x: direction.x, z: direction.z });
+      SFX.playerShoot();
     };
 
     window.addEventListener('keydown', onKeyDown);
