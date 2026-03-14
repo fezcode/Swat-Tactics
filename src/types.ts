@@ -1,4 +1,4 @@
-export type EntityType = 'player' | 'enemy' | 'barrel' | 'wall' | 'projectile' | 'health_box';
+export type EntityType = 'player' | 'enemy' | 'barrel' | 'wall' | 'projectile' | 'health_box' | 'ammo_box';
 
 export interface Position {
   x: number;
@@ -41,6 +41,10 @@ export interface HealthBoxState extends EntityState {
   type: 'health_box';
 }
 
+export interface AmmoBoxState extends EntityState {
+  type: 'ammo_box';
+}
+
 export interface ProjectileState {
   id: string;
   pos: Position;
@@ -50,11 +54,11 @@ export interface ProjectileState {
   isEnemy: boolean;
 }
 
-export type LevelTheme = 'industrial' | 'garden' | 'skyscraper';
+export type LevelTheme = 'industrial' | 'garden' | 'skyscraper' | 'desert';
 
 export interface DecorationState {
   id: string;
-  type: 'tree' | 'rock' | 'building';
+  type: 'tree' | 'rock' | 'building' | 'cactus';
   pos: Position;
   scale: number;
   rotation: number;
@@ -73,6 +77,7 @@ export interface LevelData {
   enemies: { id: string; pos: Position; hp: number; weapon: Weapon }[];
   barrels: { id: string; pos: Position }[];
   healthBoxes?: { id: string; pos: Position }[];
+  ammoBoxes?: { id: string; pos: Position }[];
   exit: Position;
 }
 

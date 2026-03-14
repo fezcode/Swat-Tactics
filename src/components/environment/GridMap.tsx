@@ -2,6 +2,7 @@ import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { useGameStore } from '../../game/store';
 import { Wall } from './Wall';
 import { HealthBox } from '../entities/HealthBox';
+import { AmmoBox } from '../entities/AmmoBox';
 
 export function GridMap() {
   const walls = useGameStore(s => s.walls);
@@ -9,6 +10,7 @@ export function GridMap() {
   const exitPos = useGameStore(s => s.exitPos);
   const enemies = useGameStore(s => s.enemies);
   const healthBoxes = useGameStore(s => s.healthBoxes);
+  const ammoBoxes = useGameStore(s => s.ammoBoxes);
   const theme = useGameStore(s => s.theme);
   const decorations = useGameStore(s => s.decorations);
   const allDead = enemies.length > 0 && enemies.every(e => e.hp <= 0);
@@ -27,6 +29,10 @@ export function GridMap() {
     skyscraper: {
       floor: "#1a202c",
       grid: 0x63b3ed
+    },
+    desert: {
+      floor: "#c2b280", // Sand color
+      grid: 0xe6ccb2
     }
   }[theme];
 
@@ -36,7 +42,7 @@ export function GridMap() {
       <RigidBody type="fixed" position={[gridSize.width / 2 - 0.5, -0.05, gridSize.height / 2 - 0.5]} userData={{ type: 'floor' }}>
         <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[gridSize.width, gridSize.height]} />
-          <meshStandardMaterial color={colors.floor} roughness={0.8} metalness={0.1} />
+          <meshStandardMaterial color={colors.floor} roughness={0.9} metalness={0.0} />
         </mesh>
         
         {/* Floor Collider */}
@@ -74,12 +80,27 @@ export function GridMap() {
             <mesh position={[0, -(d.h || 0)/2 + 0.5, 0]}>
               <boxGeometry args={[d.w || 2, d.h || 10, d.d || 2]} />
               <meshStandardMaterial color={d.color || "#1a202c"} metalness={0.5} roughness={0.2} />
-              {/* Windows */}
               <mesh position={[0, 0, (d.d || 2)/2 + 0.01]}>
                 <planeGeometry args={[(d.w || 2) * 0.8, (d.h || 10) * 0.8]} />
                 <meshBasicMaterial color="#4fd1c5" opacity={0.1} transparent />
               </mesh>
             </mesh>
+          )}
+          {d.type === 'cactus' && (
+            <>
+              <mesh position={[0, 0.8, 0]} castShadow>
+                <cylinderGeometry args={[0.2, 0.2, 1.6, 8]} />
+                <meshStandardMaterial color="#4a7c44" />
+              </mesh>
+              <mesh position={[0.3, 1.0, 0]} rotation={[0, 0, Math.PI / 4]} castShadow>
+                <cylinderGeometry args={[0.1, 0.1, 0.6, 8]} />
+                <meshStandardMaterial color="#4a7c44" />
+              </mesh>
+              <mesh position={[-0.3, 1.2, 0]} rotation={[0, 0, -Math.PI / 4]} castShadow>
+                <cylinderGeometry args={[0.1, 0.1, 0.6, 8]} />
+                <meshStandardMaterial color="#4a7c44" />
+              </mesh>
+            </>
           )}
         </group>
       ))}
@@ -94,6 +115,7 @@ export function GridMap() {
 
       {walls.map((w, i) => <Wall key={i} pos={w} />)}
       {healthBoxes.map((h) => <HealthBox key={h.id} state={h} />)}
+      {ammoBoxes.map((a) => <AmmoBox key={a.id} state={a} />)}
 
       {exitPos && (
         <RigidBody 

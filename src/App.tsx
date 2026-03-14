@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
@@ -30,9 +30,20 @@ function GameScene() {
   const enemies = useGameStore(s => s.enemies);
   const barrels = useGameStore(s => s.barrels);
   const phase = useGameStore(s => s.phase);
+  const theme = useGameStore(s => s.theme);
+
+  const bgColor = useMemo(() => {
+    switch (theme) {
+      case 'garden': return '#1a2e1a';
+      case 'skyscraper': return '#0a0c14';
+      case 'desert': return '#4a3c2a';
+      default: return '#050505';
+    }
+  }, [theme]);
 
   return (
     <>
+      <color attach="background" args={[bgColor]} />
       <ambientLight intensity={1.2} />
       <directionalLight 
         position={[10, 20, 10]} 
@@ -89,6 +100,18 @@ function CameraRig() {
 
 function App() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const theme = useGameStore(s => s.theme);
+  const phase = useGameStore(s => s.phase);
+
+  const containerBg = useMemo(() => {
+    if (phase === 'main_menu') return '#050505';
+    switch (theme) {
+      case 'garden': return '#1a2e1a';
+      case 'skyscraper': return '#0a0c14';
+      case 'desert': return '#4a3c2a';
+      default: return '#050505';
+    }
+  }, [theme, phase]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -121,7 +144,10 @@ function App() {
   }, []);
 
   return (
-    <div className="w-full h-screen bg-[#0a0a0a] relative overflow-hidden cursor-none">
+    <div 
+      className="w-full h-screen relative overflow-hidden cursor-none"
+      style={{ backgroundColor: containerBg }}
+    >
       <Canvas shadows>
         <CameraRig />
         <GameScene />

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState, HealthBoxState, LevelTheme, DecorationState } from '../types';
+import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState, HealthBoxState, AmmoBoxState, LevelTheme, DecorationState } from '../types';
 import { LEVELS } from './levels';
 import { SFX, Music } from './sounds';
 
@@ -18,6 +18,7 @@ interface GameState {
   enemies: EnemyState[];
   barrels: BarrelState[];
   healthBoxes: HealthBoxState[];
+  ammoBoxes: AmmoBoxState[];
   walls: Position[];
   decorations: DecorationState[];
   gridSize: { width: number; height: number };
@@ -34,6 +35,7 @@ interface GameState {
   // Continuous actions
   damageEntity: (id: string, amount: number, pos?: Position) => void;
   collectHealth: (id: string) => void;
+  collectAmmo: (id: string) => void;
   playerShoot: (spawnPos: Position, direction: Position) => void;
   enemyShoot: (spawnPos: Position, direction: Position, damage: number) => void;
   addProjectile: (proj: Omit<ProjectileState, 'id'>) => void;
@@ -54,6 +56,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   enemies: [],
   barrels: [],
   healthBoxes: [],
+  ammoBoxes: [],
   walls: [],
   decorations: [],
   gridSize: { width: 10, height: 10 },
@@ -139,6 +142,23 @@ export const useGameStore = create<GameState>((set, get) => ({
           color: Math.random() > 0.5 ? "#1a202c" : "#2d3748"
         });
       }
+    } else if (theme === 'desert') {
+      for (let i = 0; i < 80; i++) {
+        const side = Math.floor(Math.random() * 4);
+        let x = 0, z = 0;
+        const margin = 5;
+        if (side === 0) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = -margin - Math.random() * 15; }
+        else if (side === 1) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + Math.random() * 15; }
+        else if (side === 2) { x = -margin - Math.random() * 15; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
+        else { x = level.gridSize.width + margin + Math.random() * 15; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
+        decorations.push({
+          id: `desert-${i}`,
+          type: Math.random() > 0.4 ? 'cactus' : 'rock',
+          pos: { x, z },
+          scale: 0.6 + Math.random() * 1.5,
+          rotation: Math.random() * Math.PI * 2
+        });
+      }
     }
 
     set({
@@ -154,6 +174,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       }),
       barrels: level.barrels.map(b => ({ type: 'barrel', id: b.id, pos: b.pos, rotation: 0, hp: 1, maxHp: 1 })),
       healthBoxes: (level.healthBoxes || []).map(h => ({ type: 'health_box', id: h.id, pos: h.pos, rotation: 0, hp: 1, maxHp: 1 })),
+      ammoBoxes: (level.ammoBoxes || []).map(a => ({ type: 'ammo_box', id: a.id, pos: a.pos, rotation: 0, hp: 1, maxHp: 1 })),
       walls: level.walls,
       decorations,
       gridSize: level.gridSize,
@@ -177,7 +198,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       return;
     }
 
-    // Try enemies
     let hit = false;
     const newEnemies = state.enemies.map(e => {
       if (e.id === id && e.hp > 0) {
@@ -194,13 +214,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       return;
     }
 
-    // Try barrels
     let explodedBarrel: any = null;
     const newBarrels = state.barrels.map(b => {
       if (b.id === id && b.hp > 0) {
         hit = true;
         explodedBarrel = b;
-        return { ...b, hp: 0 }; // Explode
+        return { ...b, hp: 0 }; 
       }
       return b;
     });
@@ -209,7 +228,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({ barrels: newBarrels });
       const exPos = explodedBarrel?.pos || pos;
       if (exPos) {
-        // Create AoE visual
         const explosionRadius = 3;
         const explosionId = Math.random().toString(36).substr(2, 9);
         set(s => ({
@@ -262,9 +280,22 @@ export const useGameStore = create<GameState>((set, get) => ({
         player: { ...state.player, hp: Math.min(state.player.maxHp, state.player.hp + 50) },
         healthBoxes: state.healthBoxes.filter(h => h.id !== id)
       });
-      // Add green particles
       for (let i = 0; i < 10; i++) {
         get().addParticle([box.pos.x, 0.5, box.pos.z], '#22c55e');
+      }
+    }
+  },
+
+  collectAmmo: (id) => {
+    const state = get();
+    const box = state.ammoBoxes.find(a => a.id === id);
+    if (box && state.player) {
+      set({
+        player: { ...state.player, weapon: { ...state.player.weapon, ammo: state.player.weapon.maxAmmo } },
+        ammoBoxes: state.ammoBoxes.filter(a => a.id !== id)
+      });
+      for (let i = 0; i < 10; i++) {
+        get().addParticle([box.pos.x, 0.5, box.pos.z], '#fbbf24');
       }
     }
   },
