@@ -1,0 +1,120 @@
+import { useState, useEffect } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Environment, PerspectiveCamera } from '@react-three/drei';
+import { Physics } from '@react-three/rapier';
+import * as THREE from 'three';
+import { useGameStore } from './game/store';
+import { GridMap } from './components/environment/GridMap';
+import { Player } from './components/entities/Player';
+import { Enemy } from './components/entities/Enemy';
+import { Barrel } from './components/entities/Barrel';
+import { HUD } from './components/ui/HUD';
+import { ParticleSystem } from './components/entities/ParticleSystem';
+import { Projectiles } from './components/entities/Projectile';
+
+function GameLoop() {
+  const tick = useGameStore(s => s.tick);
+  useFrame((_, delta) => {
+    tick(delta);
+  });
+  return null;
+}
+
+function GameScene() {
+  const player = useGameStore(s => s.player);
+  const enemies = useGameStore(s => s.enemies);
+  const barrels = useGameStore(s => s.barrels);
+
+  return (
+    <>
+      <ambientLight intensity={0.5} />
+      <directionalLight 
+        position={[10, 20, 10]} 
+        intensity={1} 
+        castShadow 
+        shadow-mapSize-width={2048} 
+        shadow-mapSize-height={2048} 
+        shadow-camera-left={-20}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
+      />
+      <Environment preset="city" />
+
+      <Physics gravity={[0, 0, 0]}>
+        <GridMap />
+        
+        {player && <Player state={player} />}
+        {enemies.map(e => <Enemy key={e.id} state={e} />)}
+        {barrels.map(b => <Barrel key={b.id} state={b} />)}
+        
+        <Projectiles />
+      </Physics>
+      
+      <ParticleSystem />
+      <GameLoop />
+    </>
+  );
+}
+
+function CameraRig() {
+  const { camera, scene } = useThree();
+
+  useFrame(() => {
+    let playerObj: THREE.Object3D | undefined;
+    scene.traverse(child => {
+      if (child.name === 'player') playerObj = child;
+    });
+
+    if (playerObj) {
+      const pos = new THREE.Vector3();
+      playerObj.getWorldPosition(pos);
+      
+      // Interpolate camera towards player
+      camera.position.x = THREE.MathUtils.lerp(camera.position.x, pos.x, 0.1);
+      camera.position.z = THREE.MathUtils.lerp(camera.position.z, pos.z + 10, 0.1); // +10 for perspective angle
+      camera.lookAt(camera.position.x, 0, camera.position.z - 10);
+    }
+  });
+
+  return (
+    <PerspectiveCamera 
+      makeDefault 
+      position={[0, 15, 10]} 
+      fov={45} 
+    />
+  );
+}
+
+function App() {
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  return (
+    <div className="w-full h-screen bg-zinc-950 relative overflow-hidden cursor-none">
+      <Canvas shadows>
+        <CameraRig />
+        <GameScene />
+      </Canvas>
+      <HUD />
+      {/* Crosshair overlay following mouse */}
+      <div 
+        className="pointer-events-none fixed z-50 flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
+        style={{ left: mousePos.x, top: mousePos.y }}
+      >
+        <div className="w-6 h-6 border-2 border-white/70 rounded-full flex items-center justify-center mix-blend-difference">
+          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
