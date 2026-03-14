@@ -50,7 +50,19 @@ export interface ProjectileState {
   isEnemy: boolean;
 }
 
-export type LevelTheme = 'industrial' | 'garden';
+export type LevelTheme = 'industrial' | 'garden' | 'skyscraper';
+
+export interface DecorationState {
+  id: string;
+  type: 'tree' | 'rock' | 'building';
+  pos: Position;
+  scale: number;
+  rotation: number;
+  color?: string;
+  w?: number;
+  h?: number;
+  d?: number;
+}
 
 export interface LevelData {
   id: number;

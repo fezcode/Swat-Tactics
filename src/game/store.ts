@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState, HealthBoxState, LevelTheme } from '../types';
+import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState, HealthBoxState, LevelTheme, DecorationState } from '../types';
 import { LEVELS } from './levels';
 import { SFX, Music } from './sounds';
 
@@ -19,6 +19,7 @@ interface GameState {
   barrels: BarrelState[];
   healthBoxes: HealthBoxState[];
   walls: Position[];
+  decorations: DecorationState[];
   gridSize: { width: number; height: number };
   exitPos: Position | null;
   particles: Particle[];
@@ -54,6 +55,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   barrels: [],
   healthBoxes: [],
   walls: [],
+  decorations: [],
   gridSize: { width: 10, height: 10 },
   exitPos: null,
   particles: [],
@@ -96,10 +98,53 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
       : { id: 'player', type: 'player', pos: level.playerSpawn, rotation: 0, hp: 100, maxHp: 100, weapon: { ...defaultWeapon } };
 
+    const theme = level.theme || 'industrial';
+    const decorations: DecorationState[] = [];
+
+    if (theme === 'garden') {
+      for (let i = 0; i < 40; i++) {
+        const side = Math.floor(Math.random() * 4);
+        let x = 0, z = 0;
+        const margin = 5;
+        if (side === 0) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = -margin - Math.random() * 10; }
+        else if (side === 1) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + Math.random() * 10; }
+        else if (side === 2) { x = -margin - Math.random() * 10; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
+        else { x = level.gridSize.width + margin + Math.random() * 10; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
+        decorations.push({
+          id: `garden-${i}`,
+          type: Math.random() > 0.3 ? 'tree' : 'rock',
+          pos: { x, z },
+          scale: 0.8 + Math.random() * 1.5,
+          rotation: Math.random() * Math.PI * 2
+        });
+      }
+    } else if (theme === 'skyscraper') {
+      for (let i = 0; i < 30; i++) {
+        const side = Math.floor(Math.random() * 4);
+        let x = 0, z = 0;
+        const margin = 10;
+        if (side === 0) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = -margin - Math.random() * 20; }
+        else if (side === 1) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + Math.random() * 20; }
+        else if (side === 2) { x = -margin - Math.random() * 20; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
+        else { x = level.gridSize.width + margin + Math.random() * 20; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
+        decorations.push({
+          id: `sky-${i}`,
+          type: 'building',
+          pos: { x, z },
+          scale: 1,
+          rotation: 0,
+          w: 2 + Math.random() * 4,
+          h: 5 + Math.random() * 30,
+          d: 2 + Math.random() * 4,
+          color: Math.random() > 0.5 ? "#1a202c" : "#2d3748"
+        });
+      }
+    }
+
     set({
       phase: 'playing',
       levelIndex: index,
-      theme: level.theme || 'industrial',
+      theme,
       player: newPlayer,
       enemies: level.enemies.map(e => {
         const dx = level.playerSpawn.x - e.pos.x;
@@ -110,6 +155,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       barrels: level.barrels.map(b => ({ type: 'barrel', id: b.id, pos: b.pos, rotation: 0, hp: 1, maxHp: 1 })),
       healthBoxes: (level.healthBoxes || []).map(h => ({ type: 'health_box', id: h.id, pos: h.pos, rotation: 0, hp: 1, maxHp: 1 })),
       walls: level.walls,
+      decorations,
       gridSize: level.gridSize,
       exitPos: level.exit,
       particles: [],

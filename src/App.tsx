@@ -101,8 +101,8 @@ function App() {
       window.removeEventListener('keydown', handleInteraction);
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
         useGameStore.getState().togglePause();
       }
     };
@@ -110,13 +110,13 @@ function App() {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mousedown', handleInteraction);
     window.addEventListener('keydown', handleInteraction);
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
     
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mousedown', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
 

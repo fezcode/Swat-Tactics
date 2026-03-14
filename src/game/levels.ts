@@ -326,4 +326,154 @@ export const LEVELS: LevelData[] = [
     barrels: [{ id: 'gb1', pos: { x: 5, z: 5 } }, { id: 'gb2', pos: { x: 13, z: 5 } }, { id: 'gb3', pos: { x: 5, z: 13 } }, { id: 'gb4', pos: { x: 13, z: 13 } }],
     exit: { x: 9, z: 1 },
   },
+  // Level 21: Rooftop
+  {
+    id: 21,
+    theme: 'skyscraper',
+    gridSize: { width: 10, height: 10 },
+    playerSpawn: { x: 1, z: 1 },
+    walls: [...createBoxRoom(10, 10)],
+    enemies: [{ id: 'se1', pos: { x: 8, z: 8 }, hp: 40, weapon: { ...rifle } }],
+    barrels: [{ id: 'sb1', pos: { x: 5, z: 5 } }],
+    healthBoxes: [{ id: 'h21', pos: { x: 8, z: 1 } }],
+    exit: { x: 1, z: 8 },
+  },
+  // Level 22: High-Rise Hall
+  {
+    id: 22,
+    theme: 'skyscraper',
+    gridSize: { width: 14, height: 8 },
+    playerSpawn: { x: 1, z: 4 },
+    walls: [...createBoxRoom(14, 8), { x: 7, z: 1 }, { x: 7, z: 2 }, { x: 7, z: 5 }, { x: 7, z: 6 }],
+    enemies: [
+      { id: 'se1', pos: { x: 12, z: 2 }, hp: 40, weapon: { ...rifle } },
+      { id: 'se2', pos: { x: 12, z: 5 }, hp: 40, weapon: { ...shotgun } },
+    ],
+    barrels: [],
+    exit: { x: 12, z: 4 },
+  },
+  // Level 23: Sky Deck
+  {
+    id: 23,
+    theme: 'skyscraper',
+    gridSize: { width: 12, height: 12 },
+    playerSpawn: { x: 1, z: 1 },
+    walls: [...createBoxRoom(12, 12), { x: 4, z: 4 }, { x: 4, z: 5 }, { x: 4, z: 6 }, { x: 4, z: 7 }, { x: 7, z: 4 }, { x: 7, z: 5 }, { x: 7, z: 6 }, { x: 7, z: 7 }],
+    enemies: [
+      { id: 'se1', pos: { x: 10, z: 10 }, hp: 50, weapon: { ...rifle } },
+      { id: 'se2', pos: { x: 1, z: 10 }, hp: 50, weapon: { ...rifle } },
+    ],
+    barrels: [{ id: 'sb1', pos: { x: 6, z: 6 } }],
+    healthBoxes: [{ id: 'h23', pos: { x: 10, z: 1 } }],
+    exit: { x: 6, z: 1 },
+  },
+  // Level 24: Penthouse
+  {
+    id: 24,
+    theme: 'skyscraper',
+    gridSize: { width: 16, height: 16 },
+    playerSpawn: { x: 8, z: 14 },
+    walls: [...createBoxRoom(16, 16), { x: 4, z: 4 }, { x: 11, z: 4 }, { x: 4, z: 11 }, { x: 11, z: 11 }],
+    enemies: [
+      { id: 'se1', pos: { x: 2, z: 2 }, hp: 40, weapon: { ...shotgun } },
+      { id: 'se2', pos: { x: 13, z: 2 }, hp: 40, weapon: { ...shotgun } },
+      { id: 'se3', pos: { x: 8, z: 8 }, hp: 60, weapon: { ...rifle } },
+    ],
+    barrels: [{ id: 'sb1', pos: { x: 8, z: 4 } }, { id: 'sb2', pos: { x: 8, z: 11 } }],
+    exit: { x: 8, z: 1 },
+  },
+  // Level 25: Crane View
+  {
+    id: 25,
+    theme: 'skyscraper',
+    gridSize: { width: 10, height: 18 },
+    playerSpawn: { x: 1, z: 16 },
+    walls: [...createBoxRoom(10, 18), { x: 5, z: 9 }],
+    enemies: [
+      { id: 'se1', pos: { x: 8, z: 2 }, hp: 50, weapon: { ...rifle } },
+      { id: 'se2', pos: { x: 1, z: 2 }, hp: 50, weapon: { ...rifle } },
+    ],
+    barrels: [{ id: 'sb1', pos: { x: 5, z: 5 } }],
+    healthBoxes: [{ id: 'h25', pos: { x: 8, z: 16 } }],
+    exit: { x: 5, z: 1 },
+  },
+  // Level 26: Sky Bridge
+  {
+    id: 26,
+    theme: 'skyscraper',
+    gridSize: { width: 20, height: 8 },
+    playerSpawn: { x: 1, z: 4 },
+    walls: [...createBoxRoom(20, 8), { x: 5, z: 1 }, { x: 5, z: 2 }, { x: 5, z: 5 }, { x: 5, z: 6 }, { x: 15, z: 1 }, { x: 15, z: 2 }, { x: 15, z: 5 }, { x: 15, z: 6 }],
+    enemies: [
+      { id: 'se1', pos: { x: 10, z: 2 }, hp: 40, weapon: { ...rifle } },
+      { id: 'se2', pos: { x: 10, z: 5 }, hp: 40, weapon: { ...rifle } },
+      { id: 'se3', pos: { x: 18, z: 4 }, hp: 60, weapon: { ...shotgun } },
+    ],
+    barrels: [{ id: 'sb1', pos: { x: 10, z: 4 } }],
+    exit: { x: 18, z: 1 },
+  },
+  // Level 27: Observation Deck
+  {
+    id: 27,
+    theme: 'skyscraper',
+    gridSize: { width: 14, height: 14 },
+    playerSpawn: { x: 1, z: 1 },
+    walls: [...createBoxRoom(14, 14), { x: 7, z: 7 }, { x: 6, z: 7 }, { x: 8, z: 7 }, { x: 7, z: 6 }, { x: 7, z: 8 }],
+    enemies: [
+      { id: 'se1', pos: { x: 12, z: 12 }, hp: 50, weapon: { ...rifle } },
+      { id: 'se2', pos: { x: 12, z: 1 }, hp: 50, weapon: { ...shotgun } },
+      { id: 'se3', pos: { x: 1, z: 12 }, hp: 50, weapon: { ...shotgun } },
+    ],
+    barrels: [],
+    healthBoxes: [{ id: 'h27', pos: { x: 7, z: 7 } }],
+    exit: { x: 7, z: 1 },
+  },
+  // Level 28: Server Room
+  {
+    id: 28,
+    theme: 'skyscraper',
+    gridSize: { width: 16, height: 10 },
+    playerSpawn: { x: 1, z: 5 },
+    walls: [...createBoxRoom(16, 10), { x: 4, z: 3 }, { x: 4, z: 4 }, { x: 4, z: 5 }, { x: 4, z: 6 }, { x: 12, z: 3 }, { x: 12, z: 4 }, { x: 12, z: 5 }, { x: 12, z: 6 }],
+    enemies: [
+      { id: 'se1', pos: { x: 8, z: 2 }, hp: 40, weapon: { ...rifle } },
+      { id: 'se2', pos: { x: 8, z: 8 }, hp: 40, weapon: { ...rifle } },
+      { id: 'se3', pos: { x: 14, z: 5 }, hp: 60, weapon: { ...rifle } },
+    ],
+    barrels: [{ id: 'sb1', pos: { x: 8, z: 5 } }],
+    exit: { x: 14, z: 1 },
+  },
+  // Level 29: Helipad
+  {
+    id: 29,
+    theme: 'skyscraper',
+    gridSize: { width: 14, height: 14 },
+    playerSpawn: { x: 7, z: 12 },
+    walls: [...createBoxRoom(14, 14)],
+    enemies: [
+      { id: 'se1', pos: { x: 2, z: 2 }, hp: 50, weapon: { ...rifle } },
+      { id: 'se2', pos: { x: 12, z: 2 }, hp: 50, weapon: { ...rifle } },
+      { id: 'se3', pos: { x: 7, z: 2 }, hp: 80, weapon: { ...rifle } },
+    ],
+    barrels: [{ id: 'sb1', pos: { x: 4, z: 4 } }, { id: 'sb2', pos: { x: 10, z: 4 } }],
+    healthBoxes: [{ id: 'h29', pos: { x: 7, z: 7 } }],
+    exit: { x: 7, z: 1 },
+  },
+  // Level 30: The Pinnacle
+  {
+    id: 30,
+    theme: 'skyscraper',
+    gridSize: { width: 20, height: 20 },
+    playerSpawn: { x: 10, z: 18 },
+    walls: [...createBoxRoom(20, 20), { x: 10, z: 10 }],
+    enemies: [
+      { id: 'skymaster', pos: { x: 10, z: 2 }, hp: 250, weapon: { ...rifle, damage: 25, ammo: 500, maxAmmo: 500 } },
+      { id: 'se1', pos: { x: 2, z: 2 }, hp: 60, weapon: { ...rifle } },
+      { id: 'se2', pos: { x: 18, z: 2 }, hp: 60, weapon: { ...rifle } },
+      { id: 'se3', pos: { x: 2, z: 18 }, hp: 60, weapon: { ...shotgun } },
+      { id: 'se4', pos: { x: 18, z: 18 }, hp: 60, weapon: { ...shotgun } },
+    ],
+    barrels: [{ id: 'sb1', pos: { x: 5, z: 5 } }, { id: 'sb2', pos: { x: 15, z: 5 } }, { id: 'sb3', pos: { x: 5, z: 15 } }, { id: 'sb4', pos: { x: 15, z: 15 } }],
+    exit: { x: 10, z: 1 },
+  },
 ];
