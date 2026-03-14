@@ -27,6 +27,7 @@ interface GameState {
   projectiles: ProjectileState[];
   explosions: ExplosionEffect[];
   isMuted: boolean;
+  countdown: number | null;
   
   setPhase: (phase: GamePhase) => void;
   loadLevel: (index: number) => void;
@@ -65,6 +66,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   projectiles: [],
   explosions: [],
   isMuted: false,
+  countdown: null,
 
   setPhase: (phase) => {
     set({ phase });
@@ -182,6 +184,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       particles: [],
       projectiles: [],
       explosions: [],
+      countdown: 4, // 3, 2, 1, START
     });
     SFX.levelStart();
   },
@@ -302,7 +305,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   playerShoot: (spawnPos, direction) => {
     const state = get();
-    if (state.phase !== 'playing' || !state.player || state.player.hp <= 0) return;
+    if (state.phase !== 'playing' || !state.player || state.player.hp <= 0 || (state.countdown !== null && state.countdown > 0.5)) return;
 
     if (state.player.weapon.ammo <= 0) {
         return;
@@ -352,7 +355,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   tick: (dt) => {
+    const state = get();
+    let newCountdown = state.countdown;
+    if (newCountdown !== null) {
+      newCountdown -= dt;
+      if (newCountdown <= 0) newCountdown = null;
+    }
+
     set(state => ({
+      countdown: newCountdown,
       particles: state.particles.map(p => ({
         ...p,
         life: p.life - dt * 2,

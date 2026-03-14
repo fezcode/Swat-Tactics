@@ -12,6 +12,7 @@ export function Player({ state }: { state: PlayerState }) {
   const { camera, pointer, raycaster } = useThree();
   const playerShoot = useGameStore(s => s.playerShoot);
   const phase = useGameStore(s => s.phase);
+  const countdown = useGameStore(s => s.countdown);
 
   const keys = useRef({ w: false, a: false, s: false, d: false });
 
@@ -30,7 +31,7 @@ export function Player({ state }: { state: PlayerState }) {
     };
     
     const onPointerDown = (e: MouseEvent) => {
-      if (phase !== 'playing' || e.button !== 0 || !rb.current || !meshRef.current) return;
+      if (phase !== 'playing' || e.button !== 0 || !rb.current || !meshRef.current || (countdown !== null && countdown > 0.5)) return;
       const pos = rb.current.translation();
       const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(meshRef.current.quaternion).normalize();
       const spawnPos = { x: pos.x + direction.x * 0.6, z: pos.z + direction.z * 0.6 };
@@ -46,12 +47,12 @@ export function Player({ state }: { state: PlayerState }) {
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('mousedown', onPointerDown);
     };
-  }, [phase, playerShoot]);
+  }, [phase, playerShoot, countdown]);
 
   useFrame(() => {
     if (!rb.current || state.hp <= 0) return;
 
-    if (phase !== 'playing') {
+    if (phase !== 'playing' || (countdown !== null && countdown > 0.5)) {
       rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       return;
     }
@@ -95,7 +96,8 @@ export function Player({ state }: { state: PlayerState }) {
     raycaster.ray.intersectPlane(plane, target);
 
     if (target && meshRef.current) {
-      const angle = Math.atan2(pos.x - target.x, pos.z - target.z);
+      const pPos = rb.current.translation();
+      const angle = Math.atan2(pPos.x - target.x, pPos.z - target.z);
       meshRef.current.rotation.y = angle;
     }
   });

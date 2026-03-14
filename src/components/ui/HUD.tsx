@@ -8,6 +8,7 @@ export function HUD() {
   const levelIndex = useGameStore(s => s.levelIndex);
   const loadLevel = useGameStore(s => s.loadLevel);
   const restartGame = useGameStore(s => s.restartGame);
+  const countdown = useGameStore(s => s.countdown);
 
   const handleClick = (action: () => void) => {
     SFX.buttonClick();
@@ -103,6 +104,15 @@ export function HUD() {
 
   return (
     <div className="absolute top-0 left-0 w-full h-full pointer-events-none p-6 flex flex-col justify-between z-10">
+      {/* Countdown Overlay */}
+      {countdown !== null && countdown > 0.1 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+          <div className="text-9xl font-black italic text-white transform -skew-x-12 animate-ping">
+            {countdown > 1 ? Math.ceil(countdown - 1) : 'START'}
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-start">
         <div className="bg-zinc-950/80 p-4 transform -skew-x-12 border-l-4 border-blue-500 shadow-2xl backdrop-blur-sm pointer-events-auto">
           <h2 className="text-3xl font-black italic text-white tracking-tighter">MISSION {levelIndex + 1}</h2>

@@ -11,6 +11,7 @@ export function Enemy({ state }: { state: EnemyState }) {
   const meshRef = useRef<THREE.Group>(null);
   const enemyShoot = useGameStore(s => s.enemyShoot);
   const phase = useGameStore(s => s.phase);
+  const countdown = useGameStore(s => s.countdown);
   const { rapier, world } = useRapier();
   
   const lastShootTime = useRef(0);
@@ -27,7 +28,7 @@ export function Enemy({ state }: { state: EnemyState }) {
   useFrame(({ clock }) => {
     if (!rb.current || !meshRef.current || state.hp <= 0) return;
 
-    if (phase !== 'playing') {
+    if (phase !== 'playing' || (countdown !== null && countdown > 0.5)) {
       rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       return;
     }
@@ -68,9 +69,8 @@ export function Enemy({ state }: { state: EnemyState }) {
           if (hitData?.type === 'wall' && (hit as any).toi < dist - 0.2) {
             hasLOS = false;
           }
-          // Barrel awareness: Don't shoot if a barrel is in the way and too close to self
           if (hitData?.type === 'barrel' && (hit as any).toi < dist - 0.2) {
-            if ((hit as any).toi < 3.0) { // 3.0 is the explosion radius
+            if ((hit as any).toi < 3.0) {
               hitBarrelTooClose = true;
             }
           }
@@ -78,11 +78,9 @@ export function Enemy({ state }: { state: EnemyState }) {
       }
 
       if (hasLOS) {
-        // Smoothly rotate the visual model to face the player
         visualRotation.current = THREE.MathUtils.lerp(visualRotation.current, angle, 0.15);
         meshRef.current.rotation.y = visualRotation.current;
         
-        // Shoot aggressively if in range and not about to blow self up
         if (dist < 15 && !hitBarrelTooClose && clock.getElapsedTime() - lastShootTime.current > 0.6) {
           lastShootTime.current = clock.getElapsedTime();
           const spawnPos = { x: myPos.x + dir.x * 0.8, z: myPos.z + dir.z * 0.8 };
@@ -109,7 +107,7 @@ export function Enemy({ state }: { state: EnemyState }) {
       ref={rb} 
       type="dynamic" 
       position={[state.pos.x, 0.5, state.pos.z]} 
-      rotation={[0, 0, 0]} // Keep RB at 0 rotation so mesh child uses world-aligned Y axis
+      rotation={[0, 0, 0]}
       lockRotations
       enabledTranslations={[true, false, true]}
       friction={0}
