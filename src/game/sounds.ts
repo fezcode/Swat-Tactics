@@ -1,26 +1,26 @@
 import { useGameStore } from './store';
 
 const createAudio = (path: string, volume = 1) => {
+  // Use relative paths for GitHub Pages support (no leading slash)
   const audio = new Audio(path);
   audio.volume = volume;
   audio.preload = 'auto';
   return audio;
 };
 
-// Preload all SFX
+// Preload all SFX using relative paths
 const sfxAssets = {
-  hover: createAudio('/sounds/button-hover.mp3', 0.5),
-  click: createAudio('/sounds/button-click.mp3', 0.5),
-  playerShoot: createAudio('/sounds/player-gunshot.mp3', 0.4),
-  enemyShoot: createAudio('/sounds/enemy-gunshot.mp3', 0.3),
-  levelStart: createAudio('/sounds/level-start.mp3', 0.6),
-  levelEnd: createAudio('/sounds/level-end.mp3', 0.6),
+  hover: createAudio('sounds/button-hover.mp3', 0.5),
+  click: createAudio('sounds/button-click.mp3', 0.5),
+  playerShoot: createAudio('sounds/player-gunshot.mp3', 0.4),
+  enemyShoot: createAudio('sounds/enemy-gunshot.mp3', 0.3),
+  levelStart: createAudio('sounds/level-start.mp3', 0.6),
+  levelEnd: createAudio('sounds/level-end.mp3', 0.6),
 };
 
 export const SFX = {
   buttonHover: () => {
     if (useGameStore.getState().isMuted) return;
-    sfxAssets.hover.cloneNode(true).dispatchEvent(new Event('play'));
     const sound = sfxAssets.hover.cloneNode(true) as HTMLAudioElement;
     sound.volume = sfxAssets.hover.volume;
     sound.play().catch(() => {});
@@ -58,7 +58,7 @@ let bgMusic: HTMLAudioElement | null = null;
 export const Music = {
   play: () => {
     if (!bgMusic) {
-      bgMusic = new Audio('/sounds/music-watermello-electronic-electro-477141.mp3');
+      bgMusic = new Audio('sounds/music-watermello-electronic-electro-477141.mp3');
       bgMusic.loop = true;
       bgMusic.volume = 0.4;
       bgMusic.preload = 'auto';
