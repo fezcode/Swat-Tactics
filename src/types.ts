@@ -24,6 +24,7 @@ export interface EntityState {
 export interface EnemyState extends EntityState {
   type: 'enemy';
   weapon: Weapon;
+  color: string;
 }
 
 export interface PlayerState extends EntityState {
@@ -74,7 +75,7 @@ export interface LevelData {
   gridSize: { width: number; height: number };
   playerSpawn: Position;
   walls: Position[];
-  enemies: { id: string; pos: Position; hp: number; weapon: Weapon }[];
+  enemies: { id: string; pos: Position; hp: number; weapon: Weapon; color?: string }[];
   barrels: { id: string; pos: Position }[];
   healthBoxes?: { id: string; pos: Position }[];
   ammoBoxes?: { id: string; pos: Position }[];

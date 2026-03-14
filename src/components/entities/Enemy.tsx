@@ -143,7 +143,7 @@ export function Enemy({ state }: { state: EnemyState }) {
 
         <mesh castShadow receiveShadow position={[0, 0, 0]}>
           <capsuleGeometry args={[0.3, 0.4, 4, 16]} />
-          <meshStandardMaterial color="#ef4444" roughness={0.5} />
+          <meshStandardMaterial color={state.color} roughness={0.5} />
         </mesh>
         <mesh castShadow receiveShadow position={[0, 0.5, 0]}>
           <sphereGeometry args={[0.25, 16, 16]} />

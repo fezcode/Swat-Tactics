@@ -172,7 +172,16 @@ export const useGameStore = create<GameState>((set, get) => ({
         const dx = level.playerSpawn.x - e.pos.x;
         const dz = level.playerSpawn.z - e.pos.z;
         const rotation = Math.atan2(dx, dz);
-        return { type: 'enemy', id: e.id, pos: e.pos, rotation, hp: e.hp, maxHp: e.hp, weapon: { ...e.weapon } };
+        return { 
+          type: 'enemy', 
+          id: e.id, 
+          pos: e.pos, 
+          rotation, 
+          hp: e.hp, 
+          maxHp: e.hp, 
+          weapon: { ...e.weapon },
+          color: e.color || '#ef4444'
+        };
       }),
       barrels: level.barrels.map(b => ({ type: 'barrel', id: b.id, pos: b.pos, rotation: 0, hp: 1, maxHp: 1 })),
       healthBoxes: (level.healthBoxes || []).map(h => ({ type: 'health_box', id: h.id, pos: h.pos, rotation: 0, hp: 1, maxHp: 1 })),
