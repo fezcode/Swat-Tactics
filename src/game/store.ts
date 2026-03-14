@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState } from '../types';
 import { LEVELS } from './levels';
-import { SFX } from './sounds';
+import { SFX, Music } from './sounds';
 
 interface GameState {
   phase: GamePhase;
@@ -14,9 +14,11 @@ interface GameState {
   exitPos: Position | null;
   particles: Particle[];
   projectiles: ProjectileState[];
+  isMuted: boolean;
   
   setPhase: (phase: GamePhase) => void;
   loadLevel: (index: number) => void;
+  setMuted: (muted: boolean) => void;
   
   // Continuous actions
   damageEntity: (id: string, amount: number, pos?: Position) => void;
@@ -42,11 +44,17 @@ export const useGameStore = create<GameState>((set, get) => ({
   exitPos: null,
   particles: [],
   projectiles: [],
+  isMuted: false,
 
   setPhase: (phase) => {
     set({ phase });
     if (phase === 'level_complete' || phase === 'victory') SFX.levelEnd();
     if (phase === 'game_over') SFX.levelEnd();
+  },
+
+  setMuted: (muted) => {
+    set({ isMuted: muted });
+    Music.setMuted(muted);
   },
 
   loadLevel: (index) => {

@@ -7,6 +7,8 @@ type MenuState = 'main' | 'level_select' | 'options' | 'credits';
 
 export function MainMenu() {
   const loadLevel = useGameStore(s => s.loadLevel);
+  const isMuted = useGameStore(s => s.isMuted);
+  const setMuted = useGameStore(s => s.setMuted);
   const [view, setView] = useState<MenuState>('main');
   const [hovered, setHovered] = useState<string | number | null>(null);
 
@@ -66,10 +68,17 @@ export function MainMenu() {
         <div className="menu-crt" />
         <h2 className="text-5xl font-black italic text-white mb-12 neon-text transform -skew-x-12 relative z-10">SYSTEM CONFIG</h2>
         <div className="flex flex-col gap-8 w-80 transform -skew-x-12 relative z-10">
-          <div className="flex justify-between items-center bg-zinc-900 p-4 border-l-4 border-blue-500">
-            <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs">Master Volume</span>
-            <span className="text-white font-black">100%</span>
-          </div>
+          <button 
+            onClick={() => setMuted(!isMuted)}
+            onMouseEnter={() => handleHover('mute')}
+            onMouseLeave={() => setHovered(null)}
+            className="flex justify-between items-center bg-zinc-900 p-4 border-l-4 border-blue-500 cursor-pointer hover:bg-zinc-800 transition-colors"
+          >
+            <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs text-left">Audio System</span>
+            <span className={`font-black ${isMuted ? 'text-red-500' : 'text-blue-400'}`}>
+              {isMuted ? 'MUTED' : 'ACTIVE'}
+            </span>
+          </button>
           <div className="flex justify-between items-center bg-zinc-900 p-4 border-l-4 border-pink-500">
             <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs">Graphics</span>
             <span className="text-white font-black">ULTRA</span>
