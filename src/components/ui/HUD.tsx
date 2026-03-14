@@ -1,7 +1,7 @@
 import { useGameStore } from '../../game/store';
 import { MainMenu } from './MainMenu';
 import { SFX } from '../../game/sounds';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 export function HUD() {
   const phase = useGameStore(s => s.phase);
@@ -11,6 +11,17 @@ export function HUD() {
   const restartGame = useGameStore(s => s.restartGame);
   const countdown = useGameStore(s => s.countdown);
   const enemies = useGameStore(s => s.enemies);
+  const lastDamageTime = useGameStore(s => s.lastDamageTime);
+
+  const [showDamageFlash, setShowDamageFlash] = useState(false);
+
+  useEffect(() => {
+    if (lastDamageTime > 0) {
+      setShowDamageFlash(true);
+      const timer = setTimeout(() => setShowDamageFlash(false), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [lastDamageTime]);
 
   const boss = useMemo(() => {
     return enemies.find(e => e.id.toLowerCase().includes('boss') || e.id.toLowerCase().includes('master'));
@@ -126,7 +137,12 @@ export function HUD() {
   }
 
   return (
-    <div className="absolute top-0 left-0 w-full h-full pointer-events-none p-6 flex flex-col justify-between z-10">
+    <div className="absolute top-0 left-0 w-full h-full pointer-events-none p-6 flex flex-col justify-between z-10 overflow-hidden">
+      {/* Damage Flash Overlay */}
+      <div 
+        className={`absolute inset-0 bg-red-600/20 transition-opacity duration-75 pointer-events-none z-0 ${showDamageFlash ? 'opacity-100' : 'opacity-0'}`} 
+      />
+
       {/* Countdown Overlay */}
       {countdown !== null && countdown > 0.01 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">

@@ -78,8 +78,9 @@ function GameScene() {
 
 function CameraRig() {
   const { camera, scene } = useThree();
+  const lastDamageTime = useGameStore(s => s.lastDamageTime);
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     let playerObj: THREE.Object3D | undefined;
     scene.traverse(child => {
       if (child.name === 'player') playerObj = child;
@@ -89,8 +90,19 @@ function CameraRig() {
       const pos = new THREE.Vector3();
       playerObj.getWorldPosition(pos);
       
-      camera.position.x = THREE.MathUtils.lerp(camera.position.x, pos.x, 0.1);
-      camera.position.z = THREE.MathUtils.lerp(camera.position.z, pos.z + 10, 0.1);
+      let offsetX = 0;
+      let offsetZ = 0;
+
+      // Screen shake logic
+      const timeSinceDamage = Date.now() - lastDamageTime;
+      if (timeSinceDamage < 300) {
+        const intensity = (1 - timeSinceDamage / 300) * 0.5;
+        offsetX = (Math.random() - 0.5) * intensity;
+        offsetZ = (Math.random() - 0.5) * intensity;
+      }
+
+      camera.position.x = THREE.MathUtils.lerp(camera.position.x, pos.x + offsetX, 0.1);
+      camera.position.z = THREE.MathUtils.lerp(camera.position.z, pos.z + 10 + offsetZ, 0.1);
       camera.lookAt(camera.position.x, 0, camera.position.z - 10);
     }
   });

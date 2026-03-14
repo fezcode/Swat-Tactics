@@ -28,6 +28,7 @@ interface GameState {
   explosions: ExplosionEffect[];
   isMuted: boolean;
   countdown: number | null;
+  lastDamageTime: number;
   
   setPhase: (phase: GamePhase) => void;
   loadLevel: (index: number) => void;
@@ -67,6 +68,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   explosions: [],
   isMuted: false,
   countdown: null,
+  lastDamageTime: 0,
 
   setPhase: (phase) => {
     set({ phase });
@@ -194,6 +196,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       projectiles: [],
       explosions: [],
       countdown: 4, // 3, 2, 1, START
+      lastDamageTime: 0,
     });
     SFX.levelStart();
   },
@@ -203,7 +206,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (id === 'player') {
       if (state.player) {
         const hp = Math.max(0, state.player.hp - amount);
-        set({ player: { ...state.player, hp } });
+        set({ player: { ...state.player, hp }, lastDamageTime: Date.now() });
         if (pos) get().addParticle([pos.x, 0.5, pos.z], '#ff0000');
         if (hp === 0) get().setPhase('game_over');
       }
