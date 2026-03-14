@@ -18,6 +18,30 @@ export function HUD() {
     return <MainMenu />;
   }
 
+  if (phase === 'paused') {
+    return (
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/80 text-white z-50 scanlines overflow-hidden">
+        <h1 className="text-7xl font-black italic tracking-tighter neon-text mb-12 transform -skew-x-12">
+          PAUSED
+        </h1>
+        <div className="flex flex-col gap-6 items-center transform -skew-x-12">
+          <button 
+            className="px-12 py-4 bg-white text-black text-2xl font-black hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+            onClick={() => handleClick(() => useGameStore.getState().togglePause())}
+          >
+            RESUME MISSION
+          </button>
+          <button 
+            className="text-zinc-400 font-bold hover:text-white transition-colors cursor-pointer"
+            onClick={() => handleClick(() => useGameStore.setState({ phase: 'main_menu' }))}
+          >
+            ABORT MISSION
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (phase === 'game_over') {
     return (
       <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/90 text-white z-50 scanlines overflow-hidden animate-pulse">

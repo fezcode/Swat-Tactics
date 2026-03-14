@@ -1,75 +1,50 @@
-# React + TypeScript + Vite
+# SWAT TACTICS
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![Banner](./banner.png)
 
-Currently, two official plugins are available:
+**SWAT TACTICS** is a high-octane, top-down 3D action shooter inspired by the fast-paced gameplay and retro-neon aesthetic of *Hotline Miami*. Step into the boots of a tactical operator, clear sectors of hostile targets, and survive the chaos of continuous physics-based combat.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Features
 
-## React Compiler
+-   **Fast-Paced Combat**: Continuous free-movement 3D shooting. No turns, just action.
+-   **Retro-Neon Aesthetic**: VHS scanline overlays, CRT flicker, and a pulsing industrial color palette.
+-   **Advanced AI**: Enemies with 360-degree awareness, tactical line-of-sight checks, and barrel-avoidance logic.
+-   **Physics-Driven World**: Fully simulated collisions, smooth wall-sliding, and physical projectiles.
+-   **Explosive Hazards**: Functional barrels with AoE (Area of Effect) damage and chain reactions.
+-   **Dynamic HUD**: Real-time health monitoring, ammo tracking, and mission briefings.
+-   **Immersive Audio**: Retro SFX and an atmospheric electronic score.
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## 🎮 Controls
 
-Note: This will impact Vite dev & build performances.
+| Action | Control |
+| :--- | :--- |
+| **Move** | `W/A/S/D` or `Arrow Keys` |
+| **Aim** | `Mouse Cursor` |
+| **Shoot** | `Left Click` |
+| **Level Select** | Available in Main Menu |
+| **Mute Audio** | Available in System Config |
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+-   **Frontend**: React 19 (TypeScript)
+-   **Rendering**: @react-three/fiber & three.js
+-   **Physics**: @react-three/rapier
+-   **State Management**: Zustand
+-   **Styling**: Tailwind CSS 4
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 📜 Credits
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+-   **Lead Developer**: Fezcode (Samil) - [fezcode.com](https://fezcode.com)
+-   **Music**: Dan from Pixabay
+-   **Special Thanks**: The open-source community and the ghosts in the machine.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 📦 Deployment
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+This project is configured for GitHub Pages. To deploy:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1.  Run `npm run deploy`
+2.  Follow the prompts to push the `dist/` folder to the `gh-pages` branch.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+
+*Build v0.4.2 // Protocol: Zero Tolerance*

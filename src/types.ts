@@ -56,7 +56,7 @@ export interface LevelData {
   exit: Position;
 }
 
-export type GamePhase = 'main_menu' | 'playing' | 'game_over' | 'level_complete' | 'victory';
+export type GamePhase = 'main_menu' | 'playing' | 'paused' | 'game_over' | 'level_complete' | 'victory';
 
 export interface Particle {
   id: string;

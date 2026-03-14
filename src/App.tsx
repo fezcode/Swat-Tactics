@@ -16,8 +16,11 @@ import { Music } from './game/sounds';
 
 function GameLoop() {
   const tick = useGameStore(s => s.tick);
+  const phase = useGameStore(s => s.phase);
   useFrame((_, delta) => {
-    tick(delta);
+    if (phase === 'playing') {
+      tick(delta);
+    }
   });
   return null;
 }
@@ -26,6 +29,7 @@ function GameScene() {
   const player = useGameStore(s => s.player);
   const enemies = useGameStore(s => s.enemies);
   const barrels = useGameStore(s => s.barrels);
+  const phase = useGameStore(s => s.phase);
 
   return (
     <>
@@ -38,7 +42,7 @@ function GameScene() {
         shadow-mapSize-height={2048} 
       />
 
-      <Physics gravity={[0, 0, 0]}>
+      <Physics gravity={[0, 0, 0]} paused={phase === 'paused'}>
         <GridMap />
         
         {player && <Player state={player} />}
@@ -97,14 +101,22 @@ function App() {
       window.removeEventListener('keydown', handleInteraction);
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        useGameStore.getState().togglePause();
+      }
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mousedown', handleInteraction);
     window.addEventListener('keydown', handleInteraction);
+    window.addEventListener('keydown', handleKeyDown);
     
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mousedown', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 

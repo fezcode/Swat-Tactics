@@ -49,7 +49,12 @@ export function Player({ state }: { state: PlayerState }) {
   }, [phase, playerShoot]);
 
   useFrame(() => {
-    if (!rb.current || state.hp <= 0 || phase !== 'playing') return;
+    if (!rb.current || state.hp <= 0) return;
+
+    if (phase !== 'playing') {
+      rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      return;
+    }
 
     // Update position in store for AoE logic
     const pos = rb.current.translation();

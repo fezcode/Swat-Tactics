@@ -37,6 +37,7 @@ interface GameState {
   addParticle: (pos: [number, number, number], color: string) => void;
   tick: (dt: number) => void;
   restartGame: () => void;
+  togglePause: () => void;
 }
 
 const defaultWeapon: Weapon = { name: 'Pistol', ammo: 24, maxAmmo: 24, damage: 10 };
@@ -59,6 +60,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ phase });
     if (phase === 'level_complete' || phase === 'victory') SFX.levelEnd();
     if (phase === 'game_over') SFX.levelEnd();
+  },
+
+  togglePause: () => {
+    const { phase } = get();
+    if (phase === 'playing') set({ phase: 'paused' });
+    else if (phase === 'paused') set({ phase: 'playing' });
   },
 
   setMuted: (muted) => {

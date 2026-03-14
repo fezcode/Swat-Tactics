@@ -25,7 +25,12 @@ export function Enemy({ state }: { state: EnemyState }) {
   }, []);
 
   useFrame(({ clock }) => {
-    if (!rb.current || !meshRef.current || state.hp <= 0 || phase !== 'playing') return;
+    if (!rb.current || !meshRef.current || state.hp <= 0) return;
+
+    if (phase !== 'playing') {
+      rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      return;
+    }
     
     const myPos = rb.current.translation();
     if (Math.abs(state.pos.x - myPos.x) > 0.2 || Math.abs(state.pos.z - myPos.z) > 0.2) {
