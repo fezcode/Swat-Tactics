@@ -482,7 +482,7 @@ export const LEVELS: LevelData[] = [
     theme: 'desert',
     gridSize: { width: 20, height: 20 },
     playerSpawn: { x: 2, z: 2 },
-    walls: [...createBoxRoom(20, 20), { x: 10, z: 10 }, { x: 10, z: 9 }, { x: 10, z: 11 }],
+    walls: [...createBoxRoom(20, 20), { x: 10, z: 10 }, { x: 10, z: 9 }, { x: 10, z: 11 }, { x: 9, z: 10 }, { x: 11, z: 10 }, { x: 5, z: 5 }, { x: 15, z: 15 }, { x: 5, z: 15 }, { x: 15, z: 5 }],
     enemies: [
       { id: 'de1', pos: { x: 15, z: 15 }, hp: 60, weapon: { ...rifle } },
       { id: 'de2', pos: { x: 15, z: 5 }, hp: 60, weapon: { ...shotgun } },
@@ -500,7 +500,7 @@ export const LEVELS: LevelData[] = [
     theme: 'desert',
     gridSize: { width: 24, height: 12 },
     playerSpawn: { x: 2, z: 6 },
-    walls: [...createBoxRoom(24, 12), { x: 8, z: 1 }, { x: 8, z: 2 }, { x: 8, z: 3 }, { x: 8, z: 4 }, { x: 16, z: 7 }, { x: 16, z: 8 }, { x: 16, z: 9 }, { x: 16, z: 10 }],
+    walls: [...createBoxRoom(24, 12), { x: 8, z: 1 }, { x: 8, z: 2 }, { x: 8, z: 3 }, { x: 8, z: 4 }, { x: 16, z: 7 }, { x: 16, z: 8 }, { x: 16, z: 9 }, { x: 16, z: 10 }, { x: 4, z: 4 }, { x: 20, z: 8 }, { x: 12, z: 1 }, { x: 12, z: 10 }],
     enemies: [
       { id: 'de1', pos: { x: 12, z: 3 }, hp: 60, weapon: { ...rifle } },
       { id: 'de2', pos: { x: 12, z: 9 }, hp: 60, weapon: { ...rifle } },
@@ -518,7 +518,7 @@ export const LEVELS: LevelData[] = [
     theme: 'desert',
     gridSize: { width: 20, height: 20 },
     playerSpawn: { x: 10, z: 18 },
-    walls: [...createBoxRoom(20, 20), { x: 5, z: 5 }, { x: 6, z: 5 }, { x: 7, z: 5 }, { x: 13, z: 5 }, { x: 14, z: 5 }, { x: 15, z: 5 }],
+    walls: [...createBoxRoom(20, 20), { x: 5, z: 5 }, { x: 6, z: 5 }, { x: 7, z: 5 }, { x: 13, z: 5 }, { x: 14, z: 5 }, { x: 15, z: 5 }, { x: 5, z: 15 }, { x: 6, z: 15 }, { x: 7, z: 15 }, { x: 13, z: 15 }, { x: 14, z: 15 }, { x: 15, z: 15 }, { x: 5, z: 10 }, { x: 15, z: 10 }],
     enemies: [
       { id: 'de1', pos: { x: 2, z: 2 }, hp: 60, weapon: { ...rifle } },
       { id: 'de2', pos: { x: 18, z: 2 }, hp: 60, weapon: { ...rifle } },
@@ -537,7 +537,7 @@ export const LEVELS: LevelData[] = [
     theme: 'desert',
     gridSize: { width: 18, height: 24 },
     playerSpawn: { x: 9, z: 22 },
-    walls: [...createBoxRoom(18, 24), { x: 9, z: 12 }, { x: 8, z: 12 }, { x: 10, z: 12 }],
+    walls: [...createBoxRoom(18, 24), { x: 9, z: 12 }, { x: 8, z: 12 }, { x: 10, z: 12 }, { x: 4, z: 6 }, { x: 14, z: 6 }, { x: 4, z: 18 }, { x: 14, z: 18 }, { x: 1, z: 12 }, { x: 2, z: 12 }, { x: 16, z: 12 }, { x: 17, z: 12 }],
     enemies: [
       { id: 'de1', pos: { x: 2, z: 2 }, hp: 60, weapon: { ...rifle } },
       { id: 'de2', pos: { x: 16, z: 2 }, hp: 60, weapon: { ...rifle } },
@@ -556,7 +556,7 @@ export const LEVELS: LevelData[] = [
     theme: 'desert',
     gridSize: { width: 22, height: 14 },
     playerSpawn: { x: 2, z: 7 },
-    walls: [...createBoxRoom(22, 14), { x: 11, z: 1 }, { x: 11, z: 2 }, { x: 11, z: 3 }, { x: 11, z: 4 }, { x: 11, z: 10 }, { x: 11, z: 11 }, { x: 11, z: 12 }, { x: 11, z: 13 }],
+    walls: [...createBoxRoom(22, 14), { x: 11, z: 1 }, { x: 11, z: 2 }, { x: 11, z: 3 }, { x: 11, z: 4 }, { x: 11, z: 10 }, { x: 11, z: 11 }, { x: 11, z: 12 }, { x: 11, z: 13 }, { x: 5, z: 7 }, { x: 17, z: 7 }, { x: 5, z: 3 }, { x: 5, z: 11 }, { x: 17, z: 3 }, { x: 17, z: 11 }],
     enemies: [
       { id: 'de1', pos: { x: 18, z: 3 }, hp: 70, weapon: { ...rifle } },
       { id: 'de2', pos: { x: 18, z: 11 }, hp: 70, weapon: { ...rifle } },
@@ -575,7 +575,7 @@ export const LEVELS: LevelData[] = [
     theme: 'desert',
     gridSize: { width: 20, height: 20 },
     playerSpawn: { x: 10, z: 10 },
-    walls: [...createBoxRoom(20, 20)],
+    walls: [...createBoxRoom(20, 20), { x: 5, z: 5 }, { x: 15, z: 5 }, { x: 5, z: 15 }, { x: 15, z: 15 }, { x: 10, z: 5 }, { x: 10, z: 15 }, { x: 5, z: 10 }, { x: 15, z: 10 }],
     enemies: [
       { id: 'de1', pos: { x: 2, z: 2 }, hp: 60, weapon: { ...rifle } },
       { id: 'de2', pos: { x: 18, z: 2 }, hp: 60, weapon: { ...rifle } },
@@ -595,7 +595,7 @@ export const LEVELS: LevelData[] = [
     theme: 'desert',
     gridSize: { width: 22, height: 22 },
     playerSpawn: { x: 2, z: 2 },
-    walls: [...createBoxRoom(22, 22), { x: 11, z: 11 }, { x: 10, z: 11 }, { x: 12, z: 11 }, { x: 11, z: 10 }, { x: 11, z: 12 }],
+    walls: [...createBoxRoom(22, 22), { x: 11, z: 11 }, { x: 10, z: 11 }, { x: 12, z: 11 }, { x: 11, z: 10 }, { x: 11, z: 12 }, { x: 5, z: 5 }, { x: 17, z: 5 }, { x: 5, z: 17 }, { x: 17, z: 17 }, { x: 11, z: 3 }, { x: 11, z: 19 }],
     enemies: [
       { id: 'de1', pos: { x: 20, z: 20 }, hp: 80, weapon: { ...rifle } },
       { id: 'de2', pos: { x: 20, z: 2 }, hp: 60, weapon: { ...shotgun } },
@@ -616,7 +616,7 @@ export const LEVELS: LevelData[] = [
     theme: 'desert',
     gridSize: { width: 16, height: 28 },
     playerSpawn: { x: 8, z: 26 },
-    walls: [...createBoxRoom(16, 28), { x: 1, z: 14 }, { x: 2, z: 14 }, { x: 3, z: 14 }, { x: 4, z: 14 }, { x: 5, z: 14 }, { x: 6, z: 14 }, { x: 10, z: 14 }, { x: 11, z: 14 }, { x: 12, z: 14 }, { x: 13, z: 14 }, { x: 14, z: 14 }, { x: 15, z: 14 }],
+    walls: [...createBoxRoom(16, 28), { x: 1, z: 14 }, { x: 2, z: 14 }, { x: 3, z: 14 }, { x: 4, z: 14 }, { x: 5, z: 14 }, { x: 6, z: 14 }, { x: 10, z: 14 }, { x: 11, z: 14 }, { x: 12, z: 14 }, { x: 13, z: 14 }, { x: 14, z: 14 }, { x: 15, z: 14 }, { x: 8, z: 7 }, { x: 8, z: 21 }, { x: 1, z: 7 }, { x: 15, z: 7 }, { x: 1, z: 21 }, { x: 15, z: 21 }],
     enemies: [
       { id: 'de1', pos: { x: 8, z: 2 }, hp: 100, weapon: { ...rifle } },
       { id: 'de2', pos: { x: 3, z: 5 }, hp: 60, weapon: { ...rifle } },
@@ -636,7 +636,7 @@ export const LEVELS: LevelData[] = [
     theme: 'desert',
     gridSize: { width: 24, height: 24 },
     playerSpawn: { x: 2, z: 2 },
-    walls: [...createBoxRoom(24, 24), { x: 12, z: 12 }],
+    walls: [...createBoxRoom(24, 24), { x: 12, z: 12 }, { x: 6, z: 6 }, { x: 18, z: 6 }, { x: 6, z: 18 }, { x: 18, z: 18 }, { x: 12, z: 4 }, { x: 12, z: 20 }, { x: 4, z: 12 }, { x: 20, z: 12 }],
     enemies: [
       { id: 'de1', pos: { x: 22, z: 22 }, hp: 80, weapon: { ...rifle } },
       { id: 'de2', pos: { x: 22, z: 2 }, hp: 80, weapon: { ...rifle } },
@@ -657,7 +657,7 @@ export const LEVELS: LevelData[] = [
     theme: 'desert',
     gridSize: { width: 26, height: 26 },
     playerSpawn: { x: 13, z: 24 },
-    walls: [...createBoxRoom(26, 26), { x: 13, z: 13 }],
+    walls: [...createBoxRoom(26, 26), { x: 13, z: 13 }, { x: 6, z: 6 }, { x: 20, z: 6 }, { x: 6, z: 20 }, { x: 20, z: 20 }, { x: 13, z: 6 }, { x: 13, z: 20 }, { x: 6, z: 13 }, { x: 20, z: 13 }],
     enemies: [
       { id: 'desert_boss', pos: { x: 13, z: 3 }, hp: 500, weapon: { ...rifle, damage: 35, ammo: 2000, maxAmmo: 2000 } },
       { id: 'de1', pos: { x: 3, z: 3 }, hp: 100, weapon: { ...rifle } },
@@ -669,9 +669,8 @@ export const LEVELS: LevelData[] = [
       { id: 'de7', pos: { x: 8, z: 18 }, hp: 80, weapon: { ...shotgun } },
       { id: 'de8', pos: { x: 18, z: 18 }, hp: 80, weapon: { ...shotgun } },
     ],
-    barrels: [{ id: 'db1', pos: { x: 13, z: 8 } }, { id: 'db2', pos: { x: 13, z: 18 } }, { id: 'db3', pos: { x: 8, z: 13 } }, { id: 'db4', pos: { x: 18, z: 13 } }],
+    barrels: [{ id: 'db1', pos: { x: 13, z: 8 } }, { id: 'db2', pos: { x: 13, z: 18 } }, { id: 'db3', pos: { x: 8, z: 13 } }, { id: 'db4', pos: { x: 15, z: 11 } }],
     ammoBoxes: [{ id: 'a40', pos: { x: 13, z: 13 } }],
     healthBoxes: [{ id: 'h40', pos: { x: 13, z: 20 } }],
     exit: { x: 13, z: 1 },
   },
-];
