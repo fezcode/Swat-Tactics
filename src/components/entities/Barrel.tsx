@@ -8,13 +8,10 @@ export function Barrel({ state }: { state: BarrelState }) {
 
   return (
     <RigidBody 
-      type="dynamic" 
+      type="fixed" 
       position={[state.pos.x, 0.5, state.pos.z]}
       lockRotations
-      enabledTranslations={[true, false, true]}
-      linearDamping={5}
       friction={1}
-      // Removed sensor property to make it a solid physical object
       onIntersectionEnter={({ other }) => {
         const userData = other.rigidBodyObject?.userData as any;
         if (userData?.type === 'projectile') {

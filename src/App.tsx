@@ -98,7 +98,7 @@ function App() {
   }, []);
 
   return (
-    <div className="w-full h-screen bg-zinc-950 relative overflow-hidden cursor-none">
+    <div className="w-full h-screen bg-zinc-950 relative overflow-hidden cursor-none scanlines">
       <Canvas shadows>
         <CameraRig />
         <GameScene />

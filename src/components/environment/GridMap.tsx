@@ -17,7 +17,7 @@ export function GridMap() {
       <RigidBody type="fixed" position={[gridSize.width / 2 - 0.5, -0.05, gridSize.height / 2 - 0.5]} userData={{ type: 'floor' }}>
         <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[gridSize.width, gridSize.height]} />
-          <meshStandardMaterial color="#1a202c" roughness={0.9} />
+          <meshStandardMaterial color="#0a0c10" roughness={1} metalness={0} />
         </mesh>
         
         {/* Floor Collider */}
