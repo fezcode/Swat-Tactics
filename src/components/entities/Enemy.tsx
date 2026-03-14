@@ -61,16 +61,16 @@ export function Enemy({ state }: { state: EnemyState }) {
       let hasLOS = true;
       let hitBarrelTooClose = false;
       if (hit) {
-        const hitCollider = world.getCollider(hit.colliderHandle);
+        const hitCollider = world.getCollider((hit as any).colliderHandle);
         if (hitCollider) {
           const hitBody = hitCollider.parent();
           const hitData = hitBody?.userData as any;
-          if (hitData?.type === 'wall' && hit.toi < dist - 0.2) {
+          if (hitData?.type === 'wall' && (hit as any).toi < dist - 0.2) {
             hasLOS = false;
           }
           // Barrel awareness: Don't shoot if a barrel is in the way and too close to self
-          if (hitData?.type === 'barrel' && hit.toi < dist - 0.2) {
-            if (hit.toi < 3.0) { // 3.0 is the explosion radius
+          if (hitData?.type === 'barrel' && (hit as any).toi < dist - 0.2) {
+            if ((hit as any).toi < 3.0) { // 3.0 is the explosion radius
               hitBarrelTooClose = true;
             }
           }
