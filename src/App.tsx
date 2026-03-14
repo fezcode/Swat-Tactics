@@ -11,6 +11,7 @@ import { Barrel } from './components/entities/Barrel';
 import { HUD } from './components/ui/HUD';
 import { ParticleSystem } from './components/entities/ParticleSystem';
 import { Projectiles } from './components/entities/Projectile';
+import { ExplosionEffects } from './components/entities/Explosion';
 import { Music } from './game/sounds';
 
 function GameLoop() {
@@ -45,6 +46,7 @@ function GameScene() {
         {barrels.map(b => <Barrel key={b.id} state={b} />)}
         
         <Projectiles />
+        <ExplosionEffects />
       </Physics>
       
       <ParticleSystem />

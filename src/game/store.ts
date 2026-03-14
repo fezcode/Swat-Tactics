@@ -3,6 +3,13 @@ import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon,
 import { LEVELS } from './levels';
 import { SFX, Music } from './sounds';
 
+interface ExplosionEffect {
+  id: string;
+  pos: Position;
+  radius: number;
+  life: number;
+}
+
 interface GameState {
   phase: GamePhase;
   levelIndex: number;
@@ -14,6 +21,7 @@ interface GameState {
   exitPos: Position | null;
   particles: Particle[];
   projectiles: ProjectileState[];
+  explosions: ExplosionEffect[];
   isMuted: boolean;
   
   setPhase: (phase: GamePhase) => void;
@@ -44,6 +52,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   exitPos: null,
   particles: [],
   projectiles: [],
+  explosions: [],
   isMuted: false,
 
   setPhase: (phase) => {
@@ -66,7 +75,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     const player = get().player;
     // Keep player stats if moving to next level, else reset
     const newPlayer: PlayerState = player && index > 0 && player.hp > 0
-      ? { ...player, pos: level.playerSpawn, rotation: 0, weapon: { ...player.weapon, ammo: player.weapon.maxAmmo } }
+      ? { 
+          ...player, 
+          pos: level.playerSpawn, 
+          rotation: 0, 
+          hp: Math.min(player.maxHp, player.hp + 20),
+          weapon: { ...player.weapon, ammo: player.weapon.maxAmmo } 
+        }
       : { id: 'player', type: 'player', pos: level.playerSpawn, rotation: 0, hp: 100, maxHp: 100, weapon: { ...defaultWeapon } };
 
     set({
@@ -85,6 +100,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       exitPos: level.exit,
       particles: [],
       projectiles: [],
+      explosions: [],
     });
     SFX.levelStart();
   },
@@ -134,12 +150,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({ barrels: newBarrels });
       const exPos = pos || explodedBarrel?.pos;
       if (exPos) {
+        // Create AoE visual
+        const explosionRadius = 3;
+        const explosionId = Math.random().toString(36).substr(2, 9);
+        set(s => ({
+          explosions: [...s.explosions, { id: explosionId, pos: exPos, radius: explosionRadius, life: 1.0 }]
+        }));
+
         for (let i = 0; i < 20; i++) {
           get().addParticle([exPos.x, 0.5, exPos.z], '#ff4400');
           get().addParticle([exPos.x, 0.5, exPos.z], '#ffaa00');
         }
         
-        const explosionRadius = 3;
         const explosionDamage = 50;
 
         if (state.player && state.player.hp > 0) {
@@ -234,7 +256,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       projectiles: state.projectiles.map(p => ({
         ...p,
         life: p.life - dt,
-      })).filter(p => p.life > 0)
+      })).filter(p => p.life > 0),
+      explosions: state.explosions.map(e => ({
+        ...e,
+        life: e.life - dt * 3
+      })).filter(e => e.life > 0)
     }));
   },
 
