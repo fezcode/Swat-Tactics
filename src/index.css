@@ -8,7 +8,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: #1a1a1a;
+  background-color: #050505;
   color: white;
   font-family: var(--font-sans);
 }
@@ -18,97 +18,75 @@ body {
   height: 100vh;
 }
 
-@keyframes scanlines {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(100%); }
+/* BASE CRT Container */
+.scanlines-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 45;
+  overflow: hidden;
+}
+
+/* Gameplay Scanlines - Subtler to keep visibility */
+.scanlines-container::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+  background-size: 100% 4px, 3px 100%;
+}
+
+/* INTENSE Menu CRT - Only applied in MainMenu.tsx */
+.menu-crt {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), 
+              linear-gradient(90deg, rgba(255, 0, 0, 0.08), rgba(0, 255, 0, 0.03), rgba(0, 0, 255, 0.08));
+  background-size: 100% 3px, 3px 100%;
+  opacity: 0.8;
+  animation: crt-flicker 0.1s infinite;
 }
 
 @keyframes crt-flicker {
-  0% { opacity: 0.97; }
-  5% { opacity: 0.95; }
-  10% { opacity: 0.97; }
-  15% { opacity: 0.94; }
-  20% { opacity: 0.98; }
-  25% { opacity: 0.95; }
-  30% { opacity: 0.99; }
-  35% { opacity: 0.96; }
-  40% { opacity: 0.98; }
-  45% { opacity: 0.95; }
-  50% { opacity: 0.97; }
-  55% { opacity: 0.94; }
-  60% { opacity: 0.98; }
-  65% { opacity: 0.95; }
-  70% { opacity: 0.99; }
-  75% { opacity: 0.96; }
-  80% { opacity: 0.98; }
-  85% { opacity: 0.95; }
-  90% { opacity: 0.97; }
-  95% { opacity: 0.94; }
-  100% { opacity: 0.98; }
+  0% { opacity: 0.75; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.77; }
 }
 
-.scanlines {
-  position: relative;
+@keyframes vhs-distort {
+  0% { transform: skewX(0deg); }
+  5% { transform: skewX(1deg); }
+  10% { transform: skewX(0deg); }
+  15% { transform: skewX(-1deg); }
+  20% { transform: skewX(0deg); }
+  100% { transform: skewX(0deg); }
 }
 
-.scanlines::before {
-  content: " ";
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-  z-index: 100;
-  background-size: 100% 3px, 3px 100%;
-  pointer-events: none;
-  animation: crt-flicker 0.15s infinite;
-}
-
-.scanlines::after {
-  content: " ";
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  background: rgba(18, 16, 16, 0.1);
-  opacity: 0;
-  z-index: 100;
-  pointer-events: none;
-  animation: flicker 0.15s infinite;
+.vhs-distort {
+  animation: vhs-distort 2s infinite;
 }
 
 @keyframes flicker {
-  0% { opacity: 0.27861; }
-  5% { opacity: 0.34769; }
-  10% { opacity: 0.23604; }
-  15% { opacity: 0.90626; }
-  20% { opacity: 0.18128; }
-  25% { opacity: 0.83891; }
-  30% { opacity: 0.65583; }
-  35% { opacity: 0.57807; }
-  40% { opacity: 0.26559; }
-  45% { opacity: 0.84693; }
-  50% { opacity: 0.96019; }
-  55% { opacity: 0.08594; }
-  60% { opacity: 0.20313; }
-  65% { opacity: 0.71988; }
-  70% { opacity: 0.53455; }
-  75% { opacity: 0.37288; }
-  80% { opacity: 0.71428; }
-  85% { opacity: 0.70419; }
-  90% { opacity: 0.7003; }
-  95% { opacity: 0.36108; }
-  100% { opacity: 0.24387; }
+  0% { opacity: 0.27; }
+  5% { opacity: 0.34; }
+  10% { opacity: 0.23; }
+  15% { opacity: 0.90; }
+  20% { opacity: 0.18; }
+  25% { opacity: 0.83; }
+  30% { opacity: 0.65; }
+  100% { opacity: 0.24; }
 }
 
 .neon-text {
-  text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #228dff, 0 0 30px #228dff, 0 0 40px #228dff, 0 0 55px #228dff, 0 0 75px #228dff;
+  text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #228dff, 0 0 30px #228dff, 0 0 40px #228dff;
 }
 
 .neon-text-pink {
-  text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff00de, 0 0 30px #ff00de, 0 0 40px #ff00de, 0 0 55px #ff00de, 0 0 75px #ff00de;
+  text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff00de, 0 0 30px #ff00de, 0 0 40px #ff00de;
 }

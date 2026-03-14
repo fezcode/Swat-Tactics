@@ -13,7 +13,8 @@ export function Wall({ pos }: { pos: Position }) {
       <CuboidCollider args={[0.5, 0.5, 0.5]} />
       <mesh castShadow receiveShadow>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#2a2d34" roughness={0.9} />
+        {/* Brighter Industrial Grey for visibility through CRT */}
+        <meshStandardMaterial color="#6d769a" roughness={0.5} metalness={0.2} />
       </mesh>
     </RigidBody>
   );

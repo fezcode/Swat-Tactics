@@ -17,28 +17,25 @@ export function GridMap() {
       <RigidBody type="fixed" position={[gridSize.width / 2 - 0.5, -0.05, gridSize.height / 2 - 0.5]} userData={{ type: 'floor' }}>
         <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[gridSize.width, gridSize.height]} />
-          <meshStandardMaterial color="#0a0c10" roughness={1} metalness={0} />
+          {/* Brighter CRT Blue for visibility */}
+          <meshStandardMaterial color="#2d334a" roughness={0.6} metalness={0.1} />
         </mesh>
         
         {/* Floor Collider */}
         <CuboidCollider args={[gridSize.width / 2, 0.05, gridSize.height / 2]} />
 
-        {/* Boundary Walls - Massive colliders moved very far away to prevent ejection clipping */}
-        {/* North */}
+        {/* Boundary Walls */}
         <CuboidCollider args={[gridSize.width * 2, 10, 5]} position={[0, 5, -gridSize.height]} />
-        {/* South */}
         <CuboidCollider args={[gridSize.width * 2, 10, 5]} position={[0, 5, gridSize.height]} />
-        {/* East */}
         <CuboidCollider args={[5, 10, gridSize.height * 2]} position={[gridSize.width, 5, 0]} />
-        {/* West */}
         <CuboidCollider args={[5, 10, gridSize.height * 2]} position={[-gridSize.width, 5, 0]} />
       </RigidBody>
 
       {/* Grid Lines Overlay */}
       <gridHelper 
-        args={[maxDim, maxDim, 0x000000, 0x000000]} 
+        args={[maxDim, maxDim, 0x4fd1c5, 0x4fd1c5]} 
         position={[maxDim / 2 - 0.5, 0.01, maxDim / 2 - 0.5]} 
-        material-opacity={0.05} 
+        material-opacity={0.2} 
         material-transparent 
       />
 
@@ -71,7 +68,7 @@ export function GridMap() {
           </mesh>
           <pointLight 
             color={allDead ? "#22c55e" : "#ef4444"} 
-            intensity={allDead ? 10 : 2} 
+            intensity={allDead ? 15 : 5} 
             distance={5} 
           />
         </RigidBody>
