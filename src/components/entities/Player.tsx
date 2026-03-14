@@ -15,6 +15,7 @@ export function Player({ state }: { state: PlayerState }) {
   const countdown = useGameStore(s => s.countdown);
 
   const keys = useRef({ w: false, a: false, s: false, d: false });
+  const lastStoreUpdate = useRef(0);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -49,7 +50,7 @@ export function Player({ state }: { state: PlayerState }) {
     };
   }, [phase, playerShoot, countdown]);
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     if (!rb.current || state.hp <= 0) return;
 
     if (phase !== 'playing' || (countdown !== null && countdown > 0.5)) {
@@ -57,9 +58,10 @@ export function Player({ state }: { state: PlayerState }) {
       return;
     }
 
-    // Update position in store for AoE logic
+    // Update position in store for AoE logic - throttled to 10fps
     const pos = rb.current.translation();
-    if (Math.abs(state.pos.x - pos.x) > 0.1 || Math.abs(state.pos.z - pos.z) > 0.1) {
+    if (clock.getElapsedTime() - lastStoreUpdate.current > 0.1) {
+      lastStoreUpdate.current = clock.getElapsedTime();
       useGameStore.setState(s => ({ player: s.player ? { ...s.player, pos: { x: pos.x, z: pos.z } } : null }));
     }
 

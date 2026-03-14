@@ -358,7 +358,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const state = get();
     let newCountdown = state.countdown;
     if (newCountdown !== null) {
-      newCountdown -= dt;
+      newCountdown -= dt * 2;
       if (newCountdown <= 0) newCountdown = null;
     }
 

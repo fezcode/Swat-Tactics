@@ -130,23 +130,27 @@ function App() {
       window.removeEventListener('keydown', handleInteraction);
     };
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === 'Esc') {
-        useGameStore.getState().togglePause();
-      }
-    };
-
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mousedown', handleInteraction);
     window.addEventListener('keydown', handleInteraction);
-    window.addEventListener('keyup', handleKeyUp);
     
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mousedown', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
-      window.removeEventListener('keyup', handleKeyUp);
     };
+  }, []);
+
+  // Separate useEffect for Escape key to ensure it's not affected by re-renders or other listeners
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        useGameStore.getState().togglePause();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape, true);
+    return () => window.removeEventListener('keydown', handleEscape, true);
   }, []);
 
   return (

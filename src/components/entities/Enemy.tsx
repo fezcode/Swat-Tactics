@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RigidBody, RapierRigidBody, useRapier, BallCollider } from '@react-three/rapier';
+import { Billboard } from '@react-three/drei';
 import type { EnemyState } from '../../types';
 import { useGameStore } from '../../game/store';
 import * as THREE from 'three';
@@ -15,6 +16,7 @@ export function Enemy({ state }: { state: EnemyState }) {
   const { rapier, world } = useRapier();
   
   const lastShootTime = useRef(0);
+  const lastStoreUpdate = useRef(0);
 
   // Use a local ref to track the current rotation to avoid store-dependency jitter
   const visualRotation = useRef(state.rotation);
@@ -34,7 +36,9 @@ export function Enemy({ state }: { state: EnemyState }) {
     }
     
     const myPos = rb.current.translation();
-    if (Math.abs(state.pos.x - myPos.x) > 0.2 || Math.abs(state.pos.z - myPos.z) > 0.2) {
+    // Throttled store update for performance
+    if (clock.getElapsedTime() - lastStoreUpdate.current > 0.1) {
+      lastStoreUpdate.current = clock.getElapsedTime();
       useGameStore.setState(s => ({
         enemies: s.enemies.map(e => e.id === state.id ? { ...e, pos: { x: myPos.x, z: myPos.z } } : e)
       }));
@@ -118,6 +122,19 @@ export function Enemy({ state }: { state: EnemyState }) {
       userData={{ type: 'enemy', id: state.id }}
     >
       <BallCollider args={[0.3]} />
+      
+      {/* Enemy Health Bar - Billboarded */}
+      <Billboard position={[0, 1.2, 0]}>
+        <mesh>
+          <planeGeometry args={[0.8, 0.1]} />
+          <meshBasicMaterial color="#333" />
+        </mesh>
+        <mesh position={[-(0.8 * (1 - state.hp / state.maxHp)) / 2, 0, 0.01]}>
+          <planeGeometry args={[0.8 * (state.hp / state.maxHp), 0.08]} />
+          <meshBasicMaterial color={state.hp > (state.maxHp * 0.3) ? "#ef4444" : "#ff0000"} />
+        </mesh>
+      </Billboard>
+
       <group ref={meshRef}>
         <mesh position={[0, -0.45, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.4, 0.5, 32]} />

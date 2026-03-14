@@ -115,7 +115,7 @@ export const LEVELS: LevelData[] = [
     id: 7,
     theme: 'industrial',
     gridSize: { width: 15, height: 15 },
-    playerSpawn: { x: 7, z: 13 },
+    playerSpawn: { x: 1, z: 13 },
     walls: [...createBoxRoom(15, 15), { x: 7, z: 11 }, { x: 7, z: 10 }, { x: 7, z: 9 }, { x: 6, z: 9 }, { x: 8, z: 9 }],
     enemies: [
       { id: 'e1', pos: { x: 1, z: 1 }, hp: 20, weapon: { ...shotgun } },
@@ -124,7 +124,7 @@ export const LEVELS: LevelData[] = [
       { id: 'e4', pos: { x: 4, z: 7 }, hp: 20, weapon: { ...defaultPistol } },
       { id: 'e5', pos: { x: 10, z: 7 }, hp: 20, weapon: { ...defaultPistol } },
     ],
-    barrels: [{ id: 'b1', pos: { x: 2, z: 2 } }, { id: 'b2', pos: { x: 12, z: 2 } }, { id: 'b3', pos: { x: 7, z: 4 } }],
+    barrels: [{ id: 'b1', pos: { x: 4, z: 2 } }, { id: 'b2', pos: { x: 10, z: 2 } }, { id: 'b3', pos: { x: 7, z: 6 } }],
     exit: { x: 7, z: 2 },
   },
   // Level 8
@@ -147,7 +147,7 @@ export const LEVELS: LevelData[] = [
     id: 9,
     theme: 'industrial',
     gridSize: { width: 14, height: 10 },
-    playerSpawn: { x: 1, z: 4 },
+    playerSpawn: { x: 1, z: 1 },
     walls: [...createBoxRoom(14, 10), { x: 7, z: 1 }, { x: 7, z: 2 }, { x: 7, z: 7 }, { x: 7, z: 8 }],
     enemies: [
       { id: 'e1', pos: { x: 12, z: 1 }, hp: 40, weapon: { ...shotgun } },
@@ -155,7 +155,7 @@ export const LEVELS: LevelData[] = [
       { id: 'e3', pos: { x: 8, z: 4 }, hp: 20, weapon: { ...defaultPistol } },
       { id: 'e4', pos: { x: 8, z: 5 }, hp: 20, weapon: { ...defaultPistol } },
     ],
-    barrels: [{ id: 'b1', pos: { x: 11, z: 1 } }, { id: 'b2', pos: { x: 11, z: 8 } }],
+    barrels: [{ id: 'b1', pos: { x: 9, z: 1 } }, { id: 'b2', pos: { x: 9, z: 8 } }],
     exit: { x: 12, z: 4 },
   },
   // Level 10: Final Industrial Room
@@ -298,14 +298,14 @@ export const LEVELS: LevelData[] = [
     id: 19,
     theme: 'garden',
     gridSize: { width: 14, height: 14 },
-    playerSpawn: { x: 1, z: 1 },
+    playerSpawn: { x: 2, z: 2 },
     walls: [...createBoxRoom(14, 14), { x: 7, z: 7 }],
     enemies: [
       { id: 'ge1', pos: { x: 12, z: 12 }, hp: 40, weapon: { ...shotgun } },
       { id: 'ge2', pos: { x: 12, z: 1 }, hp: 40, weapon: { ...shotgun } },
       { id: 'ge3', pos: { x: 1, z: 12 }, hp: 40, weapon: { ...shotgun } },
     ],
-    barrels: [{ id: 'gb1', pos: { x: 6, z: 6 } }, { id: 'gb2', pos: { x: 8, z: 8 } }],
+    barrels: [{ id: 'gb1', pos: { x: 10, z: 6 } }, { id: 'gb2', pos: { x: 6, z: 10 } }],
     healthBoxes: [{ id: 'h19', pos: { x: 7, z: 7 } }],
     exit: { x: 7, z: 1 },
   },
