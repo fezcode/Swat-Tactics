@@ -54,6 +54,7 @@ export function Enemy({ state }: { state: EnemyState }) {
       );
       
       let hasLOS = true;
+      let hitBarrelTooClose = false;
       if (hit) {
         const hitCollider = world.getCollider(hit.colliderHandle);
         if (hitCollider) {
@@ -61,6 +62,12 @@ export function Enemy({ state }: { state: EnemyState }) {
           const hitData = hitBody?.userData as any;
           if (hitData?.type === 'wall' && hit.toi < dist - 0.2) {
             hasLOS = false;
+          }
+          // Barrel awareness: Don't shoot if a barrel is in the way and too close to self
+          if (hitData?.type === 'barrel' && hit.toi < dist - 0.2) {
+            if (hit.toi < 3.0) { // 3.0 is the explosion radius
+              hitBarrelTooClose = true;
+            }
           }
         }
       }
@@ -70,8 +77,8 @@ export function Enemy({ state }: { state: EnemyState }) {
         visualRotation.current = THREE.MathUtils.lerp(visualRotation.current, angle, 0.15);
         meshRef.current.rotation.y = visualRotation.current;
         
-        // Shoot aggressively if in range
-        if (dist < 15 && clock.getElapsedTime() - lastShootTime.current > 0.6) {
+        // Shoot aggressively if in range and not about to blow self up
+        if (dist < 15 && !hitBarrelTooClose && clock.getElapsedTime() - lastShootTime.current > 0.6) {
           lastShootTime.current = clock.getElapsedTime();
           const spawnPos = { x: myPos.x + dir.x * 0.8, z: myPos.z + dir.z * 0.8 };
           enemyShoot(spawnPos, dir, state.weapon.damage);
