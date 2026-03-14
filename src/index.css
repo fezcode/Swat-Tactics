@@ -83,6 +83,17 @@ body {
   100% { opacity: 0.24; }
 }
 
+@keyframes countdown-pop {
+  0% { transform: scale(2) skewX(-12deg); opacity: 0; }
+  20% { transform: scale(1) skewX(-12deg); opacity: 1; }
+  80% { transform: scale(1) skewX(-12deg); opacity: 1; }
+  100% { transform: scale(0.8) skewX(-12deg); opacity: 0; }
+}
+
+.animate-countdown {
+  animation: countdown-pop 0.5s ease-out forwards;
+}
+
 .neon-text {
   text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #228dff, 0 0 30px #228dff, 0 0 40px #228dff;
 }

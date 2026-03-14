@@ -670,8 +670,8 @@ export const LEVELS: LevelData[] = [
       { id: 'de8', pos: { x: 18, z: 18 }, hp: 100, weapon: { ...shotgun }, color: '#f97316' },
     ],
     barrels: [{ id: 'db1', pos: { x: 13, z: 8 } }, { id: 'db2', pos: { x: 13, z: 18 } }, { id: 'db3', pos: { x: 8, z: 13 } }, { id: 'db4', pos: { x: 15, z: 11 } }],
-    ammoBoxes: [{ id: 'a40', pos: { x: 13, z: 13 } }],
-    healthBoxes: [{ id: 'h40', pos: { x: 13, z: 20 } }],
+    ammoBoxes: [{ id: 'a40', pos: { x: 11, z: 13 } }],
+    healthBoxes: [{ id: 'h40', pos: { x: 15, z: 20 } }],
     exit: { x: 13, z: 1 },
   },
 ];

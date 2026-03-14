@@ -149,11 +149,11 @@ export function Enemy({ state }: { state: EnemyState }) {
           <sphereGeometry args={[0.25, 16, 16]} />
           <meshStandardMaterial color="#fca5a5" roughness={0.4} />
         </mesh>
-        
+        {/* Gun */}
         <group position={[0.2, 0.1, -0.4]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[0.1, 0.1, 0.6]} />
-            <meshStandardMaterial color="#374151" />
+            <meshStandardMaterial color={new THREE.Color(state.color).multiplyScalar(0.5).getHex()} />
           </mesh>
         </group>
       </group>

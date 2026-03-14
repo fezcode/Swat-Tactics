@@ -1,6 +1,7 @@
 import { useGameStore } from '../../game/store';
 import { MainMenu } from './MainMenu';
 import { SFX } from '../../game/sounds';
+import { useMemo } from 'react';
 
 export function HUD() {
   const phase = useGameStore(s => s.phase);
@@ -9,10 +10,19 @@ export function HUD() {
   const loadLevel = useGameStore(s => s.loadLevel);
   const restartGame = useGameStore(s => s.restartGame);
   const countdown = useGameStore(s => s.countdown);
+  const enemies = useGameStore(s => s.enemies);
+
+  const boss = useMemo(() => {
+    return enemies.find(e => e.id.toLowerCase().includes('boss') || e.id.toLowerCase().includes('master'));
+  }, [enemies]);
 
   const handleClick = (action: () => void) => {
     SFX.buttonClick();
     action();
+  };
+
+  const handleHover = () => {
+    SFX.buttonHover();
   };
 
   if (phase === 'main_menu') {
@@ -29,12 +39,14 @@ export function HUD() {
           <button 
             className="px-12 py-4 bg-white text-black text-2xl font-black hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none"
             onClick={() => handleClick(() => useGameStore.getState().togglePause())}
+            onMouseEnter={handleHover}
           >
             RESUME MISSION
           </button>
           <button 
             className="text-zinc-400 font-bold hover:text-white transition-colors cursor-pointer"
             onClick={() => handleClick(() => useGameStore.setState({ phase: 'main_menu' }))}
+            onMouseEnter={handleHover}
           >
             ABORT MISSION
           </button>
@@ -52,13 +64,22 @@ export function HUD() {
         <div className="flex flex-col gap-4 items-center transform -skew-x-12">
           <button 
             className="px-12 py-4 bg-white text-black text-2xl font-black hover:bg-red-600 hover:text-white transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none"
-            onClick={() => handleClick(() => restartGame())}
+            onClick={() => handleClick(() => loadLevel(levelIndex))}
+            onMouseEnter={handleHover}
           >
-            RETRY DEPLOYMENT
+            REPLAY MISSION
           </button>
           <button 
-            className="text-zinc-400 font-bold hover:text-white transition-colors cursor-pointer"
+            className="px-12 py-2 bg-zinc-800 text-white text-lg font-black hover:bg-zinc-700 transition-all cursor-pointer shadow-[4px_4px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+            onClick={() => handleClick(() => restartGame())}
+            onMouseEnter={handleHover}
+          >
+            RESTART ALL MISSIONS
+          </button>
+          <button 
+            className="text-zinc-400 font-bold hover:text-white transition-colors cursor-pointer mt-4"
             onClick={() => handleClick(() => useGameStore.setState({ phase: 'main_menu' }))}
+            onMouseEnter={handleHover}
           >
             RETURN TO BASE
           </button>
@@ -76,6 +97,7 @@ export function HUD() {
         <button 
           className="px-12 py-4 bg-pink-600 text-white text-2xl font-black hover:bg-pink-500 transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none transform -skew-x-12"
           onClick={() => handleClick(() => loadLevel(levelIndex + 1))}
+          onMouseEnter={handleHover}
         >
           NEXT MISSION
         </button>
@@ -95,6 +117,7 @@ export function HUD() {
         <button 
           className="px-12 py-4 bg-white text-black text-2xl font-black hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] transform -skew-x-12"
           onClick={() => handleClick(() => restartGame())}
+          onMouseEnter={handleHover}
         >
           BACK TO MENU
         </button>
@@ -105,10 +128,29 @@ export function HUD() {
   return (
     <div className="absolute top-0 left-0 w-full h-full pointer-events-none p-6 flex flex-col justify-between z-10">
       {/* Countdown Overlay */}
-      {countdown !== null && countdown > 0.1 && (
+      {countdown !== null && countdown > 0.01 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
-          <div className="text-9xl font-black italic text-white transform -skew-x-12 animate-ping">
-            {countdown > 1 ? Math.ceil(countdown - 1) : 'START'}
+          <div 
+            key={Math.ceil(countdown)}
+            className="text-9xl font-black italic text-white transform -skew-x-12 animate-countdown"
+          >
+            {countdown > 1 ? Math.ceil(countdown) - 1 : 'START'}
+          </div>
+        </div>
+      )}
+
+      {/* Boss Health Bar */}
+      {boss && boss.hp > 0 && (
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 w-1/2 bg-zinc-950/80 p-2 border-b-4 border-red-600 transform -skew-x-12 pointer-events-auto shadow-2xl">
+          <div className="flex justify-between items-end mb-1 px-2">
+            <span className="text-xl font-black italic text-white tracking-tighter">{boss.id.toUpperCase()}</span>
+            <span className="text-sm font-bold text-red-500 tracking-widest uppercase">Elite Target</span>
+          </div>
+          <div className="w-full h-4 bg-zinc-900 overflow-hidden border border-zinc-800">
+            <div 
+              className="h-full bg-red-600 transition-all duration-300" 
+              style={{ width: `${(boss.hp / boss.maxHp) * 100}%` }}
+            />
           </div>
         </div>
       )}
