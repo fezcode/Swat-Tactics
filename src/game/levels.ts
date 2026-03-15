@@ -790,7 +790,7 @@ export const LEVELS: LevelData[] = [
       { id: 's4', pos: { x: 18, z: 18 }, hp: 120, weapon: { ...rifle }, color: '#78350f' },
     ],
     portal: { id: 'p47', posA: { x: 2, z: 11 }, posB: { x: 19, z: 11 } },
-    healthBoxes: [{ id: 'h47', pos: { x: 11, z: 11 } }],
+    healthBoxes: [{ id: 'h47', pos: { x: 11, z: 8 } }],
     exit: { x: 11, z: 3 },
   },
   // Level 48: Reactor Hall
@@ -843,7 +843,7 @@ export const LEVELS: LevelData[] = [
       { id: 's4', pos: { x: 25, z: 25 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
     ],
     portal: { id: 'p50', posA: { x: 2, z: 15 }, posB: { x: 27, z: 15 } },
-    ammoBoxes: [{ id: 'a50', pos: { x: 15, z: 15 } }],
+    ammoBoxes: [{ id: 'a50', pos: { x: 15, z: 10 } }],
     healthBoxes: [{ id: 'h50', pos: { x: 2, z: 28 } }],
     exit: { x: 15, z: 1 },
   },
