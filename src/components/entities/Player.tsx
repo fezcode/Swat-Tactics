@@ -49,13 +49,22 @@ export function Player({ state }: { state: PlayerState }) {
       SFX.playerShoot();
     };
 
+    const onContextMenu = (e: MouseEvent) => e.preventDefault();
+    const onBlur = () => {
+      keys.current = { w: false, a: false, s: false, d: false };
+    };
+
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('contextmenu', onContextMenu);
+    window.addEventListener('blur', onBlur);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('mousedown', onPointerDown);
+      window.removeEventListener('contextmenu', onContextMenu);
+      window.removeEventListener('blur', onBlur);
     };
   }, [phase, playerShoot, countdown]);
 
