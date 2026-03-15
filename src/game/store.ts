@@ -10,6 +10,12 @@ interface ExplosionEffect {
   life: number;
 }
 
+interface GameStats {
+  kills: number;
+  deaths: number;
+  runs: number;
+}
+
 interface GameState {
   phase: GamePhase;
   levelIndex: number;
@@ -30,6 +36,7 @@ interface GameState {
   isMuted: boolean;
   countdown: number | null;
   lastDamageTime: number;
+  stats: GameStats;
   
   setPhase: (phase: GamePhase) => void;
   loadLevel: (index: number) => void;
@@ -72,11 +79,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   isMuted: false,
   countdown: null,
   lastDamageTime: 0,
+  stats: { kills: 0, deaths: 0, runs: 1 },
 
   setPhase: (phase) => {
     set({ phase });
     if (phase === 'level_complete' || phase === 'victory') SFX.levelEnd();
-    if (phase === 'game_over') SFX.levelEnd();
+    if (phase === 'game_over') {
+      SFX.levelEnd();
+      set(s => ({ stats: { ...s.stats, deaths: s.stats.deaths + 1 } }));
+    }
   },
 
   togglePause: () => {
@@ -97,6 +108,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     const level = LEVELS[index];
     const player = get().player;
+    // Keep player stats if moving to next level, else reset
     const newPlayer: PlayerState = player && index > 0 && player.hp > 0
       ? { 
           ...player, 
@@ -235,11 +247,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     let hit = false;
+    let killed = false;
     const newEnemies = state.enemies.map(e => {
       if (e.id === id && e.hp > 0) {
         hit = true;
         if (pos) get().addParticle([pos.x, 0.5, pos.z], '#ff0000');
         const hp = Math.max(0, e.hp - amount);
+        if (hp === 0) killed = true;
         return { ...e, hp };
       }
       return e;
@@ -247,6 +261,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     
     if (hit) {
       set({ enemies: newEnemies });
+      if (killed) {
+        set(s => ({ stats: { ...s.stats, kills: s.stats.kills + 1 } }));
+      }
       return;
     }
 
@@ -430,7 +447,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   restartGame: () => {
-    set({ levelIndex: 0 });
+    set(s => ({ 
+      levelIndex: 0,
+      stats: { ...s.stats, runs: s.stats.runs + 1 }
+    }));
     get().loadLevel(0);
   }
 }));

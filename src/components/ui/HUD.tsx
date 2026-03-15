@@ -12,6 +12,7 @@ export function HUD() {
   const countdown = useGameStore(s => s.countdown);
   const enemies = useGameStore(s => s.enemies);
   const lastDamageTime = useGameStore(s => s.lastDamageTime);
+  const stats = useGameStore(s => s.stats);
 
   const [showDamageFlash, setShowDamageFlash] = useState(false);
 
@@ -207,19 +208,38 @@ export function HUD() {
         )}
       </div>
 
-      <div className="bg-zinc-950/80 p-3 transform -skew-x-12 border-b-2 border-pink-500 self-center backdrop-blur-sm pointer-events-auto flex gap-6 text-xs font-bold text-zinc-400 tracking-widest uppercase shadow-2xl">
-        <div className="flex items-center gap-2">
-          <span className="bg-zinc-800 px-2 py-1 text-white">WASD</span> MOVE
+      <div className="flex justify-between items-end">
+        {/* Run Stats - Bottom Left */}
+        <div className="bg-zinc-950/80 p-3 transform -skew-x-12 border-l-2 border-yellow-500 backdrop-blur-sm pointer-events-auto flex gap-6 text-xs font-bold text-zinc-400 tracking-widest uppercase shadow-2xl">
+          <div className="flex items-center gap-2">
+            RUN <span className="text-white bg-zinc-800 px-2 py-1">{stats.runs}</span>
+          </div>
+          <div className="flex items-center gap-2 text-red-500">
+            KILLS <span className="text-white bg-red-900 px-2 py-1">{stats.kills}</span>
+          </div>
+          <div className="flex items-center gap-2 text-zinc-500">
+            DEATHS <span className="text-white bg-zinc-800 px-2 py-1">{stats.deaths}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="bg-zinc-800 px-2 py-1 text-white">CLICK</span> FIRE
+
+        {/* Controls - Bottom Center */}
+        <div className="bg-zinc-950/80 p-3 transform -skew-x-12 border-b-2 border-pink-500 backdrop-blur-sm pointer-events-auto flex gap-6 text-xs font-bold text-zinc-400 tracking-widest uppercase shadow-2xl">
+          <div className="flex items-center gap-2">
+            <span className="bg-zinc-800 px-2 py-1 text-white">WASD</span> MOVE
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="bg-zinc-800 px-2 py-1 text-white">CLICK</span> FIRE
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="bg-zinc-800 px-2 py-1 text-white">ESC</span> PAUSE
+          </div>
+          <div className="flex items-center gap-2 text-pink-500">
+            <span className="animate-pulse">●</span> LIVE FEED
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="bg-zinc-800 px-2 py-1 text-white">ESC</span> PAUSE
-        </div>
-        <div className="flex items-center gap-2 text-pink-500">
-          <span className="animate-pulse">●</span> LIVE FEED
-        </div>
+
+        {/* Spacer for bottom right balance */}
+        <div className="w-64 opacity-0 pointer-events-none" />
       </div>
     </div>
   );
