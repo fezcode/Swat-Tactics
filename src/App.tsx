@@ -157,6 +157,8 @@ function App() {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Esc') {
+        e.preventDefault();
+        e.stopPropagation();
         useGameStore.getState().togglePause();
       }
     };
@@ -164,6 +166,13 @@ function App() {
     window.addEventListener('keydown', handleEscape, true);
     return () => window.removeEventListener('keydown', handleEscape, true);
   }, []);
+
+  // Ensure focus is on window when playing to catch keyboard events reliably
+  useEffect(() => {
+    if (phase === 'playing') {
+      window.focus();
+    }
+  }, [phase]);
 
   return (
     <div 
