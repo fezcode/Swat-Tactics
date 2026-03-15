@@ -723,7 +723,12 @@ export const LEVELS: LevelData[] = [
       { id: 's4', pos: { x: 13, z: 13 }, hp: 100, weapon: { ...rifle }, color: '#78350f' },
     ],
     portal: { id: 'p43', posA: { x: 1, z: 8 }, posB: { x: 14, z: 8 } },
-    ammoBoxes: [{ id: 'a43', pos: { x: 8, z: 8 } }],
+    ammoBoxes: [
+      { id: 'a43_1', pos: { x: 8, z: 8 } },
+      { id: 'a43_2', pos: { x: 14, z: 1 } },
+      { id: 'a43_3', pos: { x: 1, z: 14 } },
+      { id: 'a43_4', pos: { x: 14, z: 14 } }
+    ],
     exit: { x: 1, z: 1 },
   },
   // Level 44: Lab Access
