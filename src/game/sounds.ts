@@ -15,6 +15,7 @@ const sfxAssets = {
   playerShoot: createAudio('sounds/player-gunshot.mp3', 0.4),
   enemyShoot: createAudio('sounds/enemy-gunshot.mp3', 0.3),
   gunEmpty: createAudio('sounds/gun-empty.mp3', 0.5),
+  teleport: createAudio('sounds/teleport.mp3', 0.6),
   levelStart: createAudio('sounds/level-start.mp3', 0.6),
   levelEnd: createAudio('sounds/level-end.mp3', 0.6),
 };
@@ -48,6 +49,12 @@ export const SFX = {
     if (useGameStore.getState().isMuted) return;
     const sound = sfxAssets.gunEmpty.cloneNode(true) as HTMLAudioElement;
     sound.volume = sfxAssets.gunEmpty.volume;
+    sound.play().catch(() => {});
+  },
+  teleport: () => {
+    if (useGameStore.getState().isMuted) return;
+    const sound = sfxAssets.teleport.cloneNode(true) as HTMLAudioElement;
+    sound.volume = sfxAssets.teleport.volume;
     sound.play().catch(() => {});
   },
   levelStart: () => {

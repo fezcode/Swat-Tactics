@@ -350,7 +350,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         get().addParticle([portal.pos.x, 0.5, portal.pos.z], '#3b82f6');
         get().addParticle([portal.target.x, 0.5, portal.target.z], '#3b82f6');
       }
-      SFX.buttonClick(); // Use a click sound or similar for teleport
+      SFX.teleport();
     }
   },
 
