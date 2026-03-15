@@ -45,6 +45,8 @@ export interface ButtonState extends EntityState {
 export interface PlayerState extends EntityState {
   type: 'player';
   weapon: Weapon;
+  secondaryWeapon: Weapon | null;
+  activeWeaponSlot: 'primary' | 'secondary';
 }
 
 export interface BarrelState extends EntityState {
@@ -75,6 +77,7 @@ export interface ProjectileState {
   damage: number;
   life: number;
   isEnemy: boolean;
+  color?: string;
 }
 
 export type LevelTheme = 'industrial' | 'garden' | 'skyscraper' | 'desert' | 'space_station' | 'beach';

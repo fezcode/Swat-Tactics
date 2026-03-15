@@ -60,9 +60,20 @@ interface GameState {
   restartGame: () => void;
   togglePause: () => void;
   updateTurretFireTime: (id: string) => void;
+  switchWeapon: () => void;
 }
 
 const defaultWeapon: Weapon = { name: 'Pistol', ammo: 24, maxAmmo: 24, damage: 10 };
+const secondarySmg: Weapon = { name: 'SMG', ammo: 80, maxAmmo: 80, damage: 8 };
+
+// Helper to visually represent enemy threat level
+function getThreatColor(hp: number): string {
+  if (hp <= 80) return "#fcd34d"; // Weak: Yellow
+  if (hp <= 150) return "#ea580c"; // Medium: Orange
+  if (hp <= 300) return "#b91c1c"; // Hard: Red
+  if (hp <= 800) return "#7f1d1d"; // Elite: Dark Red
+  return "#4c1d95"; // Boss: Purple/Black
+}
 
 export const useGameStore = create<GameState>((set, get) => ({
   phase: 'main_menu',
@@ -119,6 +130,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     const level = LEVELS[index];
     const player = get().player;
+    const hasDualWeapon = index >= 50; // Level 51+ (index 50 = id 51)
     // Keep player stats if moving to next level, else reset
     const newPlayer: PlayerState = player && index > 0 && player.hp > 0
       ? { 
@@ -126,9 +138,11 @@ export const useGameStore = create<GameState>((set, get) => ({
           pos: level.playerSpawn, 
           rotation: 0, 
           hp: Math.min(player.maxHp, player.hp + 20),
-          weapon: { ...player.weapon, ammo: player.weapon.maxAmmo } 
+          weapon: { ...player.weapon, ammo: player.weapon.maxAmmo },
+          secondaryWeapon: hasDualWeapon ? (player.secondaryWeapon ? { ...player.secondaryWeapon, ammo: player.secondaryWeapon.maxAmmo } : { ...secondarySmg }) : null,
+          activeWeaponSlot: player.activeWeaponSlot || 'primary',
         }
-      : { id: 'player', type: 'player', pos: level.playerSpawn, rotation: 0, hp: 100, maxHp: 100, weapon: { ...defaultWeapon } };
+      : { id: 'player', type: 'player', pos: level.playerSpawn, rotation: 0, hp: 100, maxHp: 100, weapon: { ...defaultWeapon }, secondaryWeapon: hasDualWeapon ? { ...secondarySmg } : null, activeWeaponSlot: 'primary' };
 
     const theme = level.theme || 'industrial';
     const decorations: DecorationState[] = [];
@@ -250,6 +264,10 @@ export const useGameStore = create<GameState>((set, get) => ({
         const dx = level.playerSpawn.x - e.pos.x;
         const dz = level.playerSpawn.z - e.pos.z;
         const rotation = Math.atan2(dx, dz);
+        
+        // Preserve specific preset colors if specified (like blue for default), otherwise use threat color
+        const color = e.color && e.color !== '#ff0000' && e.color !== '#3b82f6' ? e.color : getThreatColor(e.hp);
+
         return { 
           type: 'enemy', 
           id: e.id, 
@@ -258,7 +276,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           hp: e.hp, 
           maxHp: e.hp, 
           weapon: { ...e.weapon },
-          color: e.color || '#ef4444'
+          color
         };
       }),
       turrets: (level.turrets || []).map(t => ({
@@ -446,7 +464,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     const box = state.ammoBoxes.find(a => a.id === id);
     if (box && state.player) {
       set({
-        player: { ...state.player, weapon: { ...state.player.weapon, ammo: state.player.weapon.maxAmmo } },
+        player: {
+          ...state.player,
+          weapon: { ...state.player.weapon, ammo: state.player.weapon.maxAmmo },
+          secondaryWeapon: state.player.secondaryWeapon
+            ? { ...state.player.secondaryWeapon, ammo: state.player.secondaryWeapon.maxAmmo }
+            : null,
+        },
         ammoBoxes: state.ammoBoxes.filter(a => a.id !== id)
       });
       for (let i = 0; i < 10; i++) {
@@ -485,20 +509,30 @@ export const useGameStore = create<GameState>((set, get) => ({
     const state = get();
     if (state.phase !== 'playing' || !state.player || state.player.hp <= 0 || (state.countdown !== null && state.countdown > 0.5)) return;
 
-    if (state.player.weapon.ammo <= 0) {
+    const activeWeapon = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon
+      ? state.player.secondaryWeapon
+      : state.player.weapon;
+
+    if (activeWeapon.ammo <= 0) {
         SFX.gunEmpty();
         return;
     }
 
-    const newPlayer = { ...state.player, weapon: { ...state.player.weapon, ammo: state.player.weapon.ammo - 1 } };
+    const updatedWeapon = { ...activeWeapon, ammo: activeWeapon.ammo - 1 };
+    const newPlayer = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon
+      ? { ...state.player, secondaryWeapon: updatedWeapon }
+      : { ...state.player, weapon: updatedWeapon };
     set({ player: newPlayer });
+
+    const isSmg = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon;
 
     get().addProjectile({
       pos: spawnPos,
       velocity: { x: direction.x * 30, z: direction.z * 30 },
-      damage: state.player.weapon.damage,
+      damage: activeWeapon.damage,
       life: 2.0,
-      isEnemy: false
+      isEnemy: false,
+      color: isSmg ? '#22ff44' : undefined
     });
   },
 
@@ -557,6 +591,17 @@ export const useGameStore = create<GameState>((set, get) => ({
         life: e.life - dt * 3
       })).filter(e => e.life > 0)
     }));
+  },
+
+  switchWeapon: () => {
+    const state = get();
+    if (!state.player || !state.player.secondaryWeapon || state.phase !== 'playing') return;
+    set({
+      player: {
+        ...state.player,
+        activeWeaponSlot: state.player.activeWeaponSlot === 'primary' ? 'secondary' : 'primary'
+      }
+    });
   },
 
   restartGame: () => {

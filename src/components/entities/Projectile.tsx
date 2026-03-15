@@ -51,7 +51,7 @@ function ProjectileItem({ p }: { p: ProjectileState }) {
       <BallCollider args={[0.1]} />
       <mesh>
         <sphereGeometry args={[0.1, 8, 8]} />
-        <meshBasicMaterial color={p.isEnemy ? "#ff4444" : playerBulletColor} />
+        <meshBasicMaterial color={p.isEnemy ? "#ff4444" : (p.color || playerBulletColor)} />
       </mesh>
     </RigidBody>
   );

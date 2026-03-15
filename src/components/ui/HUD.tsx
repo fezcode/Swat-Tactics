@@ -1,7 +1,7 @@
 import { useGameStore } from '../../game/store';
 import { MainMenu } from './MainMenu';
 import { SFX } from '../../game/sounds';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 
 export function HUD() {
   const phase = useGameStore(s => s.phase);
@@ -15,6 +15,8 @@ export function HUD() {
   const stats = useGameStore(s => s.stats);
 
   const [showDamageFlash, setShowDamageFlash] = useState(false);
+  const [weaponSwitchAnim, setWeaponSwitchAnim] = useState(false);
+  const prevSlotRef = useRef(player?.activeWeaponSlot || 'primary');
 
   useEffect(() => {
     if (lastDamageTime > 0) {
@@ -23,6 +25,16 @@ export function HUD() {
       return () => clearTimeout(timer);
     }
   }, [lastDamageTime]);
+
+  // Detect weapon switch for UI animation
+  useEffect(() => {
+    if (player && player.activeWeaponSlot !== prevSlotRef.current) {
+      prevSlotRef.current = player.activeWeaponSlot;
+      setWeaponSwitchAnim(true);
+      const timer = setTimeout(() => setWeaponSwitchAnim(false), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [player?.activeWeaponSlot]);
 
   const boss = useMemo(() => {
     return enemies.find(e => 
@@ -141,6 +153,9 @@ export function HUD() {
     );
   }
 
+  const hasDualWeapons = player && player.secondaryWeapon !== null;
+  const isPrimary = player?.activeWeaponSlot === 'primary';
+
   return (
     <div className="absolute top-0 left-0 w-full h-full pointer-events-none p-6 flex flex-col justify-between z-10 overflow-hidden">
       {/* Damage Flash Overlay */}
@@ -184,6 +199,7 @@ export function HUD() {
         
         {player && (
           <div className="flex flex-col gap-2 items-end pointer-events-auto">
+            {/* HP Panel */}
             <div className="bg-zinc-950/80 p-4 transform -skew-x-12 border-r-4 border-red-600 shadow-2xl backdrop-blur-sm flex flex-col items-end">
               <div className="text-4xl font-black italic text-red-600 tracking-tighter drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]">
                 HP {player.hp}
@@ -196,13 +212,79 @@ export function HUD() {
               </div>
             </div>
 
-            <div className="bg-zinc-950/80 p-4 transform -skew-x-12 border-r-4 border-blue-400 shadow-2xl backdrop-blur-sm flex flex-col items-end">
-              <div className="text-xl font-black italic text-blue-400 tracking-tighter">
-                {player.weapon.name.toUpperCase()}
+            {/* Weapon Panels */}
+            <div className={`flex gap-2 items-end ${weaponSwitchAnim ? 'weapon-switch-anim' : ''}`}>
+              {/* Primary Weapon */}
+              <div 
+                className={`transform -skew-x-12 shadow-2xl backdrop-blur-sm flex flex-col items-end transition-all duration-300 ${
+                  isPrimary 
+                    ? 'bg-zinc-950/90 p-4 border-r-4 border-blue-400 scale-100' 
+                    : 'bg-zinc-950/60 p-2.5 border-r-2 border-zinc-600 scale-90 opacity-60'
+                }`}
+                style={{ 
+                  transform: `skewX(-12deg)${weaponSwitchAnim && isPrimary ? ' translateY(-4px)' : ''}`,
+                  transition: 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                }}
+              >
+                {isPrimary && (
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[10px] font-black text-emerald-400 tracking-widest uppercase animate-pulse">● ACTIVE</span>
+                  </div>
+                )}
+                <div className={`font-black italic tracking-tighter ${
+                  isPrimary ? 'text-xl text-blue-400' : 'text-sm text-zinc-500'
+                }`}>
+                  {player.weapon.name.toUpperCase()}
+                </div>
+                <div className={`font-black italic tracking-tighter ${
+                  isPrimary ? 'text-2xl text-white mt-1' : 'text-base text-zinc-400 mt-0.5'
+                }`}>
+                  {player.weapon.ammo} / {player.weapon.maxAmmo}
+                </div>
+                {isPrimary && hasDualWeapons && (
+                  <div className="flex items-center gap-1 mt-1.5">
+                    <span className="bg-zinc-800 border border-zinc-600 px-1.5 py-0.5 text-[10px] font-black text-yellow-400 rounded-sm tracking-wider">Q</span>
+                    <span className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase">SWITCH</span>
+                  </div>
+                )}
               </div>
-              <div className="text-2xl font-black italic text-white tracking-tighter mt-1">
-                {player.weapon.ammo} / {player.weapon.maxAmmo}
-              </div>
+
+              {/* Secondary Weapon */}
+              {hasDualWeapons && player.secondaryWeapon && (
+                <div 
+                  className={`transform -skew-x-12 shadow-2xl backdrop-blur-sm flex flex-col items-end transition-all duration-300 ${
+                    !isPrimary 
+                      ? 'bg-zinc-950/90 p-4 border-r-4 border-emerald-400 scale-100' 
+                      : 'bg-zinc-950/60 p-2.5 border-r-2 border-zinc-600 scale-90 opacity-60'
+                  }`}
+                  style={{ 
+                    transform: `skewX(-12deg)${weaponSwitchAnim && !isPrimary ? ' translateY(-4px)' : ''}`,
+                    transition: 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                  }}
+                >
+                  {!isPrimary && (
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[10px] font-black text-emerald-400 tracking-widest uppercase animate-pulse">● ACTIVE</span>
+                    </div>
+                  )}
+                  <div className={`font-black italic tracking-tighter ${
+                    !isPrimary ? 'text-xl text-emerald-400' : 'text-sm text-zinc-500'
+                  }`}>
+                    {player.secondaryWeapon.name.toUpperCase()}
+                  </div>
+                  <div className={`font-black italic tracking-tighter ${
+                    !isPrimary ? 'text-2xl text-white mt-1' : 'text-base text-zinc-400 mt-0.5'
+                  }`}>
+                    {player.secondaryWeapon.ammo} / {player.secondaryWeapon.maxAmmo}
+                  </div>
+                  {!isPrimary && hasDualWeapons && (
+                    <div className="flex items-center gap-1 mt-1.5">
+                      <span className="bg-zinc-800 border border-zinc-600 px-1.5 py-0.5 text-[10px] font-black text-yellow-400 rounded-sm tracking-wider">Q</span>
+                      <span className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase">SWITCH</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -230,6 +312,11 @@ export function HUD() {
           <div className="flex items-center gap-2">
             <span className="bg-zinc-800 px-2 py-1 text-white">CLICK</span> FIRE
           </div>
+          {hasDualWeapons && (
+            <div className="flex items-center gap-2">
+              <span className="bg-zinc-800 px-2 py-1 text-yellow-400">Q</span> SWITCH
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <span className="bg-zinc-800 px-2 py-1 text-white">ESC</span> PAUSE
           </div>

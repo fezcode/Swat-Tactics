@@ -48,8 +48,8 @@ export function GridMap() {
       grid: 0xec4899
     },
     beach: {
-      floor: "#fde68a",
-      grid: 0xf59e0b
+      floor: "#fdf0ba", // Brighter, premium sand color
+      grid: 0xd97706    // Warmer amber grid outine
     }
   }[theme];
 
@@ -75,15 +75,15 @@ export function GridMap() {
       {/* Beach specific huge environment planes */}
       {theme === 'beach' && (
         <group>
-          {/* Huge Ocean */}
+          {/* Huge Ocean - Brighter, more vibrant cyan to look like tropical water */}
           <mesh position={[gridSize.width / 2, -0.4, -40]} rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[200, 100]} />
-            <meshStandardMaterial color="#0284c7" roughness={0.1} metalness={0.8} />
+            <meshStandardMaterial color="#0ea5e9" emissive="#06b6d4" emissiveIntensity={0.2} roughness={0.1} metalness={0.9} />
           </mesh>
-          {/* Huge Sand */}
+          {/* Huge Sand - Matching the new vibrant sand color */}
           <mesh position={[gridSize.width / 2, -0.1, gridSize.height / 2]} rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[200, 200]} />
-            <meshStandardMaterial color="#fcd34d" roughness={1} />
+            <meshStandardMaterial color="#fdf0ba" roughness={1} />
           </mesh>
         </group>
       )}
