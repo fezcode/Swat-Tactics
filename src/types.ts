@@ -99,7 +99,7 @@ export interface LevelData {
   walls: Position[];
   enemies: { id: string; pos: Position; hp: number; weapon: Weapon; color?: string }[];
   turrets?: { id: string; pos: Position; hp: number; damage: number; fireRate: number; color?: string }[];
-  buttons?: { id: string; pos: Position; targetId: string }[];
+  buttons?: { pos: Position; targetId: string }[];
   barrels?: { id: string; pos: Position }[];
   healthBoxes?: { id: string; pos: Position }[];
   ammoBoxes?: { id: string; pos: Position }[];
