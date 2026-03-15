@@ -9,6 +9,7 @@ export function MainMenu() {
   const loadLevel = useGameStore(s => s.loadLevel);
   const isMuted = useGameStore(s => s.isMuted);
   const setMuted = useGameStore(s => s.setMuted);
+  const resetStats = useGameStore(s => s.resetStats);
   const [view, setView] = useState<MenuState>('main');
   const [hovered, setHovered] = useState<string | number | null>(null);
 
@@ -87,6 +88,15 @@ export function MainMenu() {
             <span className="font-bold uppercase tracking-widest text-xs">CRT Filter</span>
             <span>ACTIVE</span>
           </div>
+          <button 
+            onClick={() => handleClick(() => resetStats())}
+            onMouseEnter={() => handleHover('reset')}
+            onMouseLeave={() => setHovered(null)}
+            className="flex justify-between items-center bg-red-950/20 p-4 border-l-4 border-red-600 cursor-pointer hover:bg-red-900/40 transition-colors mt-4"
+          >
+            <span className="font-bold text-red-500/70 uppercase tracking-widest text-xs text-left">Records</span>
+            <span className="font-black text-red-500">RESET STATS</span>
+          </button>
         </div>
         <button 
           className="mt-12 text-xl font-bold text-zinc-500 hover:text-white transition-colors cursor-pointer transform -skew-x-12 relative z-10"

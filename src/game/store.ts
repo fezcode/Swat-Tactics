@@ -41,6 +41,7 @@ interface GameState {
   setPhase: (phase: GamePhase) => void;
   loadLevel: (index: number) => void;
   setMuted: (muted: boolean) => void;
+  resetStats: () => void;
   
   // Continuous actions
   damageEntity: (id: string, amount: number, pos?: Position) => void;
@@ -99,6 +100,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   setMuted: (muted) => {
     set({ isMuted: muted });
     Music.setMuted(muted);
+  },
+
+  resetStats: () => {
+    set({ stats: { kills: 0, deaths: 0, runs: 1 } });
   },
 
   loadLevel: (index) => {
