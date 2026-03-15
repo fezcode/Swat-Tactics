@@ -35,11 +35,17 @@ function PortalGate({ pos, target, used, onTeleport }: { pos: Position, target: 
       position={[pos.x, 0.01, pos.z]} 
       sensor
       onIntersectionEnter={({ other }) => {
+        // Double check 'used' state from store to prevent race conditions or double-teleport loops
+        const currentPortal = useGameStore.getState().portal;
+        if (!currentPortal || currentPortal.used) return;
+
         const userData = other.rigidBodyObject?.userData as any;
         if (userData?.type === 'player') {
           const playerRb = other.rigidBody as unknown as RapierRigidBody;
           if (playerRb) {
+            // Teleport player and reset their velocity to prevent "flying out"
             playerRb.setTranslation({ x: target.x, y: 0.5, z: target.z }, true);
+            playerRb.setLinvel({ x: 0, y: 0, z: 0 }, true);
             onTeleport();
           }
         }

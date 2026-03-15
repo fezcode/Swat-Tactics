@@ -818,15 +818,15 @@ export const LEVELS: LevelData[] = [
     playerSpawn: { x: 2, z: 2 },
     walls: [...createBoxRoom(24, 24), { x: 12, z: 12 }],
     enemies: [
-      { id: 's1', pos: { x: 21, z: 21 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
-      { id: 's2', pos: { x: 21, z: 2 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's1', pos: { x: 21, z: 2 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's2', pos: { x: 21, z: 21 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
       { id: 's3', pos: { x: 2, z: 21 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
       { id: 's4', pos: { x: 12, z: 12 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
     ],
     portal: { id: 'p49', posA: { x: 1, z: 12 }, posB: { x: 22, z: 12 } },
     healthBoxes: [{ id: 'h49', pos: { x: 21, z: 12 } }],
     ammoBoxes: [{ id: 'a49', pos: { x: 12, z: 21 } }],
-    exit: { x: 21, z: 21 },
+    exit: { x: 22, z: 22 },
   },
   // Level 50: The Singularity
   {
