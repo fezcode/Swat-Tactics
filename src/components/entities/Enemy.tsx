@@ -106,6 +106,9 @@ export function Enemy({ state }: { state: EnemyState }) {
 
   if (state.hp <= 0) return null;
 
+  // Scale bar width based on maxHp (40 is standard)
+  const barWidth = 0.8 * Math.pow(state.maxHp / 40, 0.5);
+
   return (
     <RigidBody 
       ref={rb} 
@@ -126,12 +129,12 @@ export function Enemy({ state }: { state: EnemyState }) {
       {/* Enemy Health Bar - Billboarded */}
       <Billboard position={[0, 1.2, 0]}>
         <mesh>
-          <planeGeometry args={[0.8, 0.1]} />
-          <meshBasicMaterial color="#333" />
+          <planeGeometry args={[barWidth, 0.12]} />
+          <meshBasicMaterial color="#111" />
         </mesh>
-        <mesh position={[-(0.8 * (1 - state.hp / state.maxHp)) / 2, 0, 0.01]}>
-          <planeGeometry args={[0.8 * (state.hp / state.maxHp), 0.08]} />
-          <meshBasicMaterial color={state.hp > (state.maxHp * 0.3) ? "#ef4444" : "#ff0000"} />
+        <mesh position={[-(barWidth * (1 - state.hp / state.maxHp)) / 2, 0, 0.01]}>
+          <planeGeometry args={[barWidth * (state.hp / state.maxHp), 0.08]} />
+          <meshBasicMaterial color={state.hp > (state.maxHp * 0.3) ? state.color : "#ff0000"} />
         </mesh>
       </Billboard>
 

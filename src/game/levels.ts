@@ -474,6 +474,7 @@ export const LEVELS: LevelData[] = [
       { id: 'se4', pos: { x: 18, z: 18 }, hp: 80, weapon: { ...shotgun }, color: '#f97316' },
     ],
     barrels: [{ id: 'sb1', pos: { x: 5, z: 5 } }, { id: 'sb2', pos: { x: 15, z: 5 } }, { id: 'sb3', pos: { x: 5, z: 15 } }, { id: 'sb4', pos: { x: 15, z: 15 } }],
+    ammoBoxes: [{ id: 'a30', pos: { x: 10, z: 2 } }],
     exit: { x: 10, z: 1 },
   },
   // Level 31: Oasis Outpost

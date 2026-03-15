@@ -33,6 +33,15 @@ export function Player({ state }: { state: PlayerState }) {
     
     const onPointerDown = (e: MouseEvent) => {
       if (phase !== 'playing' || e.button !== 0 || !rb.current || !meshRef.current || (countdown !== null && countdown > 0.5)) return;
+      
+      const { player } = useGameStore.getState();
+      if (!player) return;
+
+      if (player.weapon.ammo <= 0) {
+        SFX.gunEmpty();
+        return;
+      }
+
       const pos = rb.current.translation();
       const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(meshRef.current.quaternion).normalize();
       const spawnPos = { x: pos.x + direction.x * 0.6, z: pos.z + direction.z * 0.6 };
