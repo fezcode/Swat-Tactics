@@ -762,6 +762,7 @@ export const LEVELS: LevelData[] = [
     ],
     portal: { id: 'p45', posA: { x: 10, z: 1 }, posB: { x: 10, z: 18 } },
     healthBoxes: [{ id: 'h45', pos: { x: 10, z: 10 } }],
+    ammoBoxes: [{ id: 'a45', pos: { x: 15, z: 10 } }],
     exit: { x: 18, z: 10 },
   },
   // Level 46: Core Cooling
