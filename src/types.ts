@@ -48,8 +48,8 @@ export interface AmmoBoxState extends EntityState {
 
 export interface PortalState {
   id: string;
-  pos: Position;
-  target: Position;
+  posA: Position;
+  posB: Position;
   used: boolean;
 }
 
@@ -83,10 +83,10 @@ export interface LevelData {
   playerSpawn: Position;
   walls: Position[];
   enemies: { id: string; pos: Position; hp: number; weapon: Weapon; color?: string }[];
-  barrels: { id: string; pos: Position }[];
+  barrels?: { id: string; pos: Position }[];
   healthBoxes?: { id: string; pos: Position }[];
   ammoBoxes?: { id: string; pos: Position }[];
-  portals?: { id: string; pos: Position; target: Position }[];
+  portal?: { id: string; posA: Position; posB: Position };
   exit: Position;
 }
 

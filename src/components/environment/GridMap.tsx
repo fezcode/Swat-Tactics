@@ -12,7 +12,7 @@ export function GridMap() {
   const enemies = useGameStore(s => s.enemies);
   const healthBoxes = useGameStore(s => s.healthBoxes);
   const ammoBoxes = useGameStore(s => s.ammoBoxes);
-  const portals = useGameStore(s => s.portals);
+  const portal = useGameStore(s => s.portal);
   const theme = useGameStore(s => s.theme);
   const decorations = useGameStore(s => s.decorations);
   const allDead = enemies.length > 0 && enemies.every(e => e.hp <= 0);
@@ -151,7 +151,7 @@ export function GridMap() {
       {walls.map((w, i) => <Wall key={i} pos={w} />)}
       {healthBoxes.map((h) => <HealthBox key={h.id} state={h} />)}
       {ammoBoxes.map((a) => <AmmoBox key={a.id} state={a} />)}
-      {portals.map((p) => <Portal key={p.id} state={p} />)}
+      {portal && <Portal state={portal} />}
 
       {exitPos && (
         <RigidBody 

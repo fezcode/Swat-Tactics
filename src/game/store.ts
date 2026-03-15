@@ -19,7 +19,7 @@ interface GameState {
   barrels: BarrelState[];
   healthBoxes: HealthBoxState[];
   ammoBoxes: AmmoBoxState[];
-  portals: PortalState[];
+  portal: PortalState | null;
   walls: Position[];
   decorations: DecorationState[];
   gridSize: { width: number; height: number };
@@ -39,7 +39,7 @@ interface GameState {
   damageEntity: (id: string, amount: number, pos?: Position) => void;
   collectHealth: (id: string) => void;
   collectAmmo: (id: string) => void;
-  usePortal: (id: string) => void;
+  usePortal: () => void;
   playerShoot: (spawnPos: Position, direction: Position) => void;
   enemyShoot: (spawnPos: Position, direction: Position, damage: number) => void;
   addProjectile: (proj: Omit<ProjectileState, 'id'>) => void;
@@ -61,7 +61,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   barrels: [],
   healthBoxes: [],
   ammoBoxes: [],
-  portals: [],
+  portal: null,
   walls: [],
   decorations: [],
   gridSize: { width: 10, height: 10 },
@@ -205,10 +205,10 @@ export const useGameStore = create<GameState>((set, get) => ({
           color: e.color || '#ef4444'
         };
       }),
-      barrels: level.barrels.map(b => ({ type: 'barrel', id: b.id, pos: b.pos, rotation: 0, hp: 1, maxHp: 1 })),
+      barrels: (level.barrels || []).map(b => ({ type: 'barrel', id: b.id, pos: b.pos, rotation: 0, hp: 1, maxHp: 1 })),
       healthBoxes: (level.healthBoxes || []).map(h => ({ type: 'health_box', id: h.id, pos: h.pos, rotation: 0, hp: 1, maxHp: 1 })),
       ammoBoxes: (level.ammoBoxes || []).map(a => ({ type: 'ammo_box', id: a.id, pos: a.pos, rotation: 0, hp: 1, maxHp: 1 })),
-      portals: (level.portals || []).map(p => ({ id: p.id, pos: p.pos, target: p.target, used: false })),
+      portal: level.portal ? { ...level.portal, used: false } : null,
       walls: level.walls,
       decorations,
       gridSize: level.gridSize,
@@ -336,19 +336,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
-  usePortal: (id) => {
+  usePortal: () => {
     const state = get();
-    const portal = state.portals.find(p => p.id === id);
-    if (portal && !portal.used && state.player) {
-      // Move player position in state (RigidBody will sync)
-      // Note: RigidBody.setTranslation is needed in component
+    if (state.portal && !state.portal.used && state.player) {
       set({
-        portals: state.portals.map(p => p.id === id ? { ...p, used: true } : p)
+        portal: { ...state.portal, used: true }
       });
       // Trigger particles at start and end
       for (let i = 0; i < 15; i++) {
-        get().addParticle([portal.pos.x, 0.5, portal.pos.z], '#3b82f6');
-        get().addParticle([portal.target.x, 0.5, portal.target.z], '#3b82f6');
+        get().addParticle([state.portal.posA.x, 0.5, state.portal.posA.z], '#3b82f6');
+        get().addParticle([state.portal.posB.x, 0.5, state.portal.posB.z], '#3b82f6');
       }
       SFX.teleport();
     }
