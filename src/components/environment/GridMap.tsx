@@ -4,18 +4,25 @@ import { Wall } from './Wall';
 import { HealthBox } from '../entities/HealthBox';
 import { AmmoBox } from '../entities/AmmoBox';
 import { Portal } from '../entities/Portal';
+import { Turret } from '../entities/Turret';
+import { Button } from '../entities/Button';
+import * as THREE from 'three';
 
 export function GridMap() {
   const walls = useGameStore(s => s.walls);
   const gridSize = useGameStore(s => s.gridSize);
   const exitPos = useGameStore(s => s.exitPos);
   const enemies = useGameStore(s => s.enemies);
+  const turrets = useGameStore(s => s.turrets);
+  const buttons = useGameStore(s => s.buttons);
   const healthBoxes = useGameStore(s => s.healthBoxes);
   const ammoBoxes = useGameStore(s => s.ammoBoxes);
   const portal = useGameStore(s => s.portal);
   const theme = useGameStore(s => s.theme);
   const decorations = useGameStore(s => s.decorations);
-  const allDead = enemies.length > 0 && enemies.every(e => e.hp <= 0);
+  const allDead = (enemies.length > 0 || turrets.length > 0) && 
+    enemies.every(e => e.hp <= 0) && 
+    turrets.every(t => t.hp <= 0 || t.disabled);
 
   const maxDim = Math.max(gridSize.width, gridSize.height);
 
@@ -39,6 +46,10 @@ export function GridMap() {
     space_station: {
       floor: "#0f172a",
       grid: 0xec4899
+    },
+    beach: {
+      floor: "#fde68a",
+      grid: 0xf59e0b
     }
   }[theme];
 
@@ -61,6 +72,22 @@ export function GridMap() {
         <CuboidCollider args={[5, 10, gridSize.height * 2]} position={[-gridSize.width, 5, 0]} />
       </RigidBody>
 
+      {/* Beach specific huge environment planes */}
+      {theme === 'beach' && (
+        <group>
+          {/* Huge Ocean */}
+          <mesh position={[gridSize.width / 2, -0.4, -40]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[200, 100]} />
+            <meshStandardMaterial color="#0284c7" roughness={0.1} metalness={0.8} />
+          </mesh>
+          {/* Huge Sand */}
+          <mesh position={[gridSize.width / 2, -0.1, gridSize.height / 2]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[200, 200]} />
+            <meshStandardMaterial color="#fcd34d" roughness={1} />
+          </mesh>
+        </group>
+      )}
+
       {/* Decorations */}
       {decorations.map((d) => (
         <group key={d.id} position={[d.pos.x, 0, d.pos.z]} rotation={[0, d.rotation, 0]} scale={d.scale}>
@@ -75,6 +102,22 @@ export function GridMap() {
                 <meshStandardMaterial color="#2e7d32" />
               </mesh>
             </>
+          )}
+          {d.type === 'palm_tree' && (
+            <group>
+              {/* Trunk */}
+              <mesh position={[0, 1.5, 0]} castShadow rotation={[0, 0, 0.1]}>
+                <cylinderGeometry args={[0.2, 0.3, 3, 8]} />
+                <meshStandardMaterial color="#8B5A2B" />
+              </mesh>
+              {/* Leaves */}
+              {[0, 1, 2, 3, 4].map(i => (
+                <mesh key={i} position={[0, 3, 0]} rotation={[0, (Math.PI * 2 / 5) * i, Math.PI / 4]} castShadow>
+                  <coneGeometry args={[0.5, 2, 4]} />
+                  <meshStandardMaterial color="#2e8b57" />
+                </mesh>
+              ))}
+            </group>
           )}
           {d.type === 'rock' && (
             <mesh position={[0, 0.2, 0]} castShadow>
@@ -137,6 +180,36 @@ export function GridMap() {
               <pointLight position={[0, 0.2, 0]} color="#ec4899" intensity={2} distance={2} />
             </mesh>
           )}
+          {d.type === 'umbrella' && (
+            <group>
+              <mesh position={[0, 1.2, 0]} castShadow>
+                <cylinderGeometry args={[0.05, 0.05, 2.4, 8]} />
+                <meshStandardMaterial color="#fca5a5" />
+              </mesh>
+              <mesh position={[0, 2, 0]} castShadow>
+                <cylinderGeometry args={[1.5, 0.1, 0.4, 16]} />
+                <meshStandardMaterial color="#ef4444" side={THREE.DoubleSide} />
+              </mesh>
+            </group>
+          )}
+          {d.type === 'beach_ball' && (
+            <group>
+              <mesh position={[0, 0.4, 0]} castShadow>
+                <sphereGeometry args={[0.4, 16, 16]} />
+                <meshStandardMaterial color="#f87171" />
+              </mesh>
+              <mesh position={[0, 0.4, 0]} rotation={[0, Math.PI/2, 0]} castShadow>
+                <sphereGeometry args={[0.41, 16, 16]} />
+                <meshStandardMaterial color="#fef08a" wireframe />
+              </mesh>
+            </group>
+          )}
+          {d.type === 'cold_storage' && (
+            <mesh position={[0, 0.4, 0]} castShadow>
+              <boxGeometry args={[0.8, 0.8, 0.8]} />
+              <meshStandardMaterial color="#3b82f6" metalness={0.3} roughness={0.6} />
+            </mesh>
+          )}
         </group>
       ))}
 
@@ -149,6 +222,8 @@ export function GridMap() {
       />
 
       {walls.map((w, i) => <Wall key={i} pos={w} />)}
+      {turrets.map((t) => <Turret key={t.id} id={t.id} />)}
+      {buttons.map((b) => <Button key={b.id} id={b.id} />)}
       {healthBoxes.map((h) => <HealthBox key={h.id} state={h} />)}
       {ammoBoxes.map((a) => <AmmoBox key={a.id} state={a} />)}
       {portal && <Portal state={portal} />}
@@ -162,8 +237,8 @@ export function GridMap() {
           onIntersectionEnter={({ other }) => {
             const userData = other.rigidBodyObject?.userData as any;
             if (userData?.type === 'player') {
-               const { setPhase, enemies: currentEnemies } = useGameStore.getState();
-               if (currentEnemies.every(e => e.hp <= 0)) {
+               const { setPhase, enemies: currentEnemies, turrets: currentTurrets } = useGameStore.getState();
+               if (currentEnemies.every(e => e.hp <= 0) && currentTurrets.every(t => t.hp <= 0 || t.disabled)) {
                  setPhase('level_complete');
                }
             }

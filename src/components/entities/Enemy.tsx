@@ -13,6 +13,7 @@ export function Enemy({ state }: { state: EnemyState }) {
   const enemyShoot = useGameStore(s => s.enemyShoot);
   const phase = useGameStore(s => s.phase);
   const countdown = useGameStore(s => s.countdown);
+  const theme = useGameStore(s => s.theme);
   const { rapier, world } = useRapier();
   
   const lastShootTime = useRef(0);
@@ -152,6 +153,22 @@ export function Enemy({ state }: { state: EnemyState }) {
           <sphereGeometry args={[0.25, 16, 16]} />
           <meshStandardMaterial color="#fca5a5" roughness={0.4} />
         </mesh>
+
+        {/* Beach Hat */}
+        {theme === 'beach' && (
+          <group position={[0, 0.65, 0]}>
+            {/* Brim */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.2, 0.6, 32]} />
+              <meshStandardMaterial color="#fbbf24" side={THREE.DoubleSide} />
+            </mesh>
+            {/* Top */}
+            <mesh position={[0, 0.1, 0]}>
+              <cylinderGeometry args={[0.2, 0.2, 0.2, 16]} />
+              <meshStandardMaterial color="#fbbf24" />
+            </mesh>
+          </group>
+        )}
         {/* Gun */}
         <group position={[0.2, 0.1, -0.4]}>
           <mesh castShadow receiveShadow>

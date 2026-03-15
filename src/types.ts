@@ -1,4 +1,4 @@
-export type EntityType = 'player' | 'enemy' | 'barrel' | 'wall' | 'projectile' | 'health_box' | 'ammo_box' | 'portal';
+export type EntityType = 'player' | 'enemy' | 'barrel' | 'wall' | 'projectile' | 'health_box' | 'ammo_box' | 'portal' | 'turret' | 'button';
 
 export interface Position {
   x: number;
@@ -25,6 +25,21 @@ export interface EnemyState extends EntityState {
   type: 'enemy';
   weapon: Weapon;
   color: string;
+}
+
+export interface TurretState extends EntityState {
+  type: 'turret';
+  color: string;
+  damage: number;
+  fireRate: number;
+  lastFireTime: number;
+  disabled?: boolean;
+}
+
+export interface ButtonState extends EntityState {
+  type: 'button';
+  targetId: string; // ID of the turret it disables
+  active: boolean;
 }
 
 export interface PlayerState extends EntityState {
@@ -62,11 +77,11 @@ export interface ProjectileState {
   isEnemy: boolean;
 }
 
-export type LevelTheme = 'industrial' | 'garden' | 'skyscraper' | 'desert' | 'space_station';
+export type LevelTheme = 'industrial' | 'garden' | 'skyscraper' | 'desert' | 'space_station' | 'beach';
 
 export interface DecorationState {
   id: string;
-  type: 'tree' | 'rock' | 'building' | 'cactus' | 'satellite' | 'pipe' | 'panel';
+  type: 'tree' | 'rock' | 'building' | 'cactus' | 'satellite' | 'pipe' | 'panel' | 'sand' | 'umbrella' | 'cold_storage' | 'palm_tree' | 'beach_ball';
   pos: Position;
   scale: number;
   rotation: number;
@@ -83,6 +98,8 @@ export interface LevelData {
   playerSpawn: Position;
   walls: Position[];
   enemies: { id: string; pos: Position; hp: number; weapon: Weapon; color?: string }[];
+  turrets?: { id: string; pos: Position; hp: number; damage: number; fireRate: number; color?: string }[];
+  buttons?: { id: string; pos: Position; targetId: string }[];
   barrels?: { id: string; pos: Position }[];
   healthBoxes?: { id: string; pos: Position }[];
   ammoBoxes?: { id: string; pos: Position }[];

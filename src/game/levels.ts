@@ -853,4 +853,211 @@ export const LEVELS: LevelData[] = [
     healthBoxes: [{ id: 'h50', pos: { x: 2, z: 28 } }],
     exit: { x: 15, z: 1 },
   },
+  // Level 51: Beach Arrival
+  {
+    id: 51,
+    theme: 'beach',
+    gridSize: { width: 12, height: 12 },
+    playerSpawn: { x: 1, z: 1 },
+    walls: [...createBoxRoom(12, 12), { x: 5, z: 5 }, { x: 6, z: 6 }, { x: 1, z: 9 }, { x: 2, z: 9 }, { x: 3, z: 9 }],
+    enemies: [{ id: 'be1', pos: { x: 10, z: 10 }, hp: 40, weapon: { ...defaultPistol }, color: '#3b82f6' }],
+    turrets: [{ id: 'bt1', pos: { x: 10, z: 1 }, hp: 200, damage: 10, fireRate: 1000, color: '#3b82f6' }],
+    buttons: [{ pos: { x: 1, z: 10 }, targetId: 'bt1' }],
+    barrels: [{ id: 'bb51', pos: { x: 8, z: 8 } }],
+    exit: { x: 10, z: 5 },
+  },
+  // Level 52: Sandy Path
+  {
+    id: 52,
+    theme: 'beach',
+    gridSize: { width: 15, height: 10 },
+    playerSpawn: { x: 1, z: 5 },
+    walls: [...createBoxRoom(15, 10), { x: 7, z: 1 }, { x: 7, z: 2 }, { x: 7, z: 3 }, { x: 7, z: 6 }, { x: 7, z: 7 }, { x: 7, z: 8 }, { x: 3, z: 1 }, { x: 3, z: 2 }],
+    enemies: [
+      { id: 'be1', pos: { x: 13, z: 2 }, hp: 40, weapon: { ...shotgun }, color: '#3b82f6' },
+      { id: 'be2', pos: { x: 13, z: 7 }, hp: 40, weapon: { ...shotgun }, color: '#3b82f6' },
+    ],
+    turrets: [{ id: 'bt1', pos: { x: 8, z: 5 }, hp: 250, damage: 15, fireRate: 800, color: '#3b82f6' }],
+    buttons: [{ pos: { x: 1, z: 1 }, targetId: 'bt1' }],
+    barrels: [{ id: 'bb52_1', pos: { x: 10, z: 2 } }, { id: 'bb52_2', pos: { x: 10, z: 7 } }],
+    exit: { x: 13, z: 4 },
+  },
+  // Level 53: Umbrella Cover
+  {
+    id: 53,
+    theme: 'beach',
+    gridSize: { width: 14, height: 14 },
+    playerSpawn: { x: 1, z: 1 },
+    walls: [...createBoxRoom(14, 14), { x: 4, z: 4 }, { x: 9, z: 9 }, { x: 12, z: 5 }, { x: 11, z: 5 }, { x: 5, z: 12 }, { x: 5, z: 11 }],
+    enemies: [
+      { id: 'be1', pos: { x: 12, z: 12 }, hp: 60, weapon: { ...rifle }, color: '#3b82f6' },
+      { id: 'be2', pos: { x: 12, z: 1 }, hp: 40, weapon: { ...defaultPistol }, color: '#3b82f6' },
+    ],
+    turrets: [
+      { id: 'bt1', pos: { x: 1, z: 12 }, hp: 250, damage: 10, fireRate: 1200, color: '#3b82f6' },
+      { id: 'bt2', pos: { x: 7, z: 7 }, hp: 250, damage: 10, fireRate: 1200, color: '#3b82f6' },
+    ],
+    buttons: [
+      { pos: { x: 12, z: 6 }, targetId: 'bt1' },
+      { pos: { x: 6, z: 12 }, targetId: 'bt2' },
+    ],
+    barrels: [{ id: 'bb53', pos: { x: 7, z: 4 } }],
+    exit: { x: 6, z: 1 },
+  },
+  // Level 54: Cold Storage Hub
+  {
+    id: 54,
+    theme: 'beach',
+    gridSize: { width: 16, height: 12 },
+    playerSpawn: { x: 8, z: 10 },
+    walls: [...createBoxRoom(16, 12), { x: 4, z: 4 }, { x: 12, z: 4 }, { x: 4, z: 8 }, { x: 12, z: 8 }, { x: 1, z: 10 }, { x: 2, z: 11 }],
+    enemies: [
+      { id: 'be1', pos: { x: 2, z: 2 }, hp: 50, weapon: { ...rifle }, color: '#3b82f6' },
+      { id: 'be2', pos: { x: 14, z: 2 }, hp: 50, weapon: { ...rifle }, color: '#3b82f6' },
+    ],
+    turrets: [
+      { id: 'bt1', pos: { x: 8, z: 2 }, hp: 300, damage: 20, fireRate: 1500, color: '#3b82f6' },
+    ],
+    buttons: [{ pos: { x: 1, z: 11 }, targetId: 'bt1' }],
+    barrels: [{ id: 'bb54_1', pos: { x: 4, z: 2 } }, { id: 'bb54_2', pos: { x: 12, z: 2 } }],
+    ammoBoxes: [{ id: 'ba54', pos: { x: 8, z: 6 } }],
+    exit: { x: 8, z: 1 },
+  },
+  // Level 55: Beach Maze
+  {
+    id: 55,
+    theme: 'beach',
+    gridSize: { width: 12, height: 18 },
+    playerSpawn: { x: 1, z: 16 },
+    walls: [...createBoxRoom(12, 18), { x: 3, z: 3 }, { x: 3, z: 4 }, { x: 3, z: 5 }, { x: 8, z: 10 }, { x: 8, z: 11 }, { x: 8, z: 12 }, { x: 10, z: 9 }, { x: 11, z: 9 }],
+    enemies: [
+      { id: 'be1', pos: { x: 10, z: 2 }, hp: 60, weapon: { ...shotgun }, color: '#3b82f6' },
+      { id: 'be2', pos: { x: 1, z: 2 }, hp: 60, weapon: { ...rifle }, color: '#3b82f6' },
+    ],
+    turrets: [
+      { id: 'bt1', pos: { x: 6, z: 9 }, hp: 250, damage: 15, fireRate: 1000, color: '#3b82f6' },
+    ],
+    buttons: [{ pos: { x: 10, z: 10 }, targetId: 'bt1' }],
+    barrels: [{ id: 'bb55', pos: { x: 1, z: 8 } }],
+    healthBoxes: [{ id: 'bh55', pos: { x: 10, z: 16 } }],
+    exit: { x: 6, z: 1 },
+  },
+  // Level 56: Shoreline Defense
+  {
+    id: 56,
+    theme: 'beach',
+    gridSize: { width: 20, height: 10 },
+    playerSpawn: { x: 2, z: 5 },
+    walls: [...createBoxRoom(20, 10), { x: 10, z: 1 }, { x: 10, z: 2 }, { x: 10, z: 3 }, { x: 10, z: 7 }, { x: 10, z: 8 }, { x: 10, z: 9 }, { x: 9, z: 5 }, { x: 11, z: 5 }],
+    enemies: [
+      { id: 'be1', pos: { x: 18, z: 2 }, hp: 50, weapon: { ...rifle }, color: '#3b82f6' },
+      { id: 'be2', pos: { x: 18, z: 8 }, hp: 50, weapon: { ...rifle }, color: '#3b82f6' },
+    ],
+    turrets: [
+      { id: 'bt1', pos: { x: 12, z: 5 }, hp: 400, damage: 10, fireRate: 500, color: '#3b82f6' },
+    ],
+    buttons: [{ pos: { x: 10, z: 5 }, targetId: 'bt1' }],
+    barrels: [{ id: 'bb56', pos: { x: 15, z: 5 } }],
+    exit: { x: 18, z: 5 },
+  },
+  // Level 57: Tidal Trap
+  {
+    id: 57,
+    theme: 'beach',
+    gridSize: { width: 14, height: 14 },
+    playerSpawn: { x: 7, z: 7 },
+    walls: [...createBoxRoom(14, 14), { x: 1, z: 6 }, { x: 2, z: 7 }, { x: 12, z: 8 }, { x: 11, z: 7 }],
+    enemies: [
+      { id: 'be1', pos: { x: 1, z: 1 }, hp: 40, weapon: { ...shotgun }, color: '#3b82f6' },
+      { id: 'be2', pos: { x: 12, z: 1 }, hp: 40, weapon: { ...shotgun }, color: '#3b82f6' },
+      { id: 'be3', pos: { x: 1, z: 12 }, hp: 40, weapon: { ...shotgun }, color: '#3b82f6' },
+      { id: 'be4', pos: { x: 12, z: 12 }, hp: 40, weapon: { ...shotgun }, color: '#3b82f6' },
+    ],
+    turrets: [
+      { id: 'bt1', pos: { x: 7, z: 1 }, hp: 250, damage: 15, fireRate: 1000, color: '#3b82f6' },
+      { id: 'bt2', pos: { x: 7, z: 12 }, hp: 250, damage: 15, fireRate: 1000, color: '#3b82f6' },
+    ],
+    buttons: [
+      { pos: { x: 1, z: 7 }, targetId: 'bt1' },
+      { pos: { x: 12, z: 7 }, targetId: 'bt2' },
+    ],
+    barrels: [{ id: 'bb57_1', pos: { x: 4, z: 4 } }, { id: 'bb57_2', pos: { x: 10, z: 10 } }],
+    exit: { x: 13, z: 7 },
+  },
+  // Level 58: Sunburned
+  {
+    id: 58,
+    theme: 'beach',
+    gridSize: { width: 18, height: 12 },
+    playerSpawn: { x: 1, z: 1 },
+    walls: [...createBoxRoom(18, 12), { x: 6, z: 6 }, { x: 12, z: 6 }, { x: 1, z: 11 }, { x: 2, z: 10 }],
+    enemies: [
+      { id: 'be1', pos: { x: 16, z: 10 }, hp: 80, weapon: { ...rifle }, color: '#3b82f6' },
+      { id: 'be2', pos: { x: 16, z: 2 }, hp: 80, weapon: { ...rifle }, color: '#3b82f6' },
+    ],
+    turrets: [
+      { id: 'bt1', pos: { x: 9, z: 6 }, hp: 400, damage: 25, fireRate: 2000, color: '#3b82f6' },
+    ],
+    buttons: [{ pos: { x: 1, z: 10 }, targetId: 'bt1' }],
+    barrels: [{ id: 'bb58', pos: { x: 9, z: 10 } }],
+    ammoBoxes: [{ id: 'ba58', pos: { x: 9, z: 2 } }],
+    exit: { x: 16, z: 6 },
+  },
+  // Level 59: Wave Watcher
+  {
+    id: 59,
+    theme: 'beach',
+    gridSize: { width: 14, height: 20 },
+    playerSpawn: { x: 7, z: 18 },
+    walls: [...createBoxRoom(14, 20), { x: 4, z: 10 }, { x: 5, z: 10 }, { x: 9, z: 10 }, { x: 10, z: 10 }, { x: 1, z: 10 }, { x: 12, z: 10 }],
+    enemies: [
+      { id: 'be1', pos: { x: 2, z: 2 }, hp: 70, weapon: { ...rifle }, color: '#3b82f6' },
+      { id: 'be2', pos: { x: 11, z: 2 }, hp: 70, weapon: { ...rifle }, color: '#3b82f6' },
+    ],
+    turrets: [
+      { id: 'bt1', pos: { x: 2, z: 10 }, hp: 250, damage: 15, fireRate: 1000, color: '#3b82f6' },
+      { id: 'bt2', pos: { x: 11, z: 10 }, hp: 250, damage: 15, fireRate: 1000, color: '#3b82f6' },
+      { id: 'bt3', pos: { x: 7, z: 5 }, hp: 400, damage: 20, fireRate: 1500, color: '#3b82f6' },
+    ],
+    buttons: [
+      { pos: { x: 1, z: 11 }, targetId: 'bt1' },
+      { pos: { x: 12, z: 11 }, targetId: 'bt2' },
+      { pos: { x: 7, z: 10 }, targetId: 'bt3' },
+    ],
+    barrels: [{ id: 'bb59_1', pos: { x: 2, z: 15 } }, { id: 'bb59_2', pos: { x: 11, z: 15 } }],
+    exit: { x: 7, z: 1 },
+  },
+  // Level 60: Beach Master
+  {
+    id: 60,
+    theme: 'beach',
+    gridSize: { width: 24, height: 24 },
+    playerSpawn: { x: 12, z: 22 },
+    walls: [...createBoxRoom(24, 24), { x: 12, z: 12 }, { x: 1, z: 1 }, { x: 2, z: 1 }, { x: 22, z: 1 }, { x: 21, z: 1 }],
+    enemies: [
+      { id: 'beach_boss', pos: { x: 12, z: 4 }, hp: 800, weapon: { ...rifle, damage: 40, ammo: 5000, maxAmmo: 5000 }, color: '#3b82f6' },
+      { id: 'be1', pos: { x: 4, z: 4 }, hp: 100, weapon: { ...shotgun }, color: '#3b82f6' },
+      { id: 'be2', pos: { x: 20, z: 4 }, hp: 100, weapon: { ...shotgun }, color: '#3b82f6' },
+    ],
+    turrets: [
+      { id: 'bt1', pos: { x: 4, z: 20 }, hp: 400, damage: 20, fireRate: 1000, color: '#3b82f6' },
+      { id: 'bt2', pos: { x: 20, z: 20 }, hp: 400, damage: 20, fireRate: 1000, color: '#3b82f6' },
+      { id: 'bt3', pos: { x: 12, z: 18 }, hp: 500, damage: 30, fireRate: 2500, color: '#3b82f6' },
+    ],
+    buttons: [
+      { pos: { x: 1, z: 2 }, targetId: 'bt1' },
+      { pos: { x: 22, z: 2 }, targetId: 'bt2' },
+      { pos: { x: 12, z: 12 }, targetId: 'bt3' },
+    ],
+    barrels: [
+      { id: 'bb60_1', pos: { x: 6, z: 6 } },
+      { id: 'bb60_2', pos: { x: 18, z: 6 } },
+      { id: 'bb60_3', pos: { x: 12, z: 10 } },
+      { id: 'bb60_4', pos: { x: 4, z: 12 } },
+      { id: 'bb60_5', pos: { x: 20, z: 12 } }
+    ],
+    healthBoxes: [{ id: 'bh60', pos: { x: 2, z: 22 } }],
+    ammoBoxes: [{ id: 'ba60', pos: { x: 22, z: 22 } }, { id: 'ba60_2', pos: { x: 2, z: 2 } }],
+    exit: { x: 12, z: 1 },
+  },
 ];

@@ -35,7 +35,7 @@ export function MainMenu() {
       <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
         <div className="menu-crt" />
         <h2 className="text-5xl font-black italic text-white mb-12 neon-text transform -skew-x-12 relative z-10">SELECT SECTOR</h2>
-        <div className="grid grid-cols-5 gap-4 max-w-2xl transform -skew-x-12 relative z-10">
+        <div className="grid grid-cols-10 gap-4 max-w-4xl transform -skew-x-12 relative z-10">
           {LEVELS.map((_, i) => (
             <button
               key={i}

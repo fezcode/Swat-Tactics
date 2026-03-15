@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState, HealthBoxState, AmmoBoxState, LevelTheme, DecorationState, PortalState } from '../types';
+import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState, HealthBoxState, AmmoBoxState, LevelTheme, DecorationState, PortalState, TurretState, ButtonState } from '../types';
 import { LEVELS } from './levels';
 import { SFX, Music } from './sounds';
 
@@ -22,6 +22,8 @@ interface GameState {
   theme: LevelTheme;
   player: PlayerState | null;
   enemies: EnemyState[];
+  turrets: TurretState[];
+  buttons: ButtonState[];
   barrels: BarrelState[];
   healthBoxes: HealthBoxState[];
   ammoBoxes: AmmoBoxState[];
@@ -47,6 +49,7 @@ interface GameState {
   damageEntity: (id: string, amount: number, pos?: Position) => void;
   collectHealth: (id: string) => void;
   collectAmmo: (id: string) => void;
+  toggleButton: (id: string, active: boolean) => void;
   usePortal: () => void;
   playerShoot: (spawnPos: Position, direction: Position) => void;
   enemyShoot: (spawnPos: Position, direction: Position, damage: number) => void;
@@ -56,6 +59,7 @@ interface GameState {
   tick: (dt: number) => void;
   restartGame: () => void;
   togglePause: () => void;
+  updateTurretFireTime: (id: string) => void;
 }
 
 const defaultWeapon: Weapon = { name: 'Pistol', ammo: 24, maxAmmo: 24, damage: 10 };
@@ -66,6 +70,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   theme: 'industrial',
   player: null,
   enemies: [],
+  turrets: [],
+  buttons: [],
   barrels: [],
   healthBoxes: [],
   ammoBoxes: [],
@@ -127,77 +133,110 @@ export const useGameStore = create<GameState>((set, get) => ({
     const theme = level.theme || 'industrial';
     const decorations: DecorationState[] = [];
 
+    // Simple seeded random for deterministic scenery
+    let seed = index * 1234.567;
+    const nextRandom = () => {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    };
+
     if (theme === 'garden') {
       for (let i = 0; i < 40; i++) {
-        const side = Math.floor(Math.random() * 4);
+        const side = Math.floor(nextRandom() * 4);
         let x = 0, z = 0;
         const margin = 5;
-        if (side === 0) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = -margin - Math.random() * 10; }
-        else if (side === 1) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + Math.random() * 10; }
-        else if (side === 2) { x = -margin - Math.random() * 10; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
-        else { x = level.gridSize.width + margin + Math.random() * 10; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
+        if (side === 0) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = -margin - nextRandom() * 10; }
+        else if (side === 1) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + nextRandom() * 10; }
+        else if (side === 2) { x = -margin - nextRandom() * 10; z = nextRandom() * (level.gridSize.height + margin*2) - margin; }
+        else { x = level.gridSize.width + margin + nextRandom() * 10; z = nextRandom() * (level.gridSize.height + margin*2) - margin; }
         decorations.push({
           id: `garden-${i}`,
-          type: Math.random() > 0.3 ? 'tree' : 'rock',
+          type: nextRandom() > 0.3 ? 'tree' : 'rock',
           pos: { x, z },
-          scale: 0.8 + Math.random() * 1.5,
-          rotation: Math.random() * Math.PI * 2
+          scale: 0.8 + nextRandom() * 1.5,
+          rotation: nextRandom() * Math.PI * 2
         });
       }
     } else if (theme === 'skyscraper') {
       for (let i = 0; i < 30; i++) {
-        const side = Math.floor(Math.random() * 4);
+        const side = Math.floor(nextRandom() * 4);
         let x = 0, z = 0;
         const margin = 10;
-        if (side === 0) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = -margin - Math.random() * 20; }
-        else if (side === 1) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + Math.random() * 20; }
-        else if (side === 2) { x = -margin - Math.random() * 20; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
-        else { x = level.gridSize.width + margin + Math.random() * 20; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
+        if (side === 0) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = -margin - nextRandom() * 20; }
+        else if (side === 1) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + nextRandom() * 20; }
+        else if (side === 2) { x = -margin - nextRandom() * 20; z = nextRandom() * (level.gridSize.height + margin*2) - margin; }
+        else { x = level.gridSize.width + margin + nextRandom() * 20; z = nextRandom() * (level.gridSize.height + margin*2) - margin; }
         decorations.push({
           id: `sky-${i}`,
           type: 'building',
           pos: { x, z },
           scale: 1,
           rotation: 0,
-          w: 2 + Math.random() * 4,
-          h: 5 + Math.random() * 30,
-          d: 2 + Math.random() * 4,
-          color: Math.random() > 0.5 ? "#1a202c" : "#2d3748"
+          w: 2 + nextRandom() * 4,
+          h: 5 + nextRandom() * 30,
+          d: 2 + nextRandom() * 4,
+          color: nextRandom() > 0.5 ? "#1a202c" : "#2d3748"
         });
       }
     } else if (theme === 'desert') {
       for (let i = 0; i < 80; i++) {
-        const side = Math.floor(Math.random() * 4);
+        const side = Math.floor(nextRandom() * 4);
         let x = 0, z = 0;
         const margin = 5;
-        if (side === 0) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = -margin - Math.random() * 15; }
-        else if (side === 1) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + Math.random() * 15; }
-        else if (side === 2) { x = -margin - Math.random() * 15; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
-        else { x = level.gridSize.width + margin + Math.random() * 15; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
+        if (side === 0) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = -margin - nextRandom() * 15; }
+        else if (side === 1) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + nextRandom() * 15; }
+        else if (side === 2) { x = -margin - nextRandom() * 15; z = nextRandom() * (level.gridSize.height + margin*2) - margin; }
+        else { x = level.gridSize.width + margin + nextRandom() * 15; z = nextRandom() * (level.gridSize.height + margin*2) - margin; }
         decorations.push({
           id: `desert-${i}`,
-          type: Math.random() > 0.4 ? 'cactus' : 'rock',
+          type: nextRandom() > 0.4 ? 'cactus' : 'rock',
           pos: { x, z },
-          scale: 0.6 + Math.random() * 1.5,
-          rotation: Math.random() * Math.PI * 2
+          scale: 0.6 + nextRandom() * 1.5,
+          rotation: nextRandom() * Math.PI * 2
         });
       }
     } else if (theme === 'space_station') {
       for (let i = 0; i < 60; i++) {
-        const side = Math.floor(Math.random() * 4);
+        const side = Math.floor(nextRandom() * 4);
         let x = 0, z = 0;
         const margin = 8;
-        if (side === 0) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = -margin - Math.random() * 10; }
-        else if (side === 1) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + Math.random() * 10; }
-        else if (side === 2) { x = -margin - Math.random() * 10; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
-        else { x = level.gridSize.width + margin + Math.random() * 10; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
-        const type = Math.random() > 0.6 ? 'satellite' : (Math.random() > 0.5 ? 'pipe' : 'panel');
+        if (side === 0) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = -margin - nextRandom() * 10; }
+        else if (side === 1) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + nextRandom() * 10; }
+        else if (side === 2) { x = -margin - nextRandom() * 10; z = nextRandom() * (level.gridSize.height + margin*2) - margin; }
+        else { x = level.gridSize.width + margin + nextRandom() * 10; z = nextRandom() * (level.gridSize.height + margin*2) - margin; }
+        const type = nextRandom() > 0.6 ? 'satellite' : (nextRandom() > 0.5 ? 'pipe' : 'panel');
         decorations.push({
           id: `space-${i}`,
           type,
           pos: { x, z },
-          scale: 0.5 + Math.random() * 1.5,
-          rotation: Math.random() * Math.PI * 2
+          scale: 0.5 + nextRandom() * 1.5,
+          rotation: nextRandom() * Math.PI * 2
+        });
+      }
+    } else if (theme === 'beach') {
+      // Add palm trees, umbrellas, surfboards around the beach
+      for (let i = 0; i < 40; i++) {
+        // Place along the sand (not water which is far z < -10)
+        let x = nextRandom() * (level.gridSize.width + 40) - 20;
+        let z = nextRandom() * (level.gridSize.height + 30) - 5; // Keep away from deep water
+        
+        // Don't place inside the level bounds
+        if (x >= -2 && x <= level.gridSize.width + 2 && z >= -2 && z <= level.gridSize.height + 2) {
+          continue; // Skip if inside level
+        }
+
+        const rand = nextRandom();
+        let type: DecorationState['type'] = 'palm_tree';
+        if (rand > 0.8) type = 'umbrella';
+        else if (rand > 0.6) type = 'beach_ball';
+        else if (rand > 0.4) type = 'rock';
+
+        decorations.push({
+          id: `beach-prop-${i}`,
+          type,
+          pos: { x, z },
+          scale: 0.8 + nextRandom() * 0.7,
+          rotation: nextRandom() * Math.PI * 2
         });
       }
     }
@@ -222,6 +261,29 @@ export const useGameStore = create<GameState>((set, get) => ({
           color: e.color || '#ef4444'
         };
       }),
+      turrets: (level.turrets || []).map(t => ({
+        type: 'turret',
+        id: t.id,
+        pos: t.pos,
+        rotation: 0,
+        hp: t.hp,
+        maxHp: t.hp,
+        damage: t.damage,
+        fireRate: t.fireRate,
+        lastFireTime: 0,
+        color: t.color || '#ef4444',
+        disabled: false
+      })),
+      buttons: (level.buttons || []).map(b => ({
+        type: 'button',
+        id: `button-${b.targetId}`,
+        pos: b.pos,
+        rotation: 0,
+        hp: 1,
+        maxHp: 1,
+        targetId: b.targetId,
+        active: false
+      })),
       barrels: (level.barrels || []).map(b => ({ type: 'barrel', id: b.id, pos: b.pos, rotation: 0, hp: 1, maxHp: 1 })),
       healthBoxes: (level.healthBoxes || []).map(h => ({ type: 'health_box', id: h.id, pos: h.pos, rotation: 0, hp: 1, maxHp: 1 })),
       ammoBoxes: (level.ammoBoxes || []).map(a => ({ type: 'ammo_box', id: a.id, pos: a.pos, rotation: 0, hp: 1, maxHp: 1 })),
@@ -266,6 +328,25 @@ export const useGameStore = create<GameState>((set, get) => ({
     
     if (hit) {
       set({ enemies: newEnemies });
+      if (killed) {
+        set(s => ({ stats: { ...s.stats, kills: s.stats.kills + 1 } }));
+      }
+      return;
+    }
+
+    const newTurrets = state.turrets.map(t => {
+      if (t.id === id && t.hp > 0) {
+        hit = true;
+        if (pos) get().addParticle([pos.x, 0.5, pos.z], '#ff0000');
+        const hp = Math.max(0, t.hp - amount);
+        if (hp === 0) killed = true;
+        return { ...t, hp };
+      }
+      return t;
+    });
+
+    if (hit) {
+      set({ turrets: newTurrets });
       if (killed) {
         set(s => ({ stats: { ...s.stats, kills: s.stats.kills + 1 } }));
       }
@@ -317,6 +398,16 @@ export const useGameStore = create<GameState>((set, get) => ({
           }
         });
 
+        state.turrets.forEach(t => {
+          if (t.hp > 0) {
+            const dx = t.pos.x - exPos.x;
+            const dz = t.pos.z - exPos.z;
+            if (Math.sqrt(dx * dx + dz * dz) <= explosionRadius) {
+              get().damageEntity(t.id, explosionDamage, t.pos);
+            }
+          }
+        });
+
         state.barrels.forEach(b => {
           if (b.hp > 0 && b.id !== id) {
             const dx = b.pos.x - exPos.x;
@@ -328,6 +419,12 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
       }
     }
+  },
+
+  updateTurretFireTime: (id) => {
+    set(state => ({
+      turrets: state.turrets.map(t => t.id === id ? { ...t, lastFireTime: Date.now() } : t)
+    }));
   },
 
   collectHealth: (id) => {
@@ -371,6 +468,17 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
       SFX.teleport();
     }
+  },
+
+  toggleButton: (id, active) => {
+    const state = get();
+    const button = state.buttons.find(b => b.id === id);
+    if (!button) return;
+
+    set(s => ({
+      buttons: s.buttons.map(b => b.id === id ? { ...b, active } : b),
+      turrets: s.turrets.map(t => t.id === button.targetId ? { ...t, disabled: active } : t)
+    }));
   },
 
   playerShoot: (spawnPos, direction) => {

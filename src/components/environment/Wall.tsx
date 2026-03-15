@@ -10,7 +10,8 @@ export function Wall({ pos }: { pos: Position }) {
     garden: "#1b5e20", // Hedge green
     skyscraper: "#4a5568", // Steel blue grey
     desert: "#d4a373", // Sandstone
-    space_station: "#334155" // Dark slate
+    space_station: "#334155", // Dark slate
+    beach: "#92400e" // Dark wood/rock brown
   }[theme];
 
   return (

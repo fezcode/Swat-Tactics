@@ -37,6 +37,7 @@ function GameScene() {
       case 'garden': return '#1a2e1a';
       case 'skyscraper': return '#0a0c14';
       case 'desert': return '#4a3c2a';
+      case 'beach': return '#38bdf8';
       default: return '#050505';
     }
   }, [theme]);
@@ -127,6 +128,7 @@ function App() {
       case 'garden': return '#1a2e1a';
       case 'skyscraper': return '#0a0c14';
       case 'desert': return '#4a3c2a';
+      case 'beach': return '#38bdf8';
       default: return '#050505';
     }
   }, [theme, phase]);
@@ -142,29 +144,28 @@ function App() {
       window.removeEventListener('keydown', handleInteraction);
     };
 
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        const { phase, togglePause } = useGameStore.getState();
+        if (phase === 'playing' || phase === 'paused') {
+          e.preventDefault();
+          e.stopPropagation();
+          togglePause();
+        }
+      }
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mousedown', handleInteraction);
     window.addEventListener('keydown', handleInteraction);
+    document.addEventListener('keydown', handleGlobalKeyDown, true);
     
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mousedown', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
+      document.removeEventListener('keydown', handleGlobalKeyDown, true);
     };
-  }, []);
-
-  // Separate useEffect for Escape key to ensure it's not affected by re-renders or other listeners
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === 'Esc') {
-        e.preventDefault();
-        e.stopPropagation();
-        useGameStore.getState().togglePause();
-      }
-    };
-
-    window.addEventListener('keydown', handleEscape, true);
-    return () => window.removeEventListener('keydown', handleEscape, true);
   }, []);
 
   // Ensure focus is on window when playing to catch keyboard events reliably
