@@ -3,6 +3,7 @@ import { useGameStore } from '../../game/store';
 import { Wall } from './Wall';
 import { HealthBox } from '../entities/HealthBox';
 import { AmmoBox } from '../entities/AmmoBox';
+import { Portal } from '../entities/Portal';
 
 export function GridMap() {
   const walls = useGameStore(s => s.walls);
@@ -11,6 +12,7 @@ export function GridMap() {
   const enemies = useGameStore(s => s.enemies);
   const healthBoxes = useGameStore(s => s.healthBoxes);
   const ammoBoxes = useGameStore(s => s.ammoBoxes);
+  const portals = useGameStore(s => s.portals);
   const theme = useGameStore(s => s.theme);
   const decorations = useGameStore(s => s.decorations);
   const allDead = enemies.length > 0 && enemies.every(e => e.hp <= 0);
@@ -31,8 +33,12 @@ export function GridMap() {
       grid: 0x63b3ed
     },
     desert: {
-      floor: "#c2b280", // Sand color
+      floor: "#c2b280", 
       grid: 0xe6ccb2
+    },
+    space_station: {
+      floor: "#0f172a",
+      grid: 0xec4899
     }
   }[theme];
 
@@ -42,7 +48,7 @@ export function GridMap() {
       <RigidBody type="fixed" position={[gridSize.width / 2 - 0.5, -0.05, gridSize.height / 2 - 0.5]} userData={{ type: 'floor' }}>
         <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[gridSize.width, gridSize.height]} />
-          <meshStandardMaterial color={colors.floor} roughness={0.9} metalness={0.0} />
+          <meshStandardMaterial color={colors.floor} roughness={theme === 'space_station' ? 0.4 : 0.8} metalness={theme === 'space_station' ? 0.5 : 0.1} />
         </mesh>
         
         {/* Floor Collider */}
@@ -102,6 +108,35 @@ export function GridMap() {
               </mesh>
             </>
           )}
+          {d.type === 'satellite' && (
+            <>
+              <mesh castShadow>
+                <sphereGeometry args={[0.5, 12, 12]} />
+                <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.2} />
+              </mesh>
+              <mesh position={[0.8, 0, 0]} rotation={[0, 0, Math.PI/2]}>
+                <boxGeometry args={[0.1, 1.2, 0.05]} />
+                <meshStandardMaterial color="#3b82f6" emissive="#1e3a8a" />
+              </mesh>
+              <mesh position={[-0.8, 0, 0]} rotation={[0, 0, Math.PI/2]}>
+                <boxGeometry args={[0.1, 1.2, 0.05]} />
+                <meshStandardMaterial color="#3b82f6" emissive="#1e3a8a" />
+              </mesh>
+            </>
+          )}
+          {d.type === 'pipe' && (
+            <mesh castShadow rotation={[0, 0, Math.PI/2]}>
+              <cylinderGeometry args={[0.15, 0.15, 4, 8]} />
+              <meshStandardMaterial color="#475569" metalness={0.7} roughness={0.3} />
+            </mesh>
+          )}
+          {d.type === 'panel' && (
+            <mesh castShadow>
+              <boxGeometry args={[1, 0.1, 1]} />
+              <meshStandardMaterial color="#1e293b" metalness={0.9} roughness={0.1} />
+              <pointLight position={[0, 0.2, 0]} color="#ec4899" intensity={2} distance={2} />
+            </mesh>
+          )}
         </group>
       ))}
 
@@ -116,6 +151,7 @@ export function GridMap() {
       {walls.map((w, i) => <Wall key={i} pos={w} />)}
       {healthBoxes.map((h) => <HealthBox key={h.id} state={h} />)}
       {ammoBoxes.map((a) => <AmmoBox key={a.id} state={a} />)}
+      {portals.map((p) => <Portal key={p.id} state={p} />)}
 
       {exitPos && (
         <RigidBody 

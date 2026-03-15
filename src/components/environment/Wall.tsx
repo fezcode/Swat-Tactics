@@ -9,7 +9,8 @@ export function Wall({ pos }: { pos: Position }) {
     industrial: "#6d769a",
     garden: "#1b5e20", // Hedge green
     skyscraper: "#4a5568", // Steel blue grey
-    desert: "#d4a373" // Sandstone
+    desert: "#d4a373", // Sandstone
+    space_station: "#334155" // Dark slate
   }[theme];
 
   return (
@@ -25,8 +26,8 @@ export function Wall({ pos }: { pos: Position }) {
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial 
           color={colors} 
-          roughness={theme === 'garden' ? 1.0 : (theme === 'desert' ? 0.9 : 0.3)} 
-          metalness={theme === 'skyscraper' ? 0.6 : (theme === 'industrial' ? 0.2 : 0)} 
+          roughness={theme === 'garden' ? 1.0 : (theme === 'desert' ? 0.9 : (theme === 'space_station' ? 0.2 : 0.3))} 
+          metalness={theme === 'skyscraper' ? 0.6 : (theme === 'industrial' ? 0.2 : (theme === 'space_station' ? 0.8 : 0))} 
         />
       </mesh>
     </RigidBody>

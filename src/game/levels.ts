@@ -680,4 +680,183 @@ export const LEVELS: LevelData[] = [
     healthBoxes: [{ id: 'h40', pos: { x: 15, z: 20 } }],
     exit: { x: 13, z: 1 },
   },
+  // Level 41: Airlock
+  {
+    id: 41,
+    theme: 'space_station',
+    gridSize: { width: 14, height: 14 },
+    playerSpawn: { x: 1, z: 1 },
+    walls: [...createBoxRoom(14, 14), { x: 7, z: 1 }, { x: 7, z: 2 }, { x: 7, z: 3 }, { x: 7, z: 4 }, { x: 7, z: 5 }, { x: 7, z: 6 }, { x: 7, z: 8 }, { x: 7, z: 9 }, { x: 7, z: 10 }, { x: 7, z: 11 }, { x: 7, z: 12 }, { x: 7, z: 13 }],
+    enemies: [
+      { id: 's1', pos: { x: 12, z: 7 }, hp: 100, weapon: { ...rifle }, color: '#78350f' },
+    ],
+    portals: [{ id: 'p41', pos: { x: 1, z: 12 }, target: { x: 12, z: 12 } }],
+    ammoBoxes: [{ id: 'a41', pos: { x: 12, z: 1 } }],
+    exit: { x: 12, z: 2 },
+  },
+  // Level 42: Decompression
+  {
+    id: 42,
+    theme: 'space_station',
+    gridSize: { width: 20, height: 10 },
+    playerSpawn: { x: 1, z: 1 },
+    walls: [...createBoxRoom(20, 10), { x: 10, z: 1 }, { x: 10, z: 2 }, { x: 10, z: 3 }, { x: 10, z: 4 }, { x: 10, z: 5 }, { x: 10, z: 6 }, { x: 10, z: 7 }, { x: 10, z: 8 }],
+    enemies: [
+      { id: 's1', pos: { x: 18, z: 1 }, hp: 100, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's2', pos: { x: 18, z: 8 }, hp: 100, weapon: { ...shotgun }, color: '#f97316' },
+    ],
+    portals: [{ id: 'p42', pos: { x: 1, z: 8 }, target: { x: 12, z: 5 } }],
+    healthBoxes: [{ id: 'h42', pos: { x: 18, z: 5 } }],
+    exit: { x: 18, z: 3 },
+  },
+  // Level 43: Gravity Well
+  {
+    id: 43,
+    theme: 'space_station',
+    gridSize: { width: 16, height: 16 },
+    playerSpawn: { x: 8, z: 8 },
+    walls: [...createBoxRoom(16, 16), { x: 6, z: 6 }, { x: 10, z: 6 }, { x: 6, z: 10 }, { x: 10, z: 10 }],
+    enemies: [
+      { id: 's1', pos: { x: 2, z: 2 }, hp: 100, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's2', pos: { x: 13, z: 2 }, hp: 100, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's3', pos: { x: 2, z: 13 }, hp: 100, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's4', pos: { x: 13, z: 13 }, hp: 100, weapon: { ...rifle }, color: '#78350f' },
+    ],
+    portals: [
+      { id: 'p43_1', pos: { x: 1, z: 8 }, target: { x: 14, z: 8 } },
+      { id: 'p43_2', pos: { x: 8, z: 1 }, target: { x: 8, z: 14 } }
+    ],
+    ammoBoxes: [{ id: 'a43', pos: { x: 8, z: 8 } }],
+    exit: { x: 1, z: 1 },
+  },
+  // Level 44: Lab Access
+  {
+    id: 44,
+    theme: 'space_station',
+    gridSize: { width: 24, height: 14 },
+    playerSpawn: { x: 2, z: 2 },
+    walls: [...createBoxRoom(24, 14), { x: 12, z: 1 }, { x: 12, z: 2 }, { x: 12, z: 3 }, { x: 12, z: 4 }, { x: 12, z: 5 }, { x: 12, z: 9 }, { x: 12, z: 10 }, { x: 12, z: 11 }, { x: 12, z: 12 }],
+    enemies: [
+      { id: 's1', pos: { x: 20, z: 2 }, hp: 120, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's2', pos: { x: 20, z: 11 }, hp: 120, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's3', pos: { x: 14, z: 7 }, hp: 100, weapon: { ...shotgun }, color: '#f97316' },
+    ],
+    portals: [{ id: 'p44', pos: { x: 2, z: 11 }, target: { x: 14, z: 2 } }],
+    ammoBoxes: [{ id: 'a44', pos: { x: 22, z: 7 } }],
+    exit: { x: 22, z: 12 },
+  },
+  // Level 45: Zero-G Array
+  {
+    id: 45,
+    theme: 'space_station',
+    gridSize: { width: 20, height: 20 },
+    playerSpawn: { x: 10, z: 10 },
+    walls: [...createBoxRoom(20, 20), { x: 5, z: 5 }, { x: 15, z: 5 }, { x: 5, z: 15 }, { x: 15, z: 15 }],
+    enemies: [
+      { id: 's1', pos: { x: 2, z: 2 }, hp: 100, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's2', pos: { x: 17, z: 2 }, hp: 100, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's3', pos: { x: 2, z: 17 }, hp: 100, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's4', pos: { x: 17, z: 17 }, hp: 100, weapon: { ...rifle }, color: '#78350f' },
+    ],
+    portals: [{ id: 'p45', pos: { x: 10, z: 1 }, target: { x: 10, z: 18 } }],
+    healthBoxes: [{ id: 'h45', pos: { x: 10, z: 10 } }],
+    exit: { x: 18, z: 10 },
+  },
+  // Level 46: Core Cooling
+  {
+    id: 46,
+    theme: 'space_station',
+    gridSize: { width: 26, height: 12 },
+    playerSpawn: { x: 2, z: 6 },
+    walls: [...createBoxRoom(26, 12), { x: 13, z: 1 }, { x: 13, z: 2 }, { x: 13, z: 3 }, { x: 13, z: 4 }, { x: 13, z: 5 }, { x: 13, z: 7 }, { x: 13, z: 8 }, { x: 13, z: 9 }, { x: 13, z: 10 }],
+    enemies: [
+      { id: 's1', pos: { x: 20, z: 3 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's2', pos: { x: 20, z: 9 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's3', pos: { x: 8, z: 3 }, hp: 80, weapon: { ...shotgun }, color: '#f97316' },
+      { id: 's4', pos: { x: 8, z: 9 }, hp: 80, weapon: { ...shotgun }, color: '#f97316' },
+    ],
+    portals: [{ id: 'p46', pos: { x: 2, z: 2 }, target: { x: 24, z: 10 } }],
+    ammoBoxes: [{ id: 'a46', pos: { x: 24, z: 2 } }],
+    exit: { x: 24, z: 6 },
+  },
+  // Level 47: Command Deck
+  {
+    id: 47,
+    theme: 'space_station',
+    gridSize: { width: 22, height: 22 },
+    playerSpawn: { x: 11, z: 20 },
+    walls: [...createBoxRoom(22, 22), { x: 11, z: 11 }, { x: 10, z: 11 }, { x: 12, z: 11 }, { x: 11, z: 10 }, { x: 11, z: 12 }],
+    enemies: [
+      { id: 's1', pos: { x: 3, z: 3 }, hp: 120, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's2', pos: { x: 18, z: 3 }, hp: 120, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's3', pos: { x: 3, z: 18 }, hp: 120, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's4', pos: { x: 18, z: 18 }, hp: 120, weapon: { ...rifle }, color: '#78350f' },
+    ],
+    portals: [
+      { id: 'p47_1', pos: { x: 2, z: 11 }, target: { x: 19, z: 11 } },
+      { id: 'p47_2', pos: { x: 11, z: 2 }, target: { x: 11, z: 19 } }
+    ],
+    healthBoxes: [{ id: 'h47', pos: { x: 11, z: 11 } }],
+    exit: { x: 11, z: 3 },
+  },
+  // Level 48: Reactor Hall
+  {
+    id: 48,
+    theme: 'space_station',
+    gridSize: { width: 18, height: 28 },
+    playerSpawn: { x: 9, z: 26 },
+    walls: [...createBoxRoom(18, 28), { x: 9, z: 14 }, { x: 8, z: 14 }, { x: 10, z: 14 }, { x: 7, z: 14 }, { x: 11, z: 14 }],
+    enemies: [
+      { id: 's1', pos: { x: 2, z: 2 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's2', pos: { x: 15, z: 2 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's3', pos: { x: 2, z: 12 }, hp: 100, weapon: { ...shotgun }, color: '#f97316' },
+      { id: 's4', pos: { x: 15, z: 12 }, hp: 100, weapon: { ...shotgun }, color: '#f97316' },
+    ],
+    portals: [{ id: 'p48', pos: { x: 9, z: 20 }, target: { x: 9, z: 4 } }],
+    ammoBoxes: [{ id: 'a48', pos: { x: 2, z: 26 } }],
+    exit: { x: 9, z: 1 },
+  },
+  // Level 49: Observation Hub
+  {
+    id: 49,
+    theme: 'space_station',
+    gridSize: { width: 24, height: 24 },
+    playerSpawn: { x: 2, z: 2 },
+    walls: [...createBoxRoom(24, 24), { x: 12, z: 12 }],
+    enemies: [
+      { id: 's1', pos: { x: 21, z: 21 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's2', pos: { x: 21, z: 2 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's3', pos: { x: 2, z: 21 }, hp: 150, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's4', pos: { x: 12, z: 12 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
+    ],
+    portals: [
+      { id: 'p49_1', pos: { x: 1, z: 12 }, target: { x: 22, z: 12 } },
+      { id: 'p49_2', pos: { x: 12, z: 1 }, target: { x: 12, z: 22 } }
+    ],
+    healthBoxes: [{ id: 'h49', pos: { x: 21, z: 12 } }],
+    ammoBoxes: [{ id: 'a49', pos: { x: 12, z: 21 } }],
+    exit: { x: 21, z: 21 },
+  },
+  // Level 50: The Singularity
+  {
+    id: 50,
+    theme: 'space_station',
+    gridSize: { width: 30, height: 30 },
+    playerSpawn: { x: 15, z: 28 },
+    walls: [...createBoxRoom(30, 30), { x: 15, z: 15 }],
+    enemies: [
+      { id: 'overlord', pos: { x: 15, z: 5 }, hp: 1000, weapon: { ...rifle, damage: 40, ammo: 5000, maxAmmo: 5000 }, color: '#78350f' },
+      { id: 's1', pos: { x: 5, z: 5 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's2', pos: { x: 25, z: 5 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's3', pos: { x: 5, z: 25 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
+      { id: 's4', pos: { x: 25, z: 25 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
+    ],
+    portals: [
+      { id: 'p50_1', pos: { x: 2, z: 15 }, target: { x: 27, z: 15 } },
+      { id: 'p50_2', pos: { x: 15, z: 2 }, target: { x: 15, z: 27 } }
+    ],
+    ammoBoxes: [{ id: 'a50', pos: { x: 15, z: 15 } }],
+    healthBoxes: [{ id: 'h50', pos: { x: 2, z: 28 } }],
+    exit: { x: 15, z: 1 },
+  },
 ];

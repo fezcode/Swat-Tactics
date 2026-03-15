@@ -24,7 +24,11 @@ export function HUD() {
   }, [lastDamageTime]);
 
   const boss = useMemo(() => {
-    return enemies.find(e => e.id.toLowerCase().includes('boss') || e.id.toLowerCase().includes('master'));
+    return enemies.find(e => 
+      e.id.toLowerCase().includes('boss') || 
+      e.id.toLowerCase().includes('master') || 
+      e.id.toLowerCase().includes('overlord')
+    );
   }, [enemies]);
 
   const handleClick = (action: () => void) => {

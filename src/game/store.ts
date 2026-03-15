@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState, HealthBoxState, AmmoBoxState, LevelTheme, DecorationState } from '../types';
+import type { PlayerState, EnemyState, BarrelState, GamePhase, Position, Weapon, Particle, ProjectileState, HealthBoxState, AmmoBoxState, LevelTheme, DecorationState, PortalState } from '../types';
 import { LEVELS } from './levels';
 import { SFX, Music } from './sounds';
 
@@ -19,6 +19,7 @@ interface GameState {
   barrels: BarrelState[];
   healthBoxes: HealthBoxState[];
   ammoBoxes: AmmoBoxState[];
+  portals: PortalState[];
   walls: Position[];
   decorations: DecorationState[];
   gridSize: { width: number; height: number };
@@ -38,6 +39,7 @@ interface GameState {
   damageEntity: (id: string, amount: number, pos?: Position) => void;
   collectHealth: (id: string) => void;
   collectAmmo: (id: string) => void;
+  usePortal: (id: string) => void;
   playerShoot: (spawnPos: Position, direction: Position) => void;
   enemyShoot: (spawnPos: Position, direction: Position, damage: number) => void;
   addProjectile: (proj: Omit<ProjectileState, 'id'>) => void;
@@ -59,6 +61,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   barrels: [],
   healthBoxes: [],
   ammoBoxes: [],
+  portals: [],
   walls: [],
   decorations: [],
   gridSize: { width: 10, height: 10 },
@@ -94,7 +97,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     const level = LEVELS[index];
     const player = get().player;
-    // Keep player stats if moving to next level, else reset
     const newPlayer: PlayerState = player && index > 0 && player.hp > 0
       ? { 
           ...player, 
@@ -163,6 +165,24 @@ export const useGameStore = create<GameState>((set, get) => ({
           rotation: Math.random() * Math.PI * 2
         });
       }
+    } else if (theme === 'space_station') {
+      for (let i = 0; i < 60; i++) {
+        const side = Math.floor(Math.random() * 4);
+        let x = 0, z = 0;
+        const margin = 8;
+        if (side === 0) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = -margin - Math.random() * 10; }
+        else if (side === 1) { x = Math.random() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + Math.random() * 10; }
+        else if (side === 2) { x = -margin - Math.random() * 10; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
+        else { x = level.gridSize.width + margin + Math.random() * 10; z = Math.random() * (level.gridSize.height + margin*2) - margin; }
+        const type = Math.random() > 0.6 ? 'satellite' : (Math.random() > 0.5 ? 'pipe' : 'panel');
+        decorations.push({
+          id: `space-${i}`,
+          type,
+          pos: { x, z },
+          scale: 0.5 + Math.random() * 1.5,
+          rotation: Math.random() * Math.PI * 2
+        });
+      }
     }
 
     set({
@@ -188,6 +208,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       barrels: level.barrels.map(b => ({ type: 'barrel', id: b.id, pos: b.pos, rotation: 0, hp: 1, maxHp: 1 })),
       healthBoxes: (level.healthBoxes || []).map(h => ({ type: 'health_box', id: h.id, pos: h.pos, rotation: 0, hp: 1, maxHp: 1 })),
       ammoBoxes: (level.ammoBoxes || []).map(a => ({ type: 'ammo_box', id: a.id, pos: a.pos, rotation: 0, hp: 1, maxHp: 1 })),
+      portals: (level.portals || []).map(p => ({ id: p.id, pos: p.pos, target: p.target, used: false })),
       walls: level.walls,
       decorations,
       gridSize: level.gridSize,
@@ -315,11 +336,30 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
+  usePortal: (id) => {
+    const state = get();
+    const portal = state.portals.find(p => p.id === id);
+    if (portal && !portal.used && state.player) {
+      // Move player position in state (RigidBody will sync)
+      // Note: RigidBody.setTranslation is needed in component
+      set({
+        portals: state.portals.map(p => p.id === id ? { ...p, used: true } : p)
+      });
+      // Trigger particles at start and end
+      for (let i = 0; i < 15; i++) {
+        get().addParticle([portal.pos.x, 0.5, portal.pos.z], '#3b82f6');
+        get().addParticle([portal.target.x, 0.5, portal.target.z], '#3b82f6');
+      }
+      SFX.buttonClick(); // Use a click sound or similar for teleport
+    }
+  },
+
   playerShoot: (spawnPos, direction) => {
     const state = get();
     if (state.phase !== 'playing' || !state.player || state.player.hp <= 0 || (state.countdown !== null && state.countdown > 0.5)) return;
 
     if (state.player.weapon.ammo <= 0) {
+        SFX.gunEmpty();
         return;
     }
 
