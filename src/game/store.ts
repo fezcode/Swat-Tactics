@@ -36,6 +36,7 @@ interface GameState {
   projectiles: ProjectileState[];
   explosions: ExplosionEffect[];
   isMuted: boolean;
+  crtEnabled: boolean;
   countdown: number | null;
   lastDamageTime: number;
   stats: GameStats;
@@ -43,6 +44,7 @@ interface GameState {
   setPhase: (phase: GamePhase) => void;
   loadLevel: (index: number) => void;
   setMuted: (muted: boolean) => void;
+  setCrtEnabled: (enabled: boolean) => void;
   resetStats: () => void;
   
   // Continuous actions
@@ -95,6 +97,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   projectiles: [],
   explosions: [],
   isMuted: false,
+  crtEnabled: true,
   countdown: null,
   lastDamageTime: 0,
   stats: { kills: 0, deaths: 0, runs: 1 },
@@ -117,6 +120,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   setMuted: (muted) => {
     set({ isMuted: muted });
     Music.setMuted(muted);
+  },
+
+  setCrtEnabled: (enabled) => {
+    set({ crtEnabled: enabled });
   },
 
   resetStats: () => {

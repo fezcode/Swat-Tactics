@@ -121,6 +121,7 @@ function App() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const theme = useGameStore(s => s.theme);
   const phase = useGameStore(s => s.phase);
+  const crtEnabled = useGameStore(s => s.crtEnabled);
 
   const containerBg = useMemo(() => {
     if (phase === 'main_menu') return '#050505';
@@ -186,7 +187,7 @@ function App() {
       </Canvas>
       
       {/* CRT Scanline Overlay - Re-implemented safer version of what you liked */}
-      <div className="scanlines-container" />
+      {crtEnabled && <div className="scanlines-container" />}
 
       <HUD />
       

@@ -1,5 +1,5 @@
 import { useGameStore } from '../../game/store';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LEVELS } from '../../game/levels';
 import { SFX } from '../../game/sounds';
 
@@ -9,9 +9,24 @@ export function MainMenu() {
   const loadLevel = useGameStore(s => s.loadLevel);
   const isMuted = useGameStore(s => s.isMuted);
   const setMuted = useGameStore(s => s.setMuted);
+  const crtEnabled = useGameStore(s => s.crtEnabled);
+  const setCrtEnabled = useGameStore(s => s.setCrtEnabled);
   const resetStats = useGameStore(s => s.resetStats);
   const [view, setView] = useState<MenuState>('main');
   const [hovered, setHovered] = useState<string | number | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        if (view !== 'main') {
+          SFX.buttonClick();
+          setView('main');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [view]);
 
   const handleHover = (id: string | number | null) => {
     setHovered(id);
@@ -33,7 +48,7 @@ export function MainMenu() {
   if (view === 'level_select') {
     return (
       <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
-        <div className="menu-crt" />
+        {crtEnabled && <div className="menu-crt" />}
         <h2 className="text-5xl font-black italic text-white mb-12 neon-text transform -skew-x-12 relative z-10">SELECT SECTOR</h2>
         <div className="grid grid-cols-10 gap-4 max-w-4xl transform -skew-x-12 relative z-10">
           {LEVELS.map((_, i) => (
@@ -66,7 +81,7 @@ export function MainMenu() {
   if (view === 'options') {
     return (
       <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
-        <div className="menu-crt" />
+        {crtEnabled && <div className="menu-crt" />}
         <h2 className="text-5xl font-black italic text-white mb-12 neon-text transform -skew-x-12 relative z-10">SYSTEM CONFIG</h2>
         <div className="flex flex-col gap-8 w-80 transform -skew-x-12 relative z-10">
           <button 
@@ -84,10 +99,17 @@ export function MainMenu() {
             <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs">Graphics</span>
             <span className="text-white font-black">ULTRA</span>
           </div>
-          <div className="flex justify-between items-center bg-zinc-900 p-4 border-l-4 border-yellow-500 text-zinc-600 font-black">
-            <span className="font-bold uppercase tracking-widest text-xs">CRT Filter</span>
-            <span>ACTIVE</span>
-          </div>
+          <button 
+            onClick={() => setCrtEnabled(!crtEnabled)}
+            onMouseEnter={() => handleHover('crt')}
+            onMouseLeave={() => setHovered(null)}
+            className="flex justify-between items-center bg-zinc-900 p-4 border-l-4 border-yellow-500 cursor-pointer hover:bg-zinc-800 transition-colors"
+          >
+            <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs text-left">CRT Filter</span>
+            <span className={`font-black ${crtEnabled ? 'text-yellow-500' : 'text-zinc-500'}`}>
+              {crtEnabled ? 'ACTIVE' : 'OFF'}
+            </span>
+          </button>
           <button 
             onClick={() => handleClick(() => resetStats())}
             onMouseEnter={() => handleHover('reset')}
@@ -111,7 +133,7 @@ export function MainMenu() {
   if (view === 'credits') {
     return (
       <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden text-center">
-        <div className="menu-crt" />
+        {crtEnabled && <div className="menu-crt" />}
         <h2 className="text-5xl font-black italic text-white mb-12 neon-text transform -skew-x-12 tracking-tighter relative z-10">INTELLIGENCE</h2>
         <div className="flex flex-col gap-8 transform -skew-x-12 relative z-10">
           <div>
@@ -147,11 +169,15 @@ export function MainMenu() {
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
-      <div className="menu-crt" />
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)] animate-[scanlines_4s_linear_infinite]" />
-        <div className="absolute top-1/2 left-0 w-full h-1 bg-pink-500 shadow-[0_0_20px_rgba(236,72,153,1)] animate-[scanlines_6s_linear_infinite_reverse]" />
-      </div>
+      {crtEnabled && (
+        <>
+          <div className="menu-crt" />
+          <div className="absolute inset-0 opacity-30 pointer-events-none">
+            <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)] animate-[scanlines_4s_linear_infinite]" />
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-pink-500 shadow-[0_0_20px_rgba(236,72,153,1)] animate-[scanlines_6s_linear_infinite_reverse]" />
+          </div>
+        </>
+      )}
 
       <div className="relative z-10 flex flex-col items-center justify-center">
         <div className="relative mb-16 transform -skew-x-12 vhs-distort">
