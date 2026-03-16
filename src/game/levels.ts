@@ -1251,4 +1251,296 @@ export const LEVELS: LevelData[] = [
     ],
     exit: { x: 15, z: 1 },
   },
+  // ============================================
+  // ZONE 8: CEMETERY (Time Limits) - Levels 71-80
+  // ============================================
+  {
+    id: 71,
+    theme: 'cemetery',
+    timeLimit: 45, // 45 seconds to clear
+    gridSize: { width: 16, height: 16 },
+    playerSpawn: { x: 8, z: 14 },
+    walls: [
+      ...createBoxRoom(16, 16),
+      { x: 4, z: 12 }, { x: 5, z: 12 }, { x: 6, z: 12 }, { x: 7, z: 12 },
+      { x: 9, z: 12 }, { x: 10, z: 12 }, { x: 11, z: 12 }, { x: 12, z: 12 },
+      { x: 4, z: 8 }, { x: 5, z: 8 }, { x: 11, z: 8 }, { x: 12, z: 8 },
+      { x: 4, z: 4 }, { x: 5, z: 4 }, { x: 6, z: 4 }, { x: 7, z: 4 },
+      { x: 9, z: 4 }, { x: 10, z: 4 }, { x: 11, z: 4 }, { x: 12, z: 4 },
+    ],
+    enemies: [
+      { id: 'e71_1', pos: { x: 2, z: 10 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
+      { id: 'e71_2', pos: { x: 14, z: 10 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
+      { id: 'e71_3', pos: { x: 8, z: 6 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e71_4', pos: { x: 2, z: 2 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
+      { id: 'e71_5', pos: { x: 14, z: 2 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
+    ],
+    exit: { x: 8, z: 1 }
+  },
+  {
+    id: 72,
+    theme: 'cemetery',
+    timeLimit: 60,
+    gridSize: { width: 20, height: 20 },
+    playerSpawn: { x: 2, z: 18 },
+    walls: [
+      ...createBoxRoom(20, 20),
+      { x: 4, z: 16 }, { x: 6, z: 16 }, { x: 8, z: 16 }, { x: 10, z: 16 }, { x: 12, z: 16 }, { x: 14, z: 16 },
+      { x: 4, z: 12 }, { x: 6, z: 12 }, { x: 8, z: 12 }, { x: 10, z: 12 }, { x: 12, z: 12 }, { x: 14, z: 12 },
+      { x: 4, z: 8 }, { x: 6, z: 8 }, { x: 8, z: 8 }, { x: 10, z: 8 }, { x: 12, z: 8 }, { x: 14, z: 8 },
+      { x: 4, z: 4 }, { x: 6, z: 4 }, { x: 8, z: 4 }, { x: 10, z: 4 }, { x: 12, z: 4 }, { x: 14, z: 4 },
+    ],
+    enemies: [
+      { id: 'e72_1', pos: { x: 18, z: 16 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e72_2', pos: { x: 2, z: 12 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e72_3', pos: { x: 18, z: 8 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e72_4', pos: { x: 2, z: 4 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e72_5', pos: { x: 9, z: 10 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+    ],
+    barrels: [{ id: 'b72_1', pos: { x: 10, z: 10 } }, { id: 'b72_2', pos: { x: 10, z: 14 } }, { id: 'b72_3', pos: { x: 10, z: 6 } }],
+    exit: { x: 18, z: 2 }
+  },
+  {
+    id: 73,
+    theme: 'cemetery',
+    timeLimit: 50,
+    gridSize: { width: 18, height: 18 },
+    playerSpawn: { x: 9, z: 16 },
+    walls: [
+      ...createBoxRoom(18, 18),
+      { x: 7, z: 14 }, { x: 8, z: 14 }, { x: 9, z: 14 }, { x: 10, z: 14 }, { x: 11, z: 14 },
+      { x: 5, z: 10 }, { x: 6, z: 10 }, { x: 12, z: 10 }, { x: 13, z: 10 },
+      { x: 5, z: 8 }, { x: 6, z: 8 }, { x: 12, z: 8 }, { x: 13, z: 8 },
+      { x: 7, z: 4 }, { x: 8, z: 4 }, { x: 9, z: 4 }, { x: 10, z: 4 }, { x: 11, z: 4 },
+    ],
+    enemies: [
+      { id: 'e73_1', pos: { x: 2, z: 9 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+      { id: 'e73_2', pos: { x: 16, z: 9 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+      { id: 'e73_3', pos: { x: 9, z: 9 }, hp: 300, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e73_4', pos: { x: 5, z: 2 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
+      { id: 'e73_5', pos: { x: 13, z: 2 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
+    ],
+    turrets: [
+      { id: 't73_1', pos: { x: 9, z: 6 }, hp: 150, damage: 10, fireRate: 333 },
+      { id: 't73_2', pos: { x: 9, z: 12 }, hp: 150, damage: 10, fireRate: 333 }
+    ],
+    buttons: [
+      { pos: { x: 2, z: 2 }, targetId: 't73_1' },
+      { pos: { x: 16, z: 2 }, targetId: 't73_2' }
+    ],
+    exit: { x: 9, z: 2 }
+  },
+  {
+    id: 74,
+    theme: 'cemetery',
+    timeLimit: 75,
+    gridSize: { width: 22, height: 22 },
+    playerSpawn: { x: 11, z: 20 },
+    walls: [
+      ...createBoxRoom(22, 22),
+      { x: 11, z: 18 }, { x: 11, z: 17 }, { x: 11, z: 16 }, { x: 11, z: 15 },
+      { x: 6, z: 11 }, { x: 7, z: 11 }, { x: 8, z: 11 }, { x: 9, z: 11 }, { x: 10, z: 11 },
+      { x: 12, z: 11 }, { x: 13, z: 11 }, { x: 14, z: 11 }, { x: 15, z: 11 }, { x: 16, z: 11 },
+      { x: 11, z: 7 }, { x: 11, z: 6 }, { x: 11, z: 5 }, { x: 11, z: 4 },
+    ],
+    enemies: [
+      { id: 'e74_1', pos: { x: 4, z: 18 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e74_2', pos: { x: 18, z: 18 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e74_3', pos: { x: 4, z: 4 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e74_4', pos: { x: 18, z: 4 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e74_5', pos: { x: 7, z: 14 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+      { id: 'e74_6', pos: { x: 15, z: 14 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+      { id: 'e74_7', pos: { x: 7, z: 8 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+      { id: 'e74_8', pos: { x: 15, z: 8 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+    ],
+    ammoBoxes: [
+      { id: 'a74_1', pos: { x: 2, z: 20 } },
+      { id: 'a74_2', pos: { x: 20, z: 20 } }
+    ],
+    exit: { x: 11, z: 2 }
+  },
+  {
+    id: 75,
+    theme: 'cemetery',
+    timeLimit: 50, // Updated to 50 seconds
+    gridSize: { width: 14, height: 30 }, // Long narrow strip
+    playerSpawn: { x: 7, z: 28 },
+    walls: [
+      ...createBoxRoom(14, 30),
+      { x: 5, z: 24 }, { x: 6, z: 24 }, { x: 8, z: 24 }, { x: 9, z: 24 },
+      { x: 3, z: 19 }, { x: 4, z: 19 }, { x: 10, z: 19 }, { x: 11, z: 19 },
+      { x: 5, z: 14 }, { x: 6, z: 14 }, { x: 8, z: 14 }, { x: 9, z: 14 },
+      { x: 3, z: 9 }, { x: 4, z: 9 }, { x: 10, z: 9 }, { x: 11, z: 9 },
+      { x: 5, z: 4 }, { x: 6, z: 4 }, { x: 8, z: 4 }, { x: 9, z: 4 },
+    ],
+    enemies: [
+      { id: 'e75_1', pos: { x: 7, z: 22 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
+      { id: 'e75_2', pos: { x: 7, z: 17 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e75_3', pos: { x: 7, z: 12 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+      { id: 'e75_4', pos: { x: 7, z: 7 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e75_5', pos: { x: 7, z: 2 }, hp: 400, weapon: { name: 'Chaingun', ammo: 100, maxAmmo: 100, damage: 5 } },
+    ],
+    exit: { x: 7, z: 1 }
+  },
+  {
+    id: 76,
+    theme: 'cemetery',
+    timeLimit: 90,
+    gridSize: { width: 24, height: 24 },
+    playerSpawn: { x: 12, z: 22 },
+    walls: [
+      ...createBoxRoom(24, 24),
+      { x: 8, z: 18 }, { x: 9, z: 18 }, { x: 10, z: 18 }, { x: 14, z: 18 }, { x: 15, z: 18 }, { x: 16, z: 18 },
+      { x: 8, z: 17 }, { x: 16, z: 17 },
+      { x: 8, z: 16 }, { x: 16, z: 16 },
+      // Portal chambers
+      { x: 4, z: 12 }, { x: 5, z: 12 }, { x: 6, z: 12 },
+      { x: 18, z: 12 }, { x: 19, z: 12 }, { x: 20, z: 12 },
+      { x: 8, z: 8 }, { x: 9, z: 8 }, { x: 10, z: 8 }, { x: 14, z: 8 }, { x: 15, z: 8 }, { x: 16, z: 8 },
+      { x: 8, z: 5 }, { x: 16, z: 5 },
+    ],
+    portal: { id: 'p76', posA: { x: 12, z: 15 }, posB: { x: 12, z: 6 } }, // Skip the middle via portal, or walk around
+    enemies: [
+      { id: 'e76_1', pos: { x: 4, z: 18 }, hp: 200, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e76_2', pos: { x: 20, z: 18 }, hp: 200, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e76_3', pos: { x: 12, z: 12 }, hp: 500, weapon: { name: 'Shotgun', ammo: 20, maxAmmo: 20, damage: 20 } }, // Guards portal A
+      { id: 'e76_4', pos: { x: 4, z: 6 }, hp: 200, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e76_5', pos: { x: 20, z: 6 }, hp: 200, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e76_6', pos: { x: 12, z: 3 }, hp: 400, weapon: { name: 'Chaingun', ammo: 100, maxAmmo: 100, damage: 5 } }, // Guards exit
+    ],
+    turrets: [
+      { id: 't76_1', pos: { x: 2, z: 12 }, hp: 200, damage: 15, fireRate: 333 },
+      { id: 't76_2', pos: { x: 22, z: 12 }, hp: 200, damage: 15, fireRate: 333 }
+    ],
+    buttons: [
+      { pos: { x: 8, z: 12 }, targetId: 't76_1' },
+      { pos: { x: 16, z: 12 }, targetId: 't76_2' }
+    ],
+    healthBoxes: [{ id: 'h76_1', pos: { x: 4, z: 2 } }, { id: 'h76_2', pos: { x: 20, z: 2 } }],
+    ammoBoxes: [{ id: 'a76_1', pos: { x: 4, z: 22 } }, { id: 'a76_2', pos: { x: 20, z: 22 } }],
+    exit: { x: 12, z: 1 }
+  },
+  {
+    id: 77,
+    theme: 'cemetery',
+    timeLimit: 60,
+    gridSize: { width: 18, height: 18 },
+    playerSpawn: { x: 2, z: 16 },
+    walls: [
+      { x: 6, z: 16 }, { x: 6, z: 15 }, { x: 6, z: 14 }, { x: 6, z: 13 }, { x: 6, z: 12 },
+      { x: 12, z: 6 }, { x: 12, z: 5 }, { x: 12, z: 4 }, { x: 12, z: 3 }, { x: 12, z: 2 },
+      { x: 8, z: 8 }, { x: 9, z: 8 }, { x: 10, z: 8 },
+      { x: 8, z: 9 }, { x: 10, z: 9 },
+      { x: 8, z: 10 }, { x: 9, z: 10 }, { x: 10, z: 10 },
+    ],
+    enemies: [
+      { id: 'e77_1', pos: { x: 9, z: 16 }, hp: 200, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e77_2', pos: { x: 16, z: 16 }, hp: 200, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e77_3', pos: { x: 2, z: 8 }, hp: 300, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e77_4', pos: { x: 16, z: 8 }, hp: 300, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e77_5', pos: { x: 9, z: 2 }, hp: 200, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+    ],
+    barrels: [
+      { id: 'b77_1', pos: { x: 4, z: 14 } }, { id: 'b77_2', pos: { x: 8, z: 14 } },
+      { id: 'b77_3', pos: { x: 14, z: 4 } }, { id: 'b77_4', pos: { x: 10, z: 4 } }
+    ],
+    exit: { x: 16, z: 2 }
+  },
+  {
+    id: 78,
+    theme: 'cemetery',
+    timeLimit: 120, // Huge level with time pressure
+    gridSize: { width: 30, height: 30 },
+    playerSpawn: { x: 15, z: 28 },
+    walls: [
+      ...createBoxRoom(30, 30),
+      // Outer ring
+      { x: 5, z: 25 }, { x: 6, z: 25 }, { x: 24, z: 25 }, { x: 25, z: 25 },
+      { x: 5, z: 5 }, { x: 6, z: 5 }, { x: 24, z: 5 }, { x: 25, z: 5 },
+      { x: 5, z: 6 }, { x: 5, z: 7 }, { x: 5, z: 23 }, { x: 5, z: 24 },
+      { x: 25, z: 6 }, { x: 25, z: 7 }, { x: 25, z: 23 }, { x: 25, z: 24 },
+      // Inner cross
+      { x: 15, z: 10 }, { x: 15, z: 11 }, { x: 15, z: 12 }, { x: 15, z: 18 }, { x: 15, z: 19 }, { x: 15, z: 20 },
+      { x: 10, z: 15 }, { x: 11, z: 15 }, { x: 12, z: 15 }, { x: 18, z: 15 }, { x: 19, z: 15 }, { x: 20, z: 15 },
+    ],
+    enemies: [
+      { id: 'e78_1', pos: { x: 10, z: 25 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e78_2', pos: { x: 20, z: 25 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e78_3', pos: { x: 5, z: 15 }, hp: 300, weapon: { name: 'Shotgun', ammo: 15, maxAmmo: 15, damage: 20 } },
+      { id: 'e78_4', pos: { x: 25, z: 15 }, hp: 300, weapon: { name: 'Shotgun', ammo: 15, maxAmmo: 15, damage: 20 } },
+      { id: 'e78_5', pos: { x: 10, z: 5 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e78_6', pos: { x: 20, z: 5 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e78_7', pos: { x: 15, z: 15 }, hp: 500, weapon: { name: 'Chaingun', ammo: 200, maxAmmo: 200, damage: 6 } }, // Center guard
+    ],
+    turrets: [
+      { id: 't78_1', pos: { x: 8, z: 8 }, hp: 250, damage: 20, fireRate: 333 },
+      { id: 't78_2', pos: { x: 22, z: 8 }, hp: 250, damage: 20, fireRate: 333 },
+      { id: 't78_3', pos: { x: 8, z: 22 }, hp: 250, damage: 20, fireRate: 333 },
+      { id: 't78_4', pos: { x: 22, z: 22 }, hp: 250, damage: 20, fireRate: 333 }
+    ],
+    ammoBoxes: [
+      { id: 'a78_1', pos: { x: 15, z: 25 } }
+    ],
+    exit: { x: 15, z: 2 }
+  },
+  {
+    id: 79,
+    theme: 'cemetery',
+    timeLimit: 50,
+    gridSize: { width: 16, height: 16 },
+    playerSpawn: { x: 8, z: 14 },
+    walls: [
+      ...createBoxRoom(16, 16),
+      { x: 3, z: 12 }, { x: 4, z: 12 }, { x: 12, z: 12 }, { x: 13, z: 12 },
+      { x: 3, z: 8 }, { x: 4, z: 8 }, { x: 7, z: 8 }, { x: 8, z: 8 }, { x: 9, z: 8 }, { x: 12, z: 8 }, { x: 13, z: 8 },
+      { x: 3, z: 4 }, { x: 4, z: 4 }, { x: 12, z: 4 }, { x: 13, z: 4 },
+    ],
+    enemies: [
+      { id: 'e79_1', pos: { x: 2, z: 14 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e79_2', pos: { x: 14, z: 14 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e79_3', pos: { x: 2, z: 8 }, hp: 250, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+      { id: 'e79_4', pos: { x: 14, z: 8 }, hp: 250, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+      { id: 'e79_5', pos: { x: 8, z: 5 }, hp: 400, weapon: { name: 'Rifle', ammo: 50, maxAmmo: 50, damage: 15 } },
+      { id: 'e79_6', pos: { x: 2, z: 2 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e79_7', pos: { x: 14, z: 2 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+    ],
+    barrels: [
+      { id: 'b79_1', pos: { x: 6, z: 10 } },
+      { id: 'b79_2', pos: { x: 10, z: 6 } }
+    ],
+    exit: { x: 8, z: 1 }
+  },
+  {
+    id: 80,
+    theme: 'cemetery',
+    timeLimit: 120, // Boss level
+    gridSize: { width: 28, height: 28 },
+    playerSpawn: { x: 14, z: 26 },
+    walls: [
+      ...createBoxRoom(28, 28),
+      { x: 10, z: 20 }, { x: 11, z: 20 }, { x: 17, z: 20 }, { x: 18, z: 20 },
+      { x: 6, z: 14 }, { x: 7, z: 14 }, { x: 21, z: 14 }, { x: 22, z: 14 },
+      { x: 10, z: 8 }, { x: 11, z: 8 }, { x: 17, z: 8 }, { x: 18, z: 8 },
+    ],
+    enemies: [
+      { id: 'e80_boss_CRYPT_KEEPER', pos: { x: 14, z: 14 }, hp: 3000, weapon: { name: 'Dual Chainguns', ammo: 999, maxAmmo: 999, damage: 10 } },
+      { id: 'e80_1', pos: { x: 4, z: 24 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e80_2', pos: { x: 24, z: 24 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e80_3', pos: { x: 4, z: 4 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e80_4', pos: { x: 24, z: 4 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e80_5', pos: { x: 14, z: 20 }, hp: 300, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+      { id: 'e80_6', pos: { x: 14, z: 8 }, hp: 300, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+    ],
+    turrets: [
+      { id: 't80_1', pos: { x: 8, z: 14 }, hp: 300, damage: 25, fireRate: 333 },
+      { id: 't80_2', pos: { x: 20, z: 14 }, hp: 300, damage: 25, fireRate: 333 }
+    ],
+    buttons: [
+      { pos: { x: 2, z: 14 }, targetId: 't80_1' },
+      { pos: { x: 26, z: 14 }, targetId: 't80_2' }
+    ],
+    healthBoxes: [{ id: 'h80_1', pos: { x: 14, z: 22 } }, { id: 'h80_2', pos: { x: 14, z: 6 } }],
+    ammoBoxes: [{ id: 'a80_1', pos: { x: 12, z: 14 } }, { id: 'a80_2', pos: { x: 16, z: 14 } }],
+    exit: { x: 14, z: 2 }
+  }
 ];

@@ -38,6 +38,7 @@ interface GameState {
   isMuted: boolean;
   crtEnabled: boolean;
   countdown: number | null;
+  timeLeft: number | null;
   lastDamageTime: number;
   stats: GameStats;
   
@@ -99,6 +100,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   isMuted: false,
   crtEnabled: true,
   countdown: null,
+  timeLeft: null,
   lastDamageTime: 0,
   stats: { kills: 0, deaths: 0, runs: 1 },
 
@@ -260,12 +262,35 @@ export const useGameStore = create<GameState>((set, get) => ({
           rotation: nextRandom() * Math.PI * 2
         });
       }
+    } else if (theme === 'cemetery') {
+      for (let i = 0; i < 60; i++) {
+        let x = nextRandom() * (level.gridSize.width + 30) - 15;
+        let z = nextRandom() * (level.gridSize.height + 30) - 15;
+        
+        if (x >= -1 && x <= level.gridSize.width + 1 && z >= -1 && z <= level.gridSize.height + 1) {
+          continue;
+        }
+
+        const rand = nextRandom();
+        let type: DecorationState['type'] = 'tombstone';
+        if (rand > 0.7) type = 'dead_tree';
+        else if (rand > 0.5) type = 'crypt';
+
+        decorations.push({
+          id: `cem-prop-${i}`,
+          type,
+          pos: { x, z },
+          scale: type === 'crypt' ? 1.5 + nextRandom() : 0.8 + nextRandom() * 0.5,
+          rotation: nextRandom() * Math.PI * 2
+        });
+      }
     }
 
     set({
       phase: 'playing',
       levelIndex: index,
       theme,
+      timeLeft: level.timeLimit || null,
       player: newPlayer,
       enemies: level.enemies.map(e => {
         const dx = level.playerSpawn.x - e.pos.x;
@@ -582,8 +607,25 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (newCountdown <= 0) newCountdown = null;
     }
 
+    let newTimeLeft = state.timeLeft;
+    let newPhase = state.phase;
+    if (newTimeLeft !== null && newPhase === 'playing' && newCountdown === null) {
+      newTimeLeft -= dt;
+      if (newTimeLeft <= 0) {
+        newTimeLeft = 0;
+        newPhase = 'game_over';
+        SFX.levelEnd(); // Play game over sound
+      }
+    }
+
+    if (newPhase !== state.phase) {
+       set(s => ({ ...s, phase: newPhase, timeLeft: newTimeLeft, stats: { ...s.stats, deaths: s.stats.deaths + 1 } }));
+       return;
+    }
+
     set(state => ({
       countdown: newCountdown,
+      timeLeft: newTimeLeft,
       particles: state.particles.map(p => ({
         ...p,
         life: p.life - dt * 2,

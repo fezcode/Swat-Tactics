@@ -50,6 +50,10 @@ export function GridMap() {
     beach: {
       floor: "#fdf0ba", // Brighter, premium sand color
       grid: 0xd97706    // Warmer amber grid outine
+    },
+    cemetery: {
+      floor: "#27272a", // Dark muddy ground
+      grid: 0x52525b    // Muted grey grid
     }
   }[theme];
 
@@ -209,6 +213,49 @@ export function GridMap() {
               <boxGeometry args={[0.8, 0.8, 0.8]} />
               <meshStandardMaterial color="#3b82f6" metalness={0.3} roughness={0.6} />
             </mesh>
+          )}
+          {d.type === 'tombstone' && (
+            <mesh position={[0, 0.4, 0]} castShadow>
+              <boxGeometry args={[0.6, 0.8, 0.2]} />
+              <meshStandardMaterial color="#71717a" roughness={0.9} />
+              <mesh position={[0, 0.4, 0]} rotation={[Math.PI/2, 0, 0]}>
+                <cylinderGeometry args={[0.3, 0.3, 0.2, 16]} />
+                <meshStandardMaterial color="#71717a" roughness={0.9} />
+              </mesh>
+            </mesh>
+          )}
+          {d.type === 'dead_tree' && (
+            <group>
+              <mesh position={[0, 1.5, 0]} castShadow>
+                <cylinderGeometry args={[0.1, 0.3, 3, 6]} />
+                <meshStandardMaterial color="#3f3f46" roughness={1} />
+              </mesh>
+              <mesh position={[0.4, 2, 0]} rotation={[0, 0, -Math.PI/4]} castShadow>
+                <cylinderGeometry args={[0.05, 0.15, 1.5, 5]} />
+                <meshStandardMaterial color="#3f3f46" roughness={1} />
+              </mesh>
+              <mesh position={[-0.3, 1.5, 0.3]} rotation={[Math.PI/4, 0, Math.PI/4]} castShadow>
+                <cylinderGeometry args={[0.05, 0.1, 1, 5]} />
+                <meshStandardMaterial color="#3f3f46" roughness={1} />
+              </mesh>
+            </group>
+          )}
+          {d.type === 'crypt' && (
+            <group>
+              <mesh position={[0, 1, 0]} castShadow>
+                <boxGeometry args={[2, 2, 2.5]} />
+                <meshStandardMaterial color="#52525b" roughness={0.8} />
+              </mesh>
+              <mesh position={[0, 2.2, 0]} rotation={[0, Math.PI/4, 0]} castShadow>
+                <coneGeometry args={[1.6, 0.8, 4]} />
+                <meshStandardMaterial color="#3f3f46" />
+              </mesh>
+              {/* Door */}
+              <mesh position={[0, 0.8, 1.26]}>
+                <boxGeometry args={[0.8, 1.6, 0.1]} />
+                <meshStandardMaterial color="#18181b" />
+              </mesh>
+            </group>
           )}
         </group>
       ))}

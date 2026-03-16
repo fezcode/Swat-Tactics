@@ -13,6 +13,7 @@ export function HUD() {
   const enemies = useGameStore(s => s.enemies);
   const lastDamageTime = useGameStore(s => s.lastDamageTime);
   const stats = useGameStore(s => s.stats);
+  const timeLeft = useGameStore(s => s.timeLeft);
 
   const [showDamageFlash, setShowDamageFlash] = useState(false);
   const [weaponSwitchAnim, setWeaponSwitchAnim] = useState(false);
@@ -84,10 +85,11 @@ export function HUD() {
   }
 
   if (phase === 'game_over') {
+    const isTimeout = timeLeft === 0;
     return (
       <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/90 text-white z-50 scanlines overflow-hidden animate-pulse">
         <h1 className="text-9xl font-black italic tracking-tighter text-red-600 drop-shadow-[0_0_30px_rgba(220,38,38,0.8)] mb-12">
-          K.I.A.
+          {isTimeout ? "TIME'S UP" : "K.I.A."}
         </h1>
         <div className="flex flex-col gap-4 items-center transform -skew-x-12">
           <button 
@@ -171,6 +173,20 @@ export function HUD() {
             className="text-9xl font-black italic text-white transform -skew-x-12 animate-countdown"
           >
             {countdown > 1 ? Math.ceil(countdown) - 1 : 'START'}
+          </div>
+        </div>
+      )}
+
+      {/* Time Limit Overlay */}
+      {timeLeft !== null && phase === 'playing' && (
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center pointer-events-none z-40 transform -skew-x-12">
+          <div className={`text-6xl font-black italic tracking-tighter drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] ${
+            timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-white'
+          }`}>
+            {Math.max(0, timeLeft).toFixed(1)}
+          </div>
+          <div className="text-sm font-bold text-zinc-400 tracking-widest uppercase">
+            Time Remaining
           </div>
         </div>
       )}

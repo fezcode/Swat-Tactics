@@ -80,11 +80,11 @@ export interface ProjectileState {
   color?: string;
 }
 
-export type LevelTheme = 'industrial' | 'garden' | 'skyscraper' | 'desert' | 'space_station' | 'beach';
+export type LevelTheme = 'industrial' | 'garden' | 'skyscraper' | 'desert' | 'space_station' | 'beach' | 'cemetery';
 
 export interface DecorationState {
   id: string;
-  type: 'tree' | 'rock' | 'building' | 'cactus' | 'satellite' | 'pipe' | 'panel' | 'sand' | 'umbrella' | 'cold_storage' | 'palm_tree' | 'beach_ball';
+  type: 'tree' | 'rock' | 'building' | 'cactus' | 'satellite' | 'pipe' | 'panel' | 'sand' | 'umbrella' | 'cold_storage' | 'palm_tree' | 'beach_ball' | 'tombstone' | 'dead_tree' | 'crypt';
   pos: Position;
   scale: number;
   rotation: number;
@@ -108,6 +108,7 @@ export interface LevelData {
   ammoBoxes?: { id: string; pos: Position }[];
   portal?: { id: string; posA: Position; posB: Position };
   exit: Position;
+  timeLimit?: number;
 }
 
 export type GamePhase = 'main_menu' | 'playing' | 'paused' | 'game_over' | 'level_complete' | 'victory';
