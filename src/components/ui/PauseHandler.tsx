@@ -7,26 +7,28 @@ import { useGameStore } from '../../game/store';
  * accidentally decoupled during UI or feature refactors.
  */
 export function PauseHandler() {
+  // Destructure phase and togglePause from the store outside the effect
+  // so they can be used as dependencies and accessed by the handler.
+  const { phase, togglePause } = useGameStore();
+
   useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Esc') {
-        const { phase, togglePause } = useGameStore.getState();
-        console.log('[PauseHandler] ESC pressed, current phase:', phase);
-        
+        // Only toggle pause if the game is playing or already paused
         if (phase === 'playing' || phase === 'paused') {
-          console.log('[PauseHandler] Toggling pause...');
-          e.preventDefault();
-          e.stopPropagation();
+          console.log('[PauseHandler] ESC caught at window level (capture)', { currentPhase: phase });
+          // Prevent other listeners from seeing this to avoid conflicts
+          e.stopImmediatePropagation();
+          e.preventDefault(); // Also prevent default browser behavior for Escape
           togglePause();
         }
       }
     };
 
-    document.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
-    return () => {
-      document.removeEventListener('keydown', handleGlobalKeyDown, { capture: true });
-    };
-  }, []);
+    // Use window + capture to be the absolute first to catch the key
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+  }, [togglePause, phase]); // Dependencies ensure the latest phase and togglePause are used
 
   return null;
 }

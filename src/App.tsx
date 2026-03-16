@@ -19,7 +19,7 @@ function GameLoop() {
   const tick = useGameStore(s => s.tick);
   const phase = useGameStore(s => s.phase);
   useFrame((_, delta) => {
-    if (phase === 'playing') {
+    if (phase === 'playing' || phase === 'level_intro') {
       tick(delta);
     }
   });
@@ -159,12 +159,19 @@ function App() {
 
   // Ensure focus is on window when playing or paused to catch keyboard events reliably
   useEffect(() => {
-    if (phase === 'playing' || phase === 'paused') {
+    if (phase !== 'main_menu') {
       window.focus();
-      // Also add a click listener to the body to re-focus if the user clicks outside
+      
       const refocus = () => window.focus();
       document.addEventListener('mousedown', refocus);
-      return () => document.removeEventListener('mousedown', refocus);
+      
+      // Heartbeat: Force focus every 2 seconds during active gameplay
+      const interval = setInterval(refocus, 2000);
+      
+      return () => {
+        document.removeEventListener('mousedown', refocus);
+        clearInterval(interval);
+      };
     }
   }, [phase]);
 

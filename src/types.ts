@@ -112,7 +112,7 @@ export interface LevelData {
   timeLimit?: number;
 }
 
-export type GamePhase = 'main_menu' | 'playing' | 'paused' | 'game_over' | 'level_complete' | 'victory';
+export type GamePhase = 'main_menu' | 'level_intro' | 'playing' | 'paused' | 'game_over' | 'level_complete' | 'victory';
 
 export interface Particle {
   id: string;

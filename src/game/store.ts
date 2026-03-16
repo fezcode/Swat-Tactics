@@ -165,6 +165,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { phase } = get();
     if (phase === 'playing') set({ phase: 'paused' });
     else if (phase === 'paused') set({ phase: 'playing' });
+    else if (['game_over', 'level_complete', 'victory', 'level_intro'].includes(phase)) {
+      set({ phase: 'main_menu' });
+    }
   },
 
   setMuted: (muted) => {
@@ -367,7 +370,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     set({
-      phase: 'playing',
+      phase: 'level_intro',
       levelIndex: index,
       theme,
       timeLeft: level.timeLimit || null,
@@ -681,14 +684,17 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   tick: (dt) => {
     const state = get();
+    let newPhase = state.phase;
     let newCountdown = state.countdown;
     if (newCountdown !== null) {
       newCountdown -= dt * 2;
-      if (newCountdown <= 0) newCountdown = null;
+      if (newCountdown <= 0) {
+        newCountdown = null;
+        newPhase = 'playing';
+      }
     }
 
     let newTimeLeft = state.timeLeft;
-    let newPhase = state.phase;
     if (newTimeLeft !== null && newPhase === 'playing' && newCountdown === null) {
       newTimeLeft -= dt;
       if (newTimeLeft <= 0) {

@@ -12,7 +12,8 @@ export function Wall({ pos }: { pos: Position }) {
     desert: "#d4a373", // Sandstone
     space_station: "#334155", // Dark slate
     beach: "#92400e", // Dark wood/rock brown
-    cemetery: "#52525b" // Weathered stone grey
+    cemetery: "#52525b", // Weathered stone grey
+    airport: "#94a3b8" // Brushed steel grey
   }[theme];
 
   return (
