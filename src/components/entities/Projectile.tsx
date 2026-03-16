@@ -32,7 +32,7 @@ function ProjectileItem({ p }: { p: ProjectileState }) {
         
         if (!userData) return;
         
-        if (userData.type === 'floor' || userData.type === 'projectile' || userData.type === 'exit') return;
+        if (userData.type === 'floor' || userData.type === 'projectile' || userData.type === 'exit' || userData.type === 'health_box' || userData.type === 'ammo_box') return;
         if (p.isEnemy && (userData.type === 'enemy' || userData.type === 'turret')) return;
         if (!p.isEnemy && userData.type === 'player') return;
         

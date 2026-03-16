@@ -64,6 +64,7 @@ interface GameState {
   togglePause: () => void;
   updateTurretFireTime: (id: string) => void;
   switchWeapon: () => void;
+  dodge: (direction: Position) => void;
 }
 
 const defaultWeapon: Weapon = { name: 'Pistol', ammo: 24, maxAmmo: 24, damage: 10 };
@@ -103,6 +104,53 @@ export const useGameStore = create<GameState>((set, get) => ({
   timeLeft: null,
   lastDamageTime: 0,
   stats: { kills: 0, deaths: 0, runs: 1 },
+  
+  dodge: (direction: Position) => {
+    const state = get();
+    const player = state.player;
+    // Level restriction: index 70 is Level 71
+    if (!player || player.hp <= 0 || state.phase !== 'playing' || state.levelIndex < 70) return;
+
+    const now = Date.now();
+    if (now - player.lastDodgeTime < 5000) return; // 5s cooldown
+
+    const dodgeDistance = 3;
+    let targetX = player.pos.x + direction.x * dodgeDistance;
+    let targetZ = player.pos.z + direction.z * dodgeDistance;
+
+    // Safety check: Clamp to bounds
+    targetX = Math.max(0.5, Math.min(state.gridSize.width - 0.5, targetX));
+    targetZ = Math.max(0.5, Math.min(state.gridSize.height - 0.5, targetZ));
+
+    // Simple wall collision check (don't land inside a wall)
+    // We check points between current and target to prevent phasing
+    let finalX = player.pos.x;
+    let finalZ = player.pos.z;
+    
+    // Check 10 points along the path for walls
+    for (let i = 1; i <= 10; i++) {
+        const stepX = player.pos.x + (targetX - player.pos.x) * (i / 10);
+        const stepZ = player.pos.z + (targetZ - player.pos.z) * (i / 10);
+        
+        const isWall = state.walls.some(w => Math.abs(w.x - Math.round(stepX)) < 0.6 && Math.abs(w.z - Math.round(stepZ)) < 0.6);
+        if (isWall) break;
+        
+        finalX = stepX;
+        finalZ = stepZ;
+    }
+
+    const newPos = { x: finalX, z: finalZ };
+
+    set(s => ({
+        player: s.player ? { ...s.player, pos: newPos, lastDodgeTime: now } : null
+    }));
+    
+    // Trail particles
+    for (let i = 0; i < 10; i++) {
+        get().addParticle([player.pos.x, 0.5, player.pos.z], '#ffffff');
+    }
+    SFX.enemyShoot(); // Dash sound
+  },
 
   setPhase: (phase) => {
     set({ phase });
@@ -150,8 +198,9 @@ export const useGameStore = create<GameState>((set, get) => ({
           weapon: { ...player.weapon, ammo: player.weapon.maxAmmo },
           secondaryWeapon: hasDualWeapon ? (player.secondaryWeapon ? { ...player.secondaryWeapon, ammo: player.secondaryWeapon.maxAmmo } : { ...secondarySmg }) : null,
           activeWeaponSlot: player.activeWeaponSlot || 'primary',
+          lastDodgeTime: player.lastDodgeTime || 0,
         }
-      : { id: 'player', type: 'player', pos: level.playerSpawn, rotation: 0, hp: 100, maxHp: 100, weapon: { ...defaultWeapon }, secondaryWeapon: hasDualWeapon ? { ...secondarySmg } : null, activeWeaponSlot: 'primary' };
+      : { id: 'player', type: 'player', pos: level.playerSpawn, rotation: 0, hp: 100, maxHp: 100, weapon: { ...defaultWeapon }, secondaryWeapon: hasDualWeapon ? { ...secondarySmg } : null, activeWeaponSlot: 'primary', lastDodgeTime: 0 };
 
     const theme = level.theme || 'industrial';
     const decorations: DecorationState[] = [];
@@ -281,6 +330,37 @@ export const useGameStore = create<GameState>((set, get) => ({
           type,
           pos: { x, z },
           scale: type === 'crypt' ? 1.5 + nextRandom() : 0.8 + nextRandom() * 0.5,
+          rotation: nextRandom() * Math.PI * 2
+        });
+      }
+    } else if (theme === 'airport') {
+      for (let i = 0; i < 70; i++) {
+        let x = nextRandom() * (level.gridSize.width + 60) - 30;
+        let z = nextRandom() * (level.gridSize.height + 60) - 30;
+        
+        // Larger exclusion zone for big airplanes (scale up to 3-4)
+        if (x >= -8 && x <= level.gridSize.width + 8 && z >= -8 && z <= level.gridSize.height + 8) {
+          // Inner props (closer to the action but not inside the grid)
+          if (x >= -2 && x <= level.gridSize.width + 2 && z >= -2 && z <= level.gridSize.height + 2) {
+            continue;
+          }
+        }
+
+        const rand = nextRandom();
+        let type: DecorationState['type'] = 'airplane';
+        if (rand > 0.9) type = 'airplane';
+        else if (rand > 0.8) type = 'luggage_cart';
+        else if (rand > 0.7) type = 'terminal_sign';
+        else if (rand > 0.6) type = 'flight_board';
+        else if (rand > 0.5) type = 'security_gate';
+        else if (rand > 0.4) type = 'luggage_scanner';
+        else type = 'rock';
+
+        decorations.push({
+          id: `air-prop-${i}`,
+          type,
+          pos: { x, z },
+          scale: type === 'airplane' ? 2 + nextRandom() : 0.8 + nextRandom() * 0.5,
           rotation: nextRandom() * Math.PI * 2
         });
       }

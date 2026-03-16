@@ -54,6 +54,10 @@ export function GridMap() {
     cemetery: {
       floor: "#27272a", // Dark muddy ground
       grid: 0x52525b    // Muted grey grid
+    },
+    airport: {
+      floor: "#475569", // Dark Slate Concrete
+      grid: 0xeab308    // Yellow safety lines
     }
   }[theme];
 
@@ -63,7 +67,11 @@ export function GridMap() {
       <RigidBody type="fixed" position={[gridSize.width / 2 - 0.5, -0.05, gridSize.height / 2 - 0.5]} userData={{ type: 'floor' }}>
         <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[gridSize.width, gridSize.height]} />
-          <meshStandardMaterial color={colors.floor} roughness={theme === 'space_station' ? 0.4 : 0.8} metalness={theme === 'space_station' ? 0.5 : 0.1} />
+          <meshStandardMaterial 
+            color={colors.floor} 
+            roughness={theme === 'airport' ? 0.4 : (theme === 'space_station' ? 0.4 : 0.8)} 
+            metalness={theme === 'airport' ? 0.3 : (theme === 'space_station' ? 0.5 : 0.1)} 
+          />
         </mesh>
         
         {/* Floor Collider */}
@@ -254,6 +262,134 @@ export function GridMap() {
               <mesh position={[0, 0.8, 1.26]}>
                 <boxGeometry args={[0.8, 1.6, 0.1]} />
                 <meshStandardMaterial color="#18181b" />
+              </mesh>
+            </group>
+          )}
+          {d.type === 'airplane' && (
+            <group>
+              {/* Fuselage */}
+              <mesh castShadow rotation={[0, 0, Math.PI/2]}>
+                <cylinderGeometry args={[0.5, 0.5, 4, 8]}  />
+                <meshStandardMaterial color="#f8fafc" roughness={0.2} metalness={0.8} />
+              </mesh>
+              {/* Wings */}
+              <mesh castShadow position={[0, 0, 0]}>
+                <boxGeometry args={[4, 0.1, 1]} />
+                <meshStandardMaterial color="#f8fafc" />
+              </mesh>
+              {/* Tail */}
+              <mesh castShadow position={[1.8, 0.5, 0]} rotation={[0, 0, 0.3]}>
+                <boxGeometry args={[0.1, 0.8, 0.8]} />
+                <meshStandardMaterial color="#3b82f6" />
+              </mesh>
+              {/* Engines */}
+              <mesh castShadow position={[0, -0.3, 1]} rotation={[0, 0, Math.PI/2]}>
+                <cylinderGeometry args={[0.2, 0.2, 0.5, 8]} />
+                <meshStandardMaterial color="#334155" />
+              </mesh>
+              <mesh castShadow position={[0, -0.3, -1]} rotation={[0, 0, Math.PI/2]}>
+                <cylinderGeometry args={[0.2, 0.2, 0.5, 8]} />
+                <meshStandardMaterial color="#334155" />
+              </mesh>
+            </group>
+          )}
+          {d.type === 'luggage_cart' && (
+            <group>
+              <mesh position={[0, 0.2, 0]} castShadow>
+                <boxGeometry args={[1, 0.1, 0.6]} />
+                <meshStandardMaterial color="#94a3b8" />
+              </mesh>
+              <mesh position={[0.4, 0.5, 0]} castShadow>
+                <boxGeometry args={[0.05, 0.6, 0.6]} />
+                <meshStandardMaterial color="#64748b" />
+              </mesh>
+              <mesh position={[-0.4, 0.1, 0]} castShadow>
+                <sphereGeometry args={[0.1, 8, 8]} />
+                <meshStandardMaterial color="#1e293b" />
+              </mesh>
+            </group>
+          )}
+          {d.type === 'terminal_sign' && (
+            <group>
+              <mesh position={[0, 1.5, 0]} castShadow>
+                <cylinderGeometry args={[0.05, 0.1, 3, 8]} />
+                <meshStandardMaterial color="#334155" />
+              </mesh>
+              <mesh position={[0, 2.5, 0]} castShadow>
+                <boxGeometry args={[1.2, 0.6, 0.1]} />
+                <meshStandardMaterial color="#1e293b" />
+              </mesh>
+              <mesh position={[0, 2.5, 0.06]}>
+                <planeGeometry args={[1.0, 0.4]} />
+                <meshBasicMaterial color="#eab308" />
+              </mesh>
+            </group>
+          )}
+          {d.type === 'flight_board' && (
+            <group>
+              <mesh position={[0, 1.5, 0]} castShadow>
+                <boxGeometry args={[0.1, 3, 0.1]} />
+                <meshStandardMaterial color="#1e293b" />
+              </mesh>
+              <mesh position={[0, 2.4, 0]} castShadow>
+                <boxGeometry args={[2, 1.2, 0.2]} />
+                <meshStandardMaterial color="#0f172a" />
+              </mesh>
+              <mesh position={[0, 2.4, 0.11]}>
+                <planeGeometry args={[1.8, 1]} />
+                <meshStandardMaterial color="#1e293b" emissive="#3b82f6" emissiveIntensity={0.5} />
+              </mesh>
+              {/* Small details */}
+              {[...Array(5)].map((_, i) => (
+                <mesh key={i} position={[-0.7 + i * 0.35, 2.1, 0.12]}>
+                  <planeGeometry args={[0.2, 0.05]} />
+                  <meshBasicMaterial color="#fbbf24" />
+                </mesh>
+              ))}
+            </group>
+          )}
+          {d.type === 'security_gate' && (
+            <group>
+              <mesh position={[-0.6, 1, 0]} castShadow>
+                <boxGeometry args={[0.2, 2, 0.3]} />
+                <meshStandardMaterial color="#334155" />
+              </mesh>
+              <mesh position={[0.6, 1, 0]} castShadow>
+                <boxGeometry args={[0.2, 2, 0.3]} />
+                <meshStandardMaterial color="#334155" />
+              </mesh>
+              <mesh position={[0, 2, 0]} castShadow>
+                <boxGeometry args={[1.4, 0.2, 0.3]} />
+                <meshStandardMaterial color="#334155" />
+              </mesh>
+              <mesh position={[0, 1.8, 0.16]}>
+                <sphereGeometry args={[0.05, 8, 8]} />
+                <meshBasicMaterial color="#ef4444" />
+              </mesh>
+            </group>
+          )}
+          {d.type === 'luggage_scanner' && (
+            <group>
+              <mesh position={[0, 0.6, 0]} castShadow>
+                <boxGeometry args={[1.5, 1.2, 2.5]} />
+                <meshStandardMaterial color="#475569" metalness={0.6} roughness={0.3} />
+              </mesh>
+              <mesh position={[0.8, 0.8, 0]} castShadow>
+                <boxGeometry args={[0.1, 0.8, 0.8]} />
+                <meshStandardMaterial color="#1e293b" />
+              </mesh>
+              <mesh position={[0.81, 0.8, 0]}>
+                <planeGeometry args={[0.6, 0.6]} />
+                <meshStandardMaterial color="#000000" emissive="#22c55e" emissiveIntensity={0.5} />
+              </mesh>
+              {/* Lead curtains */}
+              <mesh position={[0, 0.6, 1.26]}>
+                <boxGeometry args={[1.2, 1, 0.1]} />
+                <meshStandardMaterial color="#1e293b" />
+              </mesh>
+              <mesh position={[0, 0.6, -1.26]}>
+                <boxGeometry args={[1.2, 1, 0.1]} />
+                <meshStandardMaterial color="#1e293b" />
               </mesh>
             </group>
           )}

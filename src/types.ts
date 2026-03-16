@@ -47,6 +47,7 @@ export interface PlayerState extends EntityState {
   weapon: Weapon;
   secondaryWeapon: Weapon | null;
   activeWeaponSlot: 'primary' | 'secondary';
+  lastDodgeTime: number;
 }
 
 export interface BarrelState extends EntityState {
@@ -80,11 +81,11 @@ export interface ProjectileState {
   color?: string;
 }
 
-export type LevelTheme = 'industrial' | 'garden' | 'skyscraper' | 'desert' | 'space_station' | 'beach' | 'cemetery';
+export type LevelTheme = 'industrial' | 'garden' | 'skyscraper' | 'desert' | 'space_station' | 'beach' | 'cemetery' | 'airport';
 
 export interface DecorationState {
   id: string;
-  type: 'tree' | 'rock' | 'building' | 'cactus' | 'satellite' | 'pipe' | 'panel' | 'sand' | 'umbrella' | 'cold_storage' | 'palm_tree' | 'beach_ball' | 'tombstone' | 'dead_tree' | 'crypt';
+  type: 'tree' | 'rock' | 'building' | 'cactus' | 'satellite' | 'pipe' | 'panel' | 'sand' | 'umbrella' | 'cold_storage' | 'palm_tree' | 'beach_ball' | 'tombstone' | 'dead_tree' | 'crypt' | 'airplane' | 'luggage_cart' | 'terminal_sign' | 'flight_board' | 'security_gate' | 'luggage_scanner';
   pos: Position;
   scale: number;
   rotation: number;

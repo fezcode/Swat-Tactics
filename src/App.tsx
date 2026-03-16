@@ -9,6 +9,7 @@ import { Player } from './components/entities/Player';
 import { Enemy } from './components/entities/Enemy';
 import { Barrel } from './components/entities/Barrel';
 import { HUD } from './components/ui/HUD';
+import { PauseHandler } from './components/ui/PauseHandler';
 import { ParticleSystem } from './components/entities/ParticleSystem';
 import { Projectiles } from './components/entities/Projectile';
 import { ExplosionEffects } from './components/entities/Explosion';
@@ -145,34 +146,25 @@ function App() {
       window.removeEventListener('keydown', handleInteraction);
     };
 
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === 'Esc') {
-        const { phase, togglePause } = useGameStore.getState();
-        if (phase === 'playing' || phase === 'paused') {
-          e.preventDefault();
-          e.stopPropagation();
-          togglePause();
-        }
-      }
-    };
-
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mousedown', handleInteraction);
     window.addEventListener('keydown', handleInteraction);
-    document.addEventListener('keydown', handleGlobalKeyDown, true);
     
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mousedown', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
-      document.removeEventListener('keydown', handleGlobalKeyDown, true);
     };
   }, []);
 
-  // Ensure focus is on window when playing to catch keyboard events reliably
+  // Ensure focus is on window when playing or paused to catch keyboard events reliably
   useEffect(() => {
-    if (phase === 'playing') {
+    if (phase === 'playing' || phase === 'paused') {
       window.focus();
+      // Also add a click listener to the body to re-focus if the user clicks outside
+      const refocus = () => window.focus();
+      document.addEventListener('mousedown', refocus);
+      return () => document.removeEventListener('mousedown', refocus);
     }
   }, [phase]);
 
@@ -189,6 +181,7 @@ function App() {
       {/* CRT Scanline Overlay - Re-implemented safer version of what you liked */}
       {crtEnabled && <div className="scanlines-container" />}
 
+      <PauseHandler />
       <HUD />
       
       {/* Crosshair overlay following mouse - Highest Z-Index */}

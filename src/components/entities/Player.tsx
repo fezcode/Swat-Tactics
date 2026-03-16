@@ -14,10 +14,11 @@ export function Player({ state }: { state: PlayerState }) {
   const { camera, pointer, raycaster } = useThree();
   const playerShoot = useGameStore(s => s.playerShoot);
   const switchWeapon = useGameStore(s => s.switchWeapon);
+  const dodge = useGameStore(s => s.dodge);
   const phase = useGameStore(s => s.phase);
   const countdown = useGameStore(s => s.countdown);
 
-  const keys = useRef({ w: false, a: false, s: false, d: false });
+  const keys = useRef({ w: false, a: false, s: false, d: false, shift: false });
   const lastStoreUpdate = useRef(0);
   const mouseDown = useRef(false);
   const lastFireTime = useRef(0);
@@ -35,6 +36,15 @@ export function Player({ state }: { state: PlayerState }) {
     }
   }, [state.activeWeaponSlot]);
 
+  // Handle dodge teleport
+  const lastDodgeRef = useRef(state.lastDodgeTime);
+  useEffect(() => {
+    if (state.lastDodgeTime > lastDodgeRef.current && rb.current) {
+      rb.current.setTranslation({ x: state.pos.x, y: 0.5, z: state.pos.z }, true);
+    }
+    lastDodgeRef.current = state.lastDodgeTime;
+  }, [state.lastDodgeTime, state.pos.x, state.pos.z]);
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.current.w = true;
@@ -42,12 +52,32 @@ export function Player({ state }: { state: PlayerState }) {
       if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.current.s = true;
       if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.current.d = true;
       if (e.key === 'q' || e.key === 'Q') switchWeapon();
+      if (e.key === 'Shift') {
+        const { player, levelIndex } = useGameStore.getState();
+        if (!player || levelIndex < 70) return; // Only level 71+
+        
+        keys.current.shift = true;
+        // Dodge in current move direction or forward if standing still
+        let dx = 0;
+        let dz = 0;
+        if (keys.current.w) dz -= 1;
+        if (keys.current.s) dz += 1;
+        if (keys.current.a) dx -= 1;
+        if (keys.current.d) dx += 1;
+
+        if (dx === 0 && dz === 0) dz = -1; // Default forward
+        
+        // Normalize
+        const len = Math.sqrt(dx * dx + dz * dz);
+        dodge({ x: dx / len, z: dz / len });
+      }
     };
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.current.w = false;
       if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.current.a = false;
       if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.current.s = false;
       if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.current.d = false;
+      if (e.key === 'Shift') keys.current.shift = false;
     };
     
     const onPointerDown = (e: MouseEvent) => {
@@ -60,7 +90,7 @@ export function Player({ state }: { state: PlayerState }) {
 
     const onContextMenu = (e: MouseEvent) => e.preventDefault();
     const onBlur = () => {
-      keys.current = { w: false, a: false, s: false, d: false };
+      keys.current = { w: false, a: false, s: false, d: false, shift: false };
       mouseDown.current = false;
     };
 
@@ -78,7 +108,7 @@ export function Player({ state }: { state: PlayerState }) {
       window.removeEventListener('contextmenu', onContextMenu);
       window.removeEventListener('blur', onBlur);
     };
-  }, [phase, playerShoot, countdown, switchWeapon]);
+  }, [phase, playerShoot, countdown, switchWeapon, dodge]);
 
   useFrame(({ clock }, delta) => {
     if (!rb.current || state.hp <= 0) return;

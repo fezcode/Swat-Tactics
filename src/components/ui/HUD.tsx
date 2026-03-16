@@ -177,6 +177,45 @@ export function HUD() {
         </div>
       )}
 
+      {/* Dodge Cooldown Indicator - Center Left */}
+      {player && levelIndex >= 70 && (
+        <div className="absolute left-12 top-1/2 -translate-y-1/2 flex flex-col items-start pointer-events-none z-40 transform -skew-x-12">
+          <div className="bg-zinc-950/80 p-3 border-l-4 border-white shadow-2xl backdrop-blur-sm">
+            <div className="text-xs font-black text-zinc-500 tracking-[0.2em] uppercase mb-1">Evasion System</div>
+            <div className="flex items-end gap-3">
+              <div className="text-3xl font-black italic tracking-tighter text-white">
+                DODGE
+              </div>
+              <div className="mb-1 bg-zinc-800 border border-zinc-700 px-1.5 py-0.5 text-[10px] font-black text-yellow-400 rounded-sm">SHIFT</div>
+            </div>
+            
+            <div className="w-32 h-1.5 bg-zinc-900 mt-2 relative overflow-hidden">
+               {(() => {
+                 const cooldown = 5000;
+                 const now = Date.now();
+                 const elapsed = now - player.lastDodgeTime;
+                 const ready = elapsed >= cooldown;
+                 const progress = ready ? 100 : (elapsed / cooldown) * 100;
+                 return (
+                   <div 
+                     className={`absolute top-0 left-0 h-full transition-all duration-100 ${ready ? 'bg-white shadow-[0_0_10px_white]' : 'bg-zinc-600'}`}
+                     style={{ width: `${progress}%` }}
+                   />
+                 );
+               })()}
+            </div>
+            {!(() => {
+                 const cooldown = 5000;
+                 const now = Date.now();
+                 const elapsed = now - player.lastDodgeTime;
+                 return elapsed >= cooldown;
+               })() && (
+              <div className="text-[10px] font-bold text-zinc-600 tracking-widest uppercase mt-1 animate-pulse">RECHARGING...</div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Time Limit Overlay */}
       {timeLeft !== null && phase === 'playing' && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center pointer-events-none z-40 transform -skew-x-12">
@@ -336,6 +375,11 @@ export function HUD() {
           <div className="flex items-center gap-2">
             <span className="bg-zinc-800 px-2 py-1 text-white">ESC</span> PAUSE
           </div>
+          {levelIndex >= 70 && (
+            <div className="flex items-center gap-2">
+              <span className="bg-zinc-800 px-2 py-1 text-yellow-400">SHIFT</span> DODGE
+            </div>
+          )}
           <div className="flex items-center gap-2 text-pink-500">
             <span className="animate-pulse">●</span> LIVE FEED
           </div>

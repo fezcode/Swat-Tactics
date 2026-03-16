@@ -3,6 +3,8 @@ import type { LevelData, Weapon } from '../types';
 const defaultPistol: Weapon = { name: 'Pistol', ammo: 12, maxAmmo: 12, damage: 10 };
 const shotgun: Weapon = { name: 'Shotgun', ammo: 6, maxAmmo: 6, damage: 20 };
 const rifle: Weapon = { name: 'Assault Rifle', ammo: 30, maxAmmo: 30, damage: 15 };
+const smg: Weapon = { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 };
+const chaingun: Weapon = { name: 'Chaingun', ammo: 100, maxAmmo: 100, damage: 5 };
 
 function createBoxRoom(width: number, height: number): { x: number, z: number }[] {
   const walls = [];
@@ -1252,12 +1254,12 @@ export const LEVELS: LevelData[] = [
     exit: { x: 15, z: 1 },
   },
   // ============================================
-  // ZONE 8: CEMETERY (Time Limits) - Levels 71-80
+  // ZONE 7: CEMETERY (Time Limits) - Levels 61-70
   // ============================================
   {
-    id: 71,
+    id: 61,
     theme: 'cemetery',
-    timeLimit: 45, // 45 seconds to clear
+    timeLimit: 45,
     gridSize: { width: 16, height: 16 },
     playerSpawn: { x: 8, z: 14 },
     walls: [
@@ -1269,16 +1271,16 @@ export const LEVELS: LevelData[] = [
       { x: 9, z: 4 }, { x: 10, z: 4 }, { x: 11, z: 4 }, { x: 12, z: 4 },
     ],
     enemies: [
-      { id: 'e71_1', pos: { x: 2, z: 10 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
-      { id: 'e71_2', pos: { x: 14, z: 10 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
-      { id: 'e71_3', pos: { x: 8, z: 6 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e71_4', pos: { x: 2, z: 2 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
-      { id: 'e71_5', pos: { x: 14, z: 2 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
+      { id: 'e61_1', pos: { x: 2, z: 10 }, hp: 100, weapon: { ...defaultPistol } },
+      { id: 'e61_2', pos: { x: 14, z: 10 }, hp: 100, weapon: { ...defaultPistol } },
+      { id: 'e61_3', pos: { x: 8, z: 6 }, hp: 150, weapon: { ...smg } },
+      { id: 'e61_4', pos: { x: 2, z: 2 }, hp: 100, weapon: { ...defaultPistol } },
+      { id: 'e61_5', pos: { x: 14, z: 2 }, hp: 100, weapon: { ...defaultPistol } },
     ],
     exit: { x: 8, z: 1 }
   },
   {
-    id: 72,
+    id: 62,
     theme: 'cemetery',
     timeLimit: 60,
     gridSize: { width: 20, height: 20 },
@@ -1291,17 +1293,17 @@ export const LEVELS: LevelData[] = [
       { x: 4, z: 4 }, { x: 6, z: 4 }, { x: 8, z: 4 }, { x: 10, z: 4 }, { x: 12, z: 4 }, { x: 14, z: 4 },
     ],
     enemies: [
-      { id: 'e72_1', pos: { x: 18, z: 16 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e72_2', pos: { x: 2, z: 12 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e72_3', pos: { x: 18, z: 8 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e72_4', pos: { x: 2, z: 4 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e72_5', pos: { x: 9, z: 10 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
+      { id: 'e62_1', pos: { x: 18, z: 16 }, hp: 150, weapon: { ...smg } },
+      { id: 'e62_2', pos: { x: 2, z: 12 }, hp: 150, weapon: { ...smg } },
+      { id: 'e62_3', pos: { x: 18, z: 8 }, hp: 150, weapon: { ...smg } },
+      { id: 'e62_4', pos: { x: 2, z: 4 }, hp: 150, weapon: { ...smg } },
+      { id: 'e62_5', pos: { x: 9, z: 10 }, hp: 250, weapon: { ...rifle } },
     ],
-    barrels: [{ id: 'b72_1', pos: { x: 10, z: 10 } }, { id: 'b72_2', pos: { x: 10, z: 14 } }, { id: 'b72_3', pos: { x: 10, z: 6 } }],
+    barrels: [{ id: 'b62_1', pos: { x: 10, z: 10 } }, { id: 'b62_2', pos: { x: 10, z: 14 } }, { id: 'b62_3', pos: { x: 10, z: 6 } }],
     exit: { x: 18, z: 2 }
   },
   {
-    id: 73,
+    id: 63,
     theme: 'cemetery',
     timeLimit: 50,
     gridSize: { width: 18, height: 18 },
@@ -1314,24 +1316,24 @@ export const LEVELS: LevelData[] = [
       { x: 7, z: 4 }, { x: 8, z: 4 }, { x: 9, z: 4 }, { x: 10, z: 4 }, { x: 11, z: 4 },
     ],
     enemies: [
-      { id: 'e73_1', pos: { x: 2, z: 9 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
-      { id: 'e73_2', pos: { x: 16, z: 9 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
-      { id: 'e73_3', pos: { x: 9, z: 9 }, hp: 300, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e73_4', pos: { x: 5, z: 2 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
-      { id: 'e73_5', pos: { x: 13, z: 2 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
+      { id: 'e63_1', pos: { x: 2, z: 9 }, hp: 200, weapon: { ...shotgun } },
+      { id: 'e63_2', pos: { x: 16, z: 9 }, hp: 200, weapon: { ...shotgun } },
+      { id: 'e63_3', pos: { x: 9, z: 9 }, hp: 300, weapon: { ...rifle } },
+      { id: 'e63_4', pos: { x: 5, z: 2 }, hp: 100, weapon: { ...defaultPistol } },
+      { id: 'e63_5', pos: { x: 13, z: 2 }, hp: 100, weapon: { ...defaultPistol } },
     ],
     turrets: [
-      { id: 't73_1', pos: { x: 9, z: 6 }, hp: 150, damage: 10, fireRate: 333 },
-      { id: 't73_2', pos: { x: 9, z: 12 }, hp: 150, damage: 10, fireRate: 333 }
+      { id: 't63_1', pos: { x: 9, z: 6 }, hp: 150, damage: 10, fireRate: 333 },
+      { id: 't63_2', pos: { x: 9, z: 12 }, hp: 150, damage: 10, fireRate: 333 }
     ],
     buttons: [
-      { pos: { x: 2, z: 2 }, targetId: 't73_1' },
-      { pos: { x: 16, z: 2 }, targetId: 't73_2' }
+      { pos: { x: 2, z: 2 }, targetId: 't63_1' },
+      { pos: { x: 16, z: 2 }, targetId: 't63_2' }
     ],
     exit: { x: 9, z: 2 }
   },
   {
-    id: 74,
+    id: 64,
     theme: 'cemetery',
     timeLimit: 75,
     gridSize: { width: 22, height: 22 },
@@ -1344,26 +1346,26 @@ export const LEVELS: LevelData[] = [
       { x: 11, z: 7 }, { x: 11, z: 6 }, { x: 11, z: 5 }, { x: 11, z: 4 },
     ],
     enemies: [
-      { id: 'e74_1', pos: { x: 4, z: 18 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e74_2', pos: { x: 18, z: 18 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e74_3', pos: { x: 4, z: 4 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e74_4', pos: { x: 18, z: 4 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e74_5', pos: { x: 7, z: 14 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
-      { id: 'e74_6', pos: { x: 15, z: 14 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
-      { id: 'e74_7', pos: { x: 7, z: 8 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
-      { id: 'e74_8', pos: { x: 15, z: 8 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+      { id: 'e64_1', pos: { x: 4, z: 18 }, hp: 150, weapon: { ...smg } },
+      { id: 'e64_2', pos: { x: 18, z: 18 }, hp: 150, weapon: { ...smg } },
+      { id: 'e64_3', pos: { x: 4, z: 4 }, hp: 150, weapon: { ...smg } },
+      { id: 'e64_4', pos: { x: 18, z: 4 }, hp: 150, weapon: { ...smg } },
+      { id: 'e64_5', pos: { x: 7, z: 14 }, hp: 200, weapon: { ...shotgun } },
+      { id: 'e64_6', pos: { x: 15, z: 14 }, hp: 200, weapon: { ...shotgun } },
+      { id: 'e64_7', pos: { x: 7, z: 8 }, hp: 200, weapon: { ...shotgun } },
+      { id: 'e64_8', pos: { x: 15, z: 8 }, hp: 200, weapon: { ...shotgun } },
     ],
     ammoBoxes: [
-      { id: 'a74_1', pos: { x: 2, z: 20 } },
-      { id: 'a74_2', pos: { x: 20, z: 20 } }
+      { id: 'a64_1', pos: { x: 2, z: 20 } },
+      { id: 'a64_2', pos: { x: 20, z: 20 } }
     ],
     exit: { x: 11, z: 2 }
   },
   {
-    id: 75,
+    id: 65,
     theme: 'cemetery',
-    timeLimit: 50, // Updated to 50 seconds
-    gridSize: { width: 14, height: 30 }, // Long narrow strip
+    timeLimit: 50,
+    gridSize: { width: 14, height: 30 },
     playerSpawn: { x: 7, z: 28 },
     walls: [
       ...createBoxRoom(14, 30),
@@ -1374,16 +1376,16 @@ export const LEVELS: LevelData[] = [
       { x: 5, z: 4 }, { x: 6, z: 4 }, { x: 8, z: 4 }, { x: 9, z: 4 },
     ],
     enemies: [
-      { id: 'e75_1', pos: { x: 7, z: 22 }, hp: 100, weapon: { name: 'Pistol', ammo: 20, maxAmmo: 20, damage: 10 } },
-      { id: 'e75_2', pos: { x: 7, z: 17 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e75_3', pos: { x: 7, z: 12 }, hp: 200, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
-      { id: 'e75_4', pos: { x: 7, z: 7 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e75_5', pos: { x: 7, z: 2 }, hp: 400, weapon: { name: 'Chaingun', ammo: 100, maxAmmo: 100, damage: 5 } },
+      { id: 'e65_1', pos: { x: 7, z: 22 }, hp: 100, weapon: { ...defaultPistol } },
+      { id: 'e65_2', pos: { x: 7, z: 17 }, hp: 150, weapon: { ...smg } },
+      { id: 'e65_3', pos: { x: 7, z: 12 }, hp: 200, weapon: { ...shotgun } },
+      { id: 'e65_4', pos: { x: 7, z: 7 }, hp: 250, weapon: { ...rifle } },
+      { id: 'e65_5', pos: { x: 7, z: 2 }, hp: 400, weapon: { ...chaingun } },
     ],
     exit: { x: 7, z: 1 }
   },
   {
-    id: 76,
+    id: 66,
     theme: 'cemetery',
     timeLimit: 90,
     gridSize: { width: 24, height: 24 },
@@ -1399,29 +1401,29 @@ export const LEVELS: LevelData[] = [
       { x: 8, z: 8 }, { x: 9, z: 8 }, { x: 10, z: 8 }, { x: 14, z: 8 }, { x: 15, z: 8 }, { x: 16, z: 8 },
       { x: 8, z: 5 }, { x: 16, z: 5 },
     ],
-    portal: { id: 'p76', posA: { x: 12, z: 15 }, posB: { x: 12, z: 6 } }, // Skip the middle via portal, or walk around
+    portal: { id: 'p66', posA: { x: 12, z: 15 }, posB: { x: 12, z: 6 } },
     enemies: [
-      { id: 'e76_1', pos: { x: 4, z: 18 }, hp: 200, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e76_2', pos: { x: 20, z: 18 }, hp: 200, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e76_3', pos: { x: 12, z: 12 }, hp: 500, weapon: { name: 'Shotgun', ammo: 20, maxAmmo: 20, damage: 20 } }, // Guards portal A
-      { id: 'e76_4', pos: { x: 4, z: 6 }, hp: 200, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e76_5', pos: { x: 20, z: 6 }, hp: 200, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e76_6', pos: { x: 12, z: 3 }, hp: 400, weapon: { name: 'Chaingun', ammo: 100, maxAmmo: 100, damage: 5 } }, // Guards exit
+      { id: 'e66_1', pos: { x: 4, z: 18 }, hp: 200, weapon: { ...rifle } },
+      { id: 'e66_2', pos: { x: 20, z: 18 }, hp: 200, weapon: { ...rifle } },
+      { id: 'e66_3', pos: { x: 12, z: 12 }, hp: 500, weapon: { ...shotgun } },
+      { id: 'e66_4', pos: { x: 4, z: 6 }, hp: 200, weapon: { ...rifle } },
+      { id: 'e66_5', pos: { x: 20, z: 6 }, hp: 200, weapon: { ...rifle } },
+      { id: 'e66_6', pos: { x: 12, z: 3 }, hp: 400, weapon: { ...chaingun } },
     ],
     turrets: [
-      { id: 't76_1', pos: { x: 2, z: 12 }, hp: 200, damage: 15, fireRate: 333 },
-      { id: 't76_2', pos: { x: 22, z: 12 }, hp: 200, damage: 15, fireRate: 333 }
+      { id: 't66_1', pos: { x: 2, z: 12 }, hp: 200, damage: 15, fireRate: 333 },
+      { id: 't66_2', pos: { x: 22, z: 12 }, hp: 200, damage: 15, fireRate: 333 }
     ],
     buttons: [
-      { pos: { x: 8, z: 12 }, targetId: 't76_1' },
-      { pos: { x: 16, z: 12 }, targetId: 't76_2' }
+      { pos: { x: 8, z: 12 }, targetId: 't66_1' },
+      { pos: { x: 16, z: 12 }, targetId: 't66_2' }
     ],
-    healthBoxes: [{ id: 'h76_1', pos: { x: 4, z: 2 } }, { id: 'h76_2', pos: { x: 20, z: 2 } }],
-    ammoBoxes: [{ id: 'a76_1', pos: { x: 4, z: 22 } }, { id: 'a76_2', pos: { x: 20, z: 22 } }],
+    healthBoxes: [{ id: 'h66_1', pos: { x: 4, z: 2 } }, { id: 'h66_2', pos: { x: 20, z: 2 } }],
+    ammoBoxes: [{ id: 'a66_1', pos: { x: 4, z: 22 } }, { id: 'a66_2', pos: { x: 20, z: 22 } }],
     exit: { x: 12, z: 1 }
   },
   {
-    id: 77,
+    id: 67,
     theme: 'cemetery',
     timeLimit: 60,
     gridSize: { width: 18, height: 18 },
@@ -1434,57 +1436,53 @@ export const LEVELS: LevelData[] = [
       { x: 8, z: 10 }, { x: 9, z: 10 }, { x: 10, z: 10 },
     ],
     enemies: [
-      { id: 'e77_1', pos: { x: 9, z: 16 }, hp: 200, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e77_2', pos: { x: 16, z: 16 }, hp: 200, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e77_3', pos: { x: 2, z: 8 }, hp: 300, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e77_4', pos: { x: 16, z: 8 }, hp: 300, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e77_5', pos: { x: 9, z: 2 }, hp: 200, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e67_1', pos: { x: 9, z: 16 }, hp: 200, weapon: { ...smg } },
+      { id: 'e67_2', pos: { x: 16, z: 16 }, hp: 200, weapon: { ...smg } },
+      { id: 'e67_3', pos: { x: 2, z: 8 }, hp: 300, weapon: { ...rifle } },
+      { id: 'e67_4', pos: { x: 16, z: 8 }, hp: 300, weapon: { ...rifle } },
+      { id: 'e67_5', pos: { x: 9, z: 2 }, hp: 200, weapon: { ...smg } },
     ],
     barrels: [
-      { id: 'b77_1', pos: { x: 4, z: 14 } }, { id: 'b77_2', pos: { x: 8, z: 14 } },
-      { id: 'b77_3', pos: { x: 14, z: 4 } }, { id: 'b77_4', pos: { x: 10, z: 4 } }
+      { id: 'b67_1', pos: { x: 4, z: 14 } }, { id: 'b67_2', pos: { x: 8, z: 14 } },
+      { id: 'b67_3', pos: { x: 14, z: 4 } }, { id: 'b67_4', pos: { x: 10, z: 4 } }
     ],
     exit: { x: 16, z: 2 }
   },
   {
-    id: 78,
+    id: 68,
     theme: 'cemetery',
-    timeLimit: 120, // Huge level with time pressure
+    timeLimit: 120,
     gridSize: { width: 30, height: 30 },
     playerSpawn: { x: 15, z: 28 },
     walls: [
       ...createBoxRoom(30, 30),
-      // Outer ring
       { x: 5, z: 25 }, { x: 6, z: 25 }, { x: 24, z: 25 }, { x: 25, z: 25 },
       { x: 5, z: 5 }, { x: 6, z: 5 }, { x: 24, z: 5 }, { x: 25, z: 5 },
       { x: 5, z: 6 }, { x: 5, z: 7 }, { x: 5, z: 23 }, { x: 5, z: 24 },
       { x: 25, z: 6 }, { x: 25, z: 7 }, { x: 25, z: 23 }, { x: 25, z: 24 },
-      // Inner cross
       { x: 15, z: 10 }, { x: 15, z: 11 }, { x: 15, z: 12 }, { x: 15, z: 18 }, { x: 15, z: 19 }, { x: 15, z: 20 },
       { x: 10, z: 15 }, { x: 11, z: 15 }, { x: 12, z: 15 }, { x: 18, z: 15 }, { x: 19, z: 15 }, { x: 20, z: 15 },
     ],
     enemies: [
-      { id: 'e78_1', pos: { x: 10, z: 25 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e78_2', pos: { x: 20, z: 25 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e78_3', pos: { x: 5, z: 15 }, hp: 300, weapon: { name: 'Shotgun', ammo: 15, maxAmmo: 15, damage: 20 } },
-      { id: 'e78_4', pos: { x: 25, z: 15 }, hp: 300, weapon: { name: 'Shotgun', ammo: 15, maxAmmo: 15, damage: 20 } },
-      { id: 'e78_5', pos: { x: 10, z: 5 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e78_6', pos: { x: 20, z: 5 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e78_7', pos: { x: 15, z: 15 }, hp: 500, weapon: { name: 'Chaingun', ammo: 200, maxAmmo: 200, damage: 6 } }, // Center guard
+      { id: 'e68_1', pos: { x: 10, z: 25 }, hp: 250, weapon: { ...rifle } },
+      { id: 'e68_2', pos: { x: 20, z: 25 }, hp: 250, weapon: { ...rifle } },
+      { id: 'e68_3', pos: { x: 5, z: 15 }, hp: 300, weapon: { ...shotgun } },
+      { id: 'e68_4', pos: { x: 25, z: 15 }, hp: 300, weapon: { ...shotgun } },
+      { id: 'e68_5', pos: { x: 10, z: 5 }, hp: 250, weapon: { ...rifle } },
+      { id: 'e68_6', pos: { x: 20, z: 5 }, hp: 250, weapon: { ...rifle } },
+      { id: 'e68_7', pos: { x: 15, z: 15 }, hp: 500, weapon: { ...chaingun } },
     ],
     turrets: [
-      { id: 't78_1', pos: { x: 8, z: 8 }, hp: 250, damage: 20, fireRate: 333 },
-      { id: 't78_2', pos: { x: 22, z: 8 }, hp: 250, damage: 20, fireRate: 333 },
-      { id: 't78_3', pos: { x: 8, z: 22 }, hp: 250, damage: 20, fireRate: 333 },
-      { id: 't78_4', pos: { x: 22, z: 22 }, hp: 250, damage: 20, fireRate: 333 }
+      { id: 't68_1', pos: { x: 8, z: 8 }, hp: 250, damage: 20, fireRate: 333 },
+      { id: 't68_2', pos: { x: 22, z: 8 }, hp: 250, damage: 20, fireRate: 333 },
+      { id: 't68_3', pos: { x: 8, z: 22 }, hp: 250, damage: 20, fireRate: 333 },
+      { id: 't68_4', pos: { x: 22, z: 22 }, hp: 250, damage: 20, fireRate: 333 }
     ],
-    ammoBoxes: [
-      { id: 'a78_1', pos: { x: 15, z: 25 } }
-    ],
+    ammoBoxes: [{ id: 'a68_1', pos: { x: 15, z: 25 } }],
     exit: { x: 15, z: 2 }
   },
   {
-    id: 79,
+    id: 69,
     theme: 'cemetery',
     timeLimit: 50,
     gridSize: { width: 16, height: 16 },
@@ -1496,24 +1494,21 @@ export const LEVELS: LevelData[] = [
       { x: 3, z: 4 }, { x: 4, z: 4 }, { x: 12, z: 4 }, { x: 13, z: 4 },
     ],
     enemies: [
-      { id: 'e79_1', pos: { x: 2, z: 14 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e79_2', pos: { x: 14, z: 14 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e79_3', pos: { x: 2, z: 8 }, hp: 250, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
-      { id: 'e79_4', pos: { x: 14, z: 8 }, hp: 250, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
-      { id: 'e79_5', pos: { x: 8, z: 5 }, hp: 400, weapon: { name: 'Rifle', ammo: 50, maxAmmo: 50, damage: 15 } },
-      { id: 'e79_6', pos: { x: 2, z: 2 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
-      { id: 'e79_7', pos: { x: 14, z: 2 }, hp: 150, weapon: { name: 'SMG', ammo: 40, maxAmmo: 40, damage: 8 } },
+      { id: 'e69_1', pos: { x: 2, z: 14 }, hp: 150, weapon: { ...smg } },
+      { id: 'e69_2', pos: { x: 14, z: 14 }, hp: 150, weapon: { ...smg } },
+      { id: 'e69_3', pos: { x: 2, z: 8 }, hp: 250, weapon: { ...shotgun } },
+      { id: 'e69_4', pos: { x: 14, z: 8 }, hp: 250, weapon: { ...shotgun } },
+      { id: 'e69_5', pos: { x: 8, z: 5 }, hp: 400, weapon: { ...rifle } },
+      { id: 'e69_6', pos: { x: 2, z: 2 }, hp: 150, weapon: { ...smg } },
+      { id: 'e69_7', pos: { x: 14, z: 2 }, hp: 150, weapon: { ...smg } },
     ],
-    barrels: [
-      { id: 'b79_1', pos: { x: 6, z: 10 } },
-      { id: 'b79_2', pos: { x: 10, z: 6 } }
-    ],
+    barrels: [{ id: 'b69_1', pos: { x: 6, z: 10 } }, { id: 'b69_2', pos: { x: 10, z: 6 } }],
     exit: { x: 8, z: 1 }
   },
   {
-    id: 80,
+    id: 70,
     theme: 'cemetery',
-    timeLimit: 120, // Boss level
+    timeLimit: 120,
     gridSize: { width: 28, height: 28 },
     playerSpawn: { x: 14, z: 26 },
     walls: [
@@ -1523,24 +1518,314 @@ export const LEVELS: LevelData[] = [
       { x: 10, z: 8 }, { x: 11, z: 8 }, { x: 17, z: 8 }, { x: 18, z: 8 },
     ],
     enemies: [
-      { id: 'e80_boss_CRYPT_KEEPER', pos: { x: 14, z: 14 }, hp: 3000, weapon: { name: 'Dual Chainguns', ammo: 999, maxAmmo: 999, damage: 10 } },
-      { id: 'e80_1', pos: { x: 4, z: 24 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e80_2', pos: { x: 24, z: 24 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e80_3', pos: { x: 4, z: 4 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e80_4', pos: { x: 24, z: 4 }, hp: 250, weapon: { name: 'Rifle', ammo: 30, maxAmmo: 30, damage: 15 } },
-      { id: 'e80_5', pos: { x: 14, z: 20 }, hp: 300, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
-      { id: 'e80_6', pos: { x: 14, z: 8 }, hp: 300, weapon: { name: 'Shotgun', ammo: 10, maxAmmo: 10, damage: 20 } },
+      { id: 'e70_boss', pos: { x: 14, z: 14 }, hp: 1000, weapon: { ...chaingun, damage: 10 } },
+      { id: 'e70_1', pos: { x: 4, z: 24 }, hp: 250, weapon: { ...rifle } },
+      { id: 'e70_2', pos: { x: 24, z: 24 }, hp: 250, weapon: { ...rifle } },
+      { id: 'e70_3', pos: { x: 4, z: 4 }, hp: 250, weapon: { ...rifle } },
+      { id: 'e70_4', pos: { x: 24, z: 4 }, hp: 250, weapon: { ...rifle } },
+      { id: 'e70_5', pos: { x: 14, z: 20 }, hp: 300, weapon: { ...shotgun } },
+      { id: 'e70_6', pos: { x: 14, z: 8 }, hp: 300, weapon: { ...shotgun } },
     ],
     turrets: [
-      { id: 't80_1', pos: { x: 8, z: 14 }, hp: 300, damage: 25, fireRate: 333 },
-      { id: 't80_2', pos: { x: 20, z: 14 }, hp: 300, damage: 25, fireRate: 333 }
+      { id: 't70_1', pos: { x: 8, z: 14 }, hp: 300, damage: 25, fireRate: 333 },
+      { id: 't70_2', pos: { x: 20, z: 14 }, hp: 300, damage: 25, fireRate: 333 }
     ],
     buttons: [
-      { pos: { x: 2, z: 14 }, targetId: 't80_1' },
-      { pos: { x: 26, z: 14 }, targetId: 't80_2' }
+      { pos: { x: 2, z: 14 }, targetId: 't70_1' },
+      { pos: { x: 26, z: 14 }, targetId: 't70_2' }
     ],
-    healthBoxes: [{ id: 'h80_1', pos: { x: 14, z: 22 } }, { id: 'h80_2', pos: { x: 14, z: 6 } }],
-    ammoBoxes: [{ id: 'a80_1', pos: { x: 12, z: 14 } }, { id: 'a80_2', pos: { x: 16, z: 14 } }],
+    barrels: [{ id: 'b70_boss_barrel', pos: { x: 14, z: 16 } }], // Barrel near boss spawn
+    healthBoxes: [{ id: 'h70_1', pos: { x: 14, z: 22 } }, { id: 'h70_2', pos: { x: 14, z: 6 } }],
+    ammoBoxes: [{ id: 'a70_1', pos: { x: 12, z: 14 } }, { id: 'a70_2', pos: { x: 16, z: 14 } }],
     exit: { x: 14, z: 2 }
+  },
+  // ============================================
+  // ZONE 8: AIRPORT (Time Limits & Dodge) - Levels 71-80
+  // ============================================
+  {
+    id: 71,
+    theme: 'airport',
+    timeLimit: 40,
+    gridSize: { width: 14, height: 14 },
+    playerSpawn: { x: 7, z: 12 },
+    walls: [
+      ...createBoxRoom(14, 14),
+      { x: 3, z: 10 }, { x: 4, z: 10 }, { x: 5, z: 10 }, { x: 8, z: 10 }, { x: 9, z: 10 }, { x: 10, z: 10 },
+      { x: 6, z: 6 }, { x: 7, z: 6 },
+    ],
+    enemies: [
+      { id: 'e71_1', pos: { x: 2, z: 8 }, hp: 100, weapon: { ...defaultPistol } },
+      { id: 'e71_2', pos: { x: 11, z: 8 }, hp: 100, weapon: { ...defaultPistol } },
+      { id: 'e71_3', pos: { x: 7, z: 4 }, hp: 150, weapon: { ...smg } },
+    ],
+    exit: { x: 7, z: 1 }
+  },
+  {
+    id: 72,
+    theme: 'airport',
+    timeLimit: 45,
+    gridSize: { width: 16, height: 16 },
+    playerSpawn: { x: 2, z: 14 },
+    walls: [
+      ...createBoxRoom(16, 16),
+      { x: 4, z: 12 }, { x: 4, z: 11 }, { x: 4, z: 10 },
+      { x: 8, z: 8 }, { x: 8, z: 7 }, { x: 8, z: 6 },
+      { x: 12, z: 4 }, { x: 12, z: 3 }, { x: 12, z: 2 },
+    ],
+    enemies: [
+      { id: 'e72_1', pos: { x: 10, z: 12 }, hp: 150, weapon: { ...smg } },
+      { id: 'e72_2', pos: { x: 4, z: 4 }, hp: 150, weapon: { ...smg } },
+    ],
+    exit: { x: 14, z: 2 }
+  },
+  {
+    id: 73,
+    theme: 'airport',
+    timeLimit: 50,
+    gridSize: { width: 18, height: 18 },
+    playerSpawn: { x: 9, z: 16 },
+    walls: [
+      ...createBoxRoom(18, 18),
+      { x: 5, z: 12 }, { x: 6, z: 12 }, { x: 7, z: 12 },
+      { x: 11, z: 12 }, { x: 12, z: 12 }, { x: 13, z: 12 },
+    ],
+    enemies: [
+      { id: 'e73_1', pos: { x: 4, z: 9 }, hp: 200, weapon: { ...shotgun } },
+      { id: 'e73_2', pos: { x: 14, z: 9 }, hp: 200, weapon: { ...shotgun } },
+    ],
+    turrets: [
+      { id: 't73_1', pos: { x: 9, z: 9 }, hp: 150, damage: 10, fireRate: 333 }
+    ],
+    buttons: [
+      { pos: { x: 2, z: 2 }, targetId: 't73_1' }
+    ],
+    exit: { x: 9, z: 2 }
+  },
+  {
+    id: 74,
+    theme: 'airport',
+    timeLimit: 90,
+    gridSize: { width: 20, height: 24 },
+    playerSpawn: { x: 10, z: 22 },
+    walls: [
+      ...createBoxRoom(20, 24),
+      // Security Checkpoint Layout
+      { x: 4, z: 18 }, { x: 5, z: 18 }, { x: 6, z: 18 }, { x: 7, z: 18 },
+      { x: 13, z: 18 }, { x: 14, z: 18 }, { x: 15, z: 18 }, { x: 16, z: 18 },
+      { x: 10, z: 14 }, { x: 10, z: 13 }, { x: 10, z: 12 },
+      { x: 2, z: 10 }, { x: 3, z: 10 }, { x: 4, z: 10 }, { x: 5, z: 10 },
+      { x: 15, z: 10 }, { x: 16, z: 10 }, { x: 17, z: 10 }, { x: 18, z: 10 },
+    ],
+    enemies: [
+      { id: 'e74_1', pos: { x: 4, z: 20 }, hp: 150, weapon: { ...smg } },
+      { id: 'e74_2', pos: { x: 16, z: 20 }, hp: 150, weapon: { ...smg } },
+      { id: 'e74_3', pos: { x: 10, z: 15 }, hp: 200, weapon: { ...rifle } },
+      { id: 'e74_4', pos: { x: 3, z: 8 }, hp: 150, weapon: { ...smg } },
+      { id: 'e74_5', pos: { x: 17, z: 8 }, hp: 150, weapon: { ...smg } },
+    ],
+    turrets: [
+      { id: 't74_1', pos: { x: 10, z: 2 }, hp: 250, damage: 12, fireRate: 400 }
+    ],
+    buttons: [
+      { pos: { x: 2, z: 2 }, targetId: 't74_1' },
+      { pos: { x: 18, z: 2 }, targetId: 't74_1' }
+    ],
+    exit: { x: 10, z: 1 }
+  },
+  {
+    id: 75,
+    theme: 'airport',
+    timeLimit: 120,
+    gridSize: { width: 24, height: 24 },
+    playerSpawn: { x: 12, z: 22 },
+    walls: [
+      ...createBoxRoom(24, 24),
+      // Departure Lounge - Row after row of seating
+      { x: 4, z: 16 }, { x: 5, z: 16 }, { x: 6, z: 16 }, { x: 7, z: 16 }, { x: 8, z: 16 },
+      { x: 16, z: 16 }, { x: 17, z: 16 }, { x: 18, z: 16 }, { x: 19, z: 16 }, { x: 20, z: 16 },
+      { x: 4, z: 12 }, { x: 5, z: 12 }, { x: 6, z: 12 }, { x: 7, z: 12 }, { x: 8, z: 12 },
+      { x: 16, z: 12 }, { x: 17, z: 12 }, { x: 18, z: 12 }, { x: 19, z: 12 }, { x: 20, z: 12 },
+      { x: 4, z: 8 }, { x: 5, z: 8 }, { x: 6, z: 8 }, { x: 7, z: 8 }, { x: 8, z: 8 },
+      { x: 16, z: 8 }, { x: 17, z: 8 }, { x: 18, z: 8 }, { x: 19, z: 8 }, { x: 20, z: 8 },
+    ],
+    enemies: [
+      { id: 'e75_1', pos: { x: 12, z: 18 }, hp: 200, weapon: { ...rifle } },
+      { id: 'e75_2', pos: { x: 6, z: 14 }, hp: 150, weapon: { ...shotgun } },
+      { id: 'e75_3', pos: { x: 18, z: 14 }, hp: 150, weapon: { ...shotgun } },
+      { id: 'e75_4', pos: { x: 6, z: 10 }, hp: 150, weapon: { ...rifle } },
+      { id: 'e75_5', pos: { x: 18, z: 10 }, hp: 150, weapon: { ...rifle } },
+      { id: 'e75_6', pos: { x: 12, z: 4 }, hp: 300, weapon: { ...chaingun } }
+    ],
+    exit: { x: 12, z: 1 }
+  },
+  {
+    id: 76,
+    theme: 'airport',
+    timeLimit: 100,
+    gridSize: { width: 22, height: 22 },
+    playerSpawn: { x: 11, z: 20 },
+    walls: [
+      ...createBoxRoom(22, 22),
+      // Hangar structures
+      { x: 5, z: 11 }, { x: 6, z: 11 }, { x: 16, z: 11 }, { x: 17, z: 11 },
+      { x: 11, z: 5 }, { x: 11, z: 6 }, { x: 11, z: 16 }, { x: 11, z: 17 },
+    ],
+    enemies: [
+      { id: 'e76_1', pos: { x: 4, z: 4 }, hp: 200, weapon: { ...shotgun } },
+      { id: 'e76_2', pos: { x: 18, z: 4 }, hp: 200, weapon: { ...shotgun } },
+      { id: 'e76_3', pos: { x: 4, z: 18 }, hp: 200, weapon: { ...shotgun } },
+      { id: 'e76_4', pos: { x: 18, z: 18 }, hp: 200, weapon: { ...shotgun } },
+    ],
+    turrets: [
+      { id: 't76_1', pos: { x: 11, z: 11 }, hp: 400, damage: 15, fireRate: 300 }
+    ],
+    buttons: [
+      { pos: { x: 2, z: 2 }, targetId: 't76_1' },
+      { pos: { x: 20, z: 2 }, targetId: 't76_1' }
+    ],
+    exit: { x: 11, z: 1 }
+  },
+  {
+    id: 77,
+    theme: 'airport',
+    timeLimit: 110,
+    gridSize: { width: 20, height: 20 },
+    playerSpawn: { x: 10, z: 18 },
+    walls: [
+      ...createBoxRoom(20, 20),
+      // Cargo Bay - Tight maze of "crates"
+      { x: 4, z: 4 }, { x: 4, z: 5 }, { x: 4, z: 6 },
+      { x: 16, z: 4 }, { x: 16, z: 5 }, { x: 16, z: 6 },
+      { x: 4, z: 14 }, { x: 4, z: 15 }, { x: 4, z: 16 },
+      { x: 16, z: 14 }, { x: 16, z: 15 }, { x: 16, z: 16 },
+      { x: 10, z: 10 }, { x: 9, z: 10 }, { x: 11, z: 10 },
+    ],
+    enemies: [
+      { id: 'e77_1', pos: { x: 4, z: 10 }, hp: 200, weapon: { ...rifle } },
+      { id: 'e77_2', pos: { x: 16, z: 10 }, hp: 200, weapon: { ...rifle } },
+      { id: 'e77_3', pos: { x: 10, z: 4 }, hp: 250, weapon: { ...chaingun } },
+    ],
+    turrets: [
+      { id: 't77_1', pos: { x: 1, z: 1 }, hp: 200, damage: 10, fireRate: 500 },
+      { id: 't77_2', pos: { x: 18, z: 1 }, hp: 200, damage: 10, fireRate: 500 }
+    ],
+    exit: { x: 10, z: 1 }
+  },
+  {
+    id: 78,
+    theme: 'airport',
+    timeLimit: 130,
+    gridSize: { width: 22, height: 22 },
+    playerSpawn: { x: 11, z: 20 },
+    walls: [
+      ...createBoxRoom(22, 22),
+      // Control Tower Base - Complex rooms
+      { x: 11, z: 15 }, { x: 11, z: 16 }, { x: 11, z: 17 }, { x: 11, z: 18 }, { x: 11, z: 19 },
+      { x: 1, z: 11 }, { x: 2, z: 11 }, { x: 3, z: 11 }, { x: 4, z: 11 }, { x: 5, z: 11 },
+      { x: 17, z: 11 }, { x: 18, z: 11 }, { x: 19, z: 11 }, { x: 20, z: 11 },
+    ],
+    enemies: [
+      { id: 'e78_1', pos: { x: 5, z: 5 }, hp: 150, weapon: { ...rifle } },
+      { id: 'e78_2', pos: { x: 17, z: 5 }, hp: 150, weapon: { ...rifle } },
+      { id: 'e78_3', pos: { x: 5, z: 17 }, hp: 150, weapon: { ...smg } },
+      { id: 'e78_4', pos: { x: 17, z: 17 }, hp: 150, weapon: { ...smg } },
+    ],
+    turrets: [
+      { id: 't78_1', pos: { x: 11, z: 2 }, hp: 300, damage: 20, fireRate: 250 }
+    ],
+    buttons: [
+      { pos: { x: 2, z: 20 }, targetId: 't78_1' },
+      { pos: { x: 20, z: 20 }, targetId: 't78_1' }
+    ],
+    exit: { x: 11, z: 1 }
+  },
+  {
+    id: 79,
+    theme: 'airport',
+    timeLimit: 150,
+    gridSize: { width: 24, height: 24 },
+    playerSpawn: { x: 12, z: 22 },
+    walls: [
+      ...createBoxRoom(24, 24),
+      // The Perimeter - Fortified corridors
+      { x: 6, z: 12 }, { x: 7, z: 12 }, { x: 8, z: 12 }, { x: 9, z: 12 },
+      { x: 15, z: 12 }, { x: 16, z: 12 }, { x: 17, z: 12 }, { x: 18, z: 12 },
+      { x: 12, z: 6 }, { x: 12, z: 7 }, { x: 12, z: 8 }, { x: 12, z: 9 },
+      { x: 12, z: 15 }, { x: 12, z: 16 }, { x: 12, z: 17 }, { x: 12, z: 18 },
+    ],
+    enemies: [
+      { id: 'e79_1', pos: { x: 6, z: 6 }, hp: 300, weapon: { ...chaingun } },
+      { id: 'e79_2', pos: { x: 18, z: 6 }, hp: 300, weapon: { ...chaingun } },
+      { id: 'e79_3', pos: { x: 6, z: 18 }, hp: 300, weapon: { ...chaingun } },
+      { id: 'e79_4', pos: { x: 18, z: 18 }, hp: 300, weapon: { ...chaingun } },
+    ],
+    turrets: [
+      { id: 't79_1', pos: { x: 2, z: 2 }, hp: 200, damage: 10, fireRate: 400 },
+      { id: 't79_2', pos: { x: 22, z: 2 }, hp: 200, damage: 10, fireRate: 400 },
+      { id: 't79_3', pos: { x: 12, z: 2 }, hp: 500, damage: 15, fireRate: 200 }
+    ],
+    buttons: [
+      { pos: { x: 12, z: 12 }, targetId: 't79_3' }
+    ],
+    barrels: [
+      { id: 'b79_1', pos: { x: 4, z: 4 } }, { id: 'b79_2', pos: { x: 20, z: 4 } },
+      { id: 'b79_3', pos: { x: 4, z: 20 } }, { id: 'b79_4', pos: { x: 20, z: 20 } }
+    ],
+    exit: { x: 12, z: 1 }
+  },
+  {
+    id: 80,
+    theme: 'airport',
+    timeLimit: 200,
+    gridSize: { width: 30, height: 30 },
+    playerSpawn: { x: 15, z: 28 },
+    walls: [
+      ...createBoxRoom(30, 30),
+      // Central Security Pillars (Provides cover but open for combat)
+      { x: 12, z: 12 }, { x: 13, z: 12 }, { x: 12, z: 13 }, { x: 13, z: 13 },
+      { x: 20, z: 12 }, { x: 21, z: 12 }, { x: 20, z: 13 }, { x: 21, z: 13 },
+      { x: 12, z: 4 }, { x: 13, z: 4 }, { x: 12, z: 5 }, { x: 13, z: 5 },
+      { x: 20, z: 4 }, { x: 21, z: 4 }, { x: 20, z: 5 }, { x: 21, z: 5 },
+      // Side bunkers
+      { x: 5, z: 20 }, { x: 6, z: 20 }, { x: 7, z: 20 },
+      { x: 23, z: 20 }, { x: 24, z: 20 }, { x: 25, z: 20 },
+    ],
+    enemies: [
+      { id: 'e80_boss_SKY_MARSHAL', pos: { x: 15, z: 8 }, hp: 3000, weapon: { ...chaingun, damage: 15, maxAmmo: 999 } },
+      { id: 'e80_1', pos: { x: 5, z: 18 }, hp: 200, weapon: { ...smg } },
+      { id: 'e80_2', pos: { x: 25, z: 18 }, hp: 200, weapon: { ...smg } },
+      { id: 'e80_3', pos: { x: 10, z: 15 }, hp: 200, weapon: { ...rifle } },
+      { id: 'e80_4', pos: { x: 20, z: 15 }, hp: 200, weapon: { ...rifle } },
+      { id: 'e80_5', pos: { x: 5, z: 5 }, hp: 150, weapon: { ...shotgun } },
+      { id: 'e80_6', pos: { x: 25, z: 5 }, hp: 150, weapon: { ...shotgun } },
+      { id: 'e80_7', pos: { x: 8, z: 8 }, hp: 150, weapon: { ...smg } },
+      { id: 'e80_8', pos: { x: 22, z: 8 }, hp: 150, weapon: { ...smg } },
+    ],
+    turrets: [
+      { id: 't80_1', pos: { x: 2, z: 2 }, hp: 300, damage: 10, fireRate: 400 },
+      { id: 't80_2', pos: { x: 28, z: 2 }, hp: 300, damage: 10, fireRate: 400 },
+      { id: 't80_3', pos: { x: 2, z: 15 }, hp: 300, damage: 10, fireRate: 400 },
+      { id: 't80_4', pos: { x: 28, z: 15 }, hp: 300, damage: 10, fireRate: 400 },
+    ],
+    buttons: [
+      { pos: { x: 11, z: 8 }, targetId: 't80_1' },
+      { pos: { x: 19, z: 8 }, targetId: 't80_2' },
+      { pos: { x: 15, z: 12 }, targetId: 't80_3' },
+      { pos: { x: 15, z: 4 }, targetId: 't80_4' }
+    ],
+    barrels: [
+      { id: 'b80_1', pos: { x: 15, z: 20 } },
+      { id: 'b80_2', pos: { x: 12, z: 15 } },
+      { id: 'b80_3', pos: { x: 18, z: 15 } },
+    ],
+    ammoBoxes: [
+      { id: 'a80_1', pos: { x: 5, z: 28 } },
+      { id: 'a80_2', pos: { x: 25, z: 28 } },
+      { id: 'a80_3', pos: { x: 15, z: 2 } }
+    ],
+    healthBoxes: [
+      { id: 'h80_1', pos: { x: 15, z: 25 } }
+    ],
+    exit: { x: 15, z: 1 }
   }
 ];
