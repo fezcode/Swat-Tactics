@@ -25,6 +25,8 @@ export interface EnemyState extends EntityState {
   type: 'enemy';
   weapon: Weapon;
   color: string;
+  unkillable?: boolean;
+  lastHitTime?: number;
 }
 
 export interface TurretState extends EntityState {
@@ -48,6 +50,7 @@ export interface PlayerState extends EntityState {
   secondaryWeapon: Weapon | null;
   activeWeaponSlot: 'primary' | 'secondary';
   lastDodgeTime: number;
+  lastSlashTime: number;
 }
 
 export interface BarrelState extends EntityState {
@@ -81,11 +84,11 @@ export interface ProjectileState {
   color?: string;
 }
 
-export type LevelTheme = 'industrial' | 'garden' | 'skyscraper' | 'desert' | 'space_station' | 'beach' | 'cemetery' | 'airport';
+export type LevelTheme = 'industrial' | 'garden' | 'skyscraper' | 'desert' | 'space_station' | 'beach' | 'cemetery' | 'airport' | 'metro';
 
 export interface DecorationState {
   id: string;
-  type: 'tree' | 'rock' | 'building' | 'cactus' | 'satellite' | 'pipe' | 'panel' | 'sand' | 'umbrella' | 'cold_storage' | 'palm_tree' | 'beach_ball' | 'tombstone' | 'dead_tree' | 'crypt' | 'airplane' | 'luggage_cart' | 'terminal_sign' | 'flight_board' | 'security_gate' | 'luggage_scanner';
+  type: 'tree' | 'rock' | 'building' | 'cactus' | 'satellite' | 'pipe' | 'panel' | 'sand' | 'umbrella' | 'cold_storage' | 'palm_tree' | 'beach_ball' | 'tombstone' | 'dead_tree' | 'crypt' | 'airplane' | 'luggage_cart' | 'terminal_sign' | 'flight_board' | 'security_gate' | 'luggage_scanner' | 'track' | 'bench' | 'metro_sign';
   pos: Position;
   scale: number;
   rotation: number;
@@ -101,7 +104,7 @@ export interface LevelData {
   gridSize: { width: number; height: number };
   playerSpawn: Position;
   walls: Position[];
-  enemies: { id: string; pos: Position; hp: number; weapon: Weapon; color?: string }[];
+  enemies: { id: string; pos: Position; hp: number; weapon: Weapon; color?: string, unkillable?: boolean }[];
   turrets?: { id: string; pos: Position; hp: number; damage: number; fireRate: number; color?: string }[];
   buttons?: { pos: Position; targetId: string }[];
   barrels?: { id: string; pos: Position }[];
@@ -110,6 +113,7 @@ export interface LevelData {
   portal?: { id: string; posA: Position; posB: Position };
   exit: Position;
   timeLimit?: number;
+  hasTrain?: boolean;
 }
 
 export type GamePhase = 'main_menu' | 'level_intro' | 'playing' | 'paused' | 'game_over' | 'level_complete' | 'victory';

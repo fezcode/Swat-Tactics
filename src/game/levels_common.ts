@@ -1,4 +1,4 @@
-import type { LevelData, Weapon } from '../types';
+import type { Weapon } from '../types';
 
 export const defaultPistol: Weapon = { name: 'Pistol', ammo: 12, maxAmmo: 12, damage: 10 };
 export const shotgun: Weapon = { name: 'Shotgun', ammo: 6, maxAmmo: 6, damage: 20 };

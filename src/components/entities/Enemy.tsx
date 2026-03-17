@@ -18,8 +18,6 @@ export function Enemy({ state }: { state: EnemyState }) {
   
   const lastShootTime = useRef(0);
   const lastStoreUpdate = useRef(0);
-
-  // Use a local ref to track the current rotation to avoid store-dependency jitter
   const visualRotation = useRef(state.rotation);
 
   useEffect(() => {
@@ -37,7 +35,6 @@ export function Enemy({ state }: { state: EnemyState }) {
     }
     
     const myPos = rb.current.translation();
-    // Throttled store update for performance
     if (clock.getElapsedTime() - lastStoreUpdate.current > 0.1) {
       lastStoreUpdate.current = clock.getElapsedTime();
       useGameStore.setState(s => ({
@@ -71,28 +68,20 @@ export function Enemy({ state }: { state: EnemyState }) {
         if (hitCollider) {
           const hitBody = hitCollider.parent();
           const hitData = hitBody?.userData as any;
-          if (hitData?.type === 'wall' && (hit as any).toi < dist - 0.2) {
-            hasLOS = false;
-          }
-          if (hitData?.type === 'barrel' && (hit as any).toi < dist - 0.2) {
-            if ((hit as any).toi < 3.0) {
-              hitBarrelTooClose = true;
-            }
-          }
+          if (hitData?.type === 'wall' && (hit as any).toi < dist - 0.2) hasLOS = false;
+          if (hitData?.type === 'barrel' && (hit as any).toi < dist - 0.2 && (hit as any).toi < 3.0) hitBarrelTooClose = true;
         }
       }
 
       if (hasLOS) {
         visualRotation.current = THREE.MathUtils.lerp(visualRotation.current, angle, 0.15);
         meshRef.current.rotation.y = visualRotation.current;
-        
         if (dist < 15 && !hitBarrelTooClose && clock.getElapsedTime() - lastShootTime.current > 0.6) {
           lastShootTime.current = clock.getElapsedTime();
           const spawnPos = { x: myPos.x + dir.x * 0.8, z: myPos.z + dir.z * 0.8 };
           enemyShoot(spawnPos, dir, state.weapon.damage);
           SFX.enemyShoot();
         }
-
         if (dist > 3) {
           const speed = 3.5;
           rb.current.setLinvel({ x: dir.x * speed, y: 0, z: dir.z * speed }, true);
@@ -107,7 +96,6 @@ export function Enemy({ state }: { state: EnemyState }) {
 
   if (state.hp <= 0) return null;
 
-  // Scale bar width based on maxHp (40 is standard)
   const barWidth = 0.8 * Math.pow(state.maxHp / 40, 0.5);
 
   return (
@@ -127,7 +115,6 @@ export function Enemy({ state }: { state: EnemyState }) {
     >
       <BallCollider args={[0.3]} />
       
-      {/* Enemy Health Bar - Billboarded */}
       <Billboard position={[0, 1.2, 0]}>
         <mesh>
           <planeGeometry args={[barWidth, 0.12]} />
@@ -154,22 +141,18 @@ export function Enemy({ state }: { state: EnemyState }) {
           <meshStandardMaterial color="#fca5a5" roughness={0.4} />
         </mesh>
 
-        {/* Beach Hat */}
         {theme === 'beach' && (
           <group position={[0, 0.65, 0]}>
-            {/* Brim */}
             <mesh rotation={[-Math.PI / 2, 0, 0]}>
               <ringGeometry args={[0.2, 0.6, 32]} />
               <meshStandardMaterial color="#fbbf24" side={THREE.DoubleSide} />
             </mesh>
-            {/* Top */}
             <mesh position={[0, 0.1, 0]}>
               <cylinderGeometry args={[0.2, 0.2, 0.2, 16]} />
               <meshStandardMaterial color="#fbbf24" />
             </mesh>
           </group>
         )}
-        {/* Gun */}
         <group position={[0.2, 0.1, -0.4]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[0.1, 0.1, 0.6]} />

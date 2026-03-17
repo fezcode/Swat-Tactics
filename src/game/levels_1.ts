@@ -1,5 +1,5 @@
 ﻿import type { LevelData } from '../types';
-import { defaultPistol, shotgun, rifle, smg, chaingun, createBoxRoom } from './levels_common';
+import { defaultPistol, shotgun, rifle, createBoxRoom } from './levels_common';
 
 export const LEVELS_1: LevelData[] = [
   // Level 1: Tutorial

@@ -21,12 +21,12 @@ export function GridMap() {
   const theme = useGameStore(s => s.theme);
   const decorations = useGameStore(s => s.decorations);
   const allDead = (enemies.length > 0 || turrets.length > 0) && 
-    enemies.every(e => e.hp <= 0) && 
+    enemies.filter(e => !e.unkillable).every(e => e.hp <= 0) && 
     turrets.every(t => t.hp <= 0 || t.disabled);
 
   const maxDim = Math.max(gridSize.width, gridSize.height);
 
-  const colors = {
+  const colors = ({
     industrial: {
       floor: "#2d334a",
       grid: 0x4fd1c5
@@ -48,18 +48,22 @@ export function GridMap() {
       grid: 0xec4899
     },
     beach: {
-      floor: "#fdf0ba", // Brighter, premium sand color
-      grid: 0xd97706    // Warmer amber grid outine
+      floor: "#fdf0ba", 
+      grid: 0xd97706    
     },
     cemetery: {
-      floor: "#27272a", // Dark muddy ground
-      grid: 0x52525b    // Muted grey grid
+      floor: "#27272a", 
+      grid: 0x52525b    
     },
     airport: {
-      floor: "#475569", // Dark Slate Concrete
-      grid: 0xeab308    // Yellow safety lines
+      floor: "#475569", 
+      grid: 0xeab308    
+    },
+    metro: {
+      floor: "#1e293b", // Dark Slate Blue/Gray
+      grid: 0xfacc15    // Yellow safety lines
     }
-  }[theme];
+  } as any)[theme] || { floor: "#111", grid: 0xffffff };
 
   return (
     <group>
@@ -69,8 +73,8 @@ export function GridMap() {
           <planeGeometry args={[gridSize.width, gridSize.height]} />
           <meshStandardMaterial 
             color={colors.floor} 
-            roughness={theme === 'airport' ? 0.4 : (theme === 'space_station' ? 0.4 : 0.8)} 
-            metalness={theme === 'airport' ? 0.3 : (theme === 'space_station' ? 0.5 : 0.1)} 
+            roughness={0.8} 
+            metalness={0.1} 
           />
         </mesh>
         
@@ -83,22 +87,6 @@ export function GridMap() {
         <CuboidCollider args={[5, 10, gridSize.height * 2]} position={[gridSize.width, 5, 0]} />
         <CuboidCollider args={[5, 10, gridSize.height * 2]} position={[-gridSize.width, 5, 0]} />
       </RigidBody>
-
-      {/* Beach specific huge environment planes */}
-      {theme === 'beach' && (
-        <group>
-          {/* Huge Ocean - Brighter, more vibrant cyan to look like tropical water */}
-          <mesh position={[gridSize.width / 2, -0.4, -40]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[200, 100]} />
-            <meshStandardMaterial color="#0ea5e9" emissive="#06b6d4" emissiveIntensity={0.2} roughness={0.1} metalness={0.9} />
-          </mesh>
-          {/* Huge Sand - Matching the new vibrant sand color */}
-          <mesh position={[gridSize.width / 2, -0.1, gridSize.height / 2]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[200, 200]} />
-            <meshStandardMaterial color="#fdf0ba" roughness={1} />
-          </mesh>
-        </group>
-      )}
 
       {/* Decorations */}
       {decorations.map((d) => (
@@ -117,12 +105,10 @@ export function GridMap() {
           )}
           {d.type === 'palm_tree' && (
             <group>
-              {/* Trunk */}
               <mesh position={[0, 1.5, 0]} castShadow rotation={[0, 0, 0.1]}>
                 <cylinderGeometry args={[0.2, 0.3, 3, 8]} />
                 <meshStandardMaterial color="#8B5A2B" />
               </mesh>
-              {/* Leaves */}
               {[0, 1, 2, 3, 4].map(i => (
                 <mesh key={i} position={[0, 3, 0]} rotation={[0, (Math.PI * 2 / 5) * i, Math.PI / 4]} castShadow>
                   <coneGeometry args={[0.5, 2, 4]} />
@@ -141,10 +127,6 @@ export function GridMap() {
             <mesh position={[0, -(d.h || 0)/2 + 0.5, 0]}>
               <boxGeometry args={[d.w || 2, d.h || 10, d.d || 2]} />
               <meshStandardMaterial color={d.color || "#1a202c"} metalness={0.5} roughness={0.2} />
-              <mesh position={[0, 0, (d.d || 2)/2 + 0.01]}>
-                <planeGeometry args={[(d.w || 2) * 0.8, (d.h || 10) * 0.8]} />
-                <meshBasicMaterial color="#4fd1c5" opacity={0.1} transparent />
-              </mesh>
             </mesh>
           )}
           {d.type === 'cactus' && (
@@ -152,30 +134,6 @@ export function GridMap() {
               <mesh position={[0, 0.8, 0]} castShadow>
                 <cylinderGeometry args={[0.2, 0.2, 1.6, 8]} />
                 <meshStandardMaterial color="#4a7c44" />
-              </mesh>
-              <mesh position={[0.3, 1.0, 0]} rotation={[0, 0, Math.PI / 4]} castShadow>
-                <cylinderGeometry args={[0.1, 0.1, 0.6, 8]} />
-                <meshStandardMaterial color="#4a7c44" />
-              </mesh>
-              <mesh position={[-0.3, 1.2, 0]} rotation={[0, 0, -Math.PI / 4]} castShadow>
-                <cylinderGeometry args={[0.1, 0.1, 0.6, 8]} />
-                <meshStandardMaterial color="#4a7c44" />
-              </mesh>
-            </>
-          )}
-          {d.type === 'satellite' && (
-            <>
-              <mesh castShadow>
-                <sphereGeometry args={[0.5, 12, 12]} />
-                <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.2} />
-              </mesh>
-              <mesh position={[0.8, 0, 0]} rotation={[0, 0, Math.PI/2]}>
-                <boxGeometry args={[0.1, 1.2, 0.05]} />
-                <meshStandardMaterial color="#3b82f6" emissive="#1e3a8a" />
-              </mesh>
-              <mesh position={[-0.8, 0, 0]} rotation={[0, 0, Math.PI/2]}>
-                <boxGeometry args={[0.1, 1.2, 0.05]} />
-                <meshStandardMaterial color="#3b82f6" emissive="#1e3a8a" />
               </mesh>
             </>
           )}
@@ -185,211 +143,51 @@ export function GridMap() {
               <meshStandardMaterial color="#475569" metalness={0.7} roughness={0.3} />
             </mesh>
           )}
-          {d.type === 'panel' && (
-            <mesh castShadow>
-              <boxGeometry args={[1, 0.1, 1]} />
-              <meshStandardMaterial color="#1e293b" metalness={0.9} roughness={0.1} />
-              <pointLight position={[0, 0.2, 0]} color="#ec4899" intensity={2} distance={2} />
-            </mesh>
-          )}
-          {d.type === 'umbrella' && (
-            <group>
-              <mesh position={[0, 1.2, 0]} castShadow>
-                <cylinderGeometry args={[0.05, 0.05, 2.4, 8]} />
-                <meshStandardMaterial color="#fca5a5" />
-              </mesh>
-              <mesh position={[0, 2, 0]} castShadow>
-                <cylinderGeometry args={[1.5, 0.1, 0.4, 16]} />
-                <meshStandardMaterial color="#ef4444" side={THREE.DoubleSide} />
-              </mesh>
-            </group>
-          )}
-          {d.type === 'beach_ball' && (
-            <group>
-              <mesh position={[0, 0.4, 0]} castShadow>
-                <sphereGeometry args={[0.4, 16, 16]} />
-                <meshStandardMaterial color="#f87171" />
-              </mesh>
-              <mesh position={[0, 0.4, 0]} rotation={[0, Math.PI/2, 0]} castShadow>
-                <sphereGeometry args={[0.41, 16, 16]} />
-                <meshStandardMaterial color="#fef08a" wireframe />
-              </mesh>
-            </group>
-          )}
-          {d.type === 'cold_storage' && (
-            <mesh position={[0, 0.4, 0]} castShadow>
-              <boxGeometry args={[0.8, 0.8, 0.8]} />
-              <meshStandardMaterial color="#3b82f6" metalness={0.3} roughness={0.6} />
-            </mesh>
-          )}
-          {d.type === 'tombstone' && (
-            <mesh position={[0, 0.4, 0]} castShadow>
-              <boxGeometry args={[0.6, 0.8, 0.2]} />
-              <meshStandardMaterial color="#71717a" roughness={0.9} />
-              <mesh position={[0, 0.4, 0]} rotation={[Math.PI/2, 0, 0]}>
-                <cylinderGeometry args={[0.3, 0.3, 0.2, 16]} />
-                <meshStandardMaterial color="#71717a" roughness={0.9} />
-              </mesh>
-            </mesh>
-          )}
-          {d.type === 'dead_tree' && (
-            <group>
-              <mesh position={[0, 1.5, 0]} castShadow>
-                <cylinderGeometry args={[0.1, 0.3, 3, 6]} />
-                <meshStandardMaterial color="#3f3f46" roughness={1} />
-              </mesh>
-              <mesh position={[0.4, 2, 0]} rotation={[0, 0, -Math.PI/4]} castShadow>
-                <cylinderGeometry args={[0.05, 0.15, 1.5, 5]} />
-                <meshStandardMaterial color="#3f3f46" roughness={1} />
-              </mesh>
-              <mesh position={[-0.3, 1.5, 0.3]} rotation={[Math.PI/4, 0, Math.PI/4]} castShadow>
-                <cylinderGeometry args={[0.05, 0.1, 1, 5]} />
-                <meshStandardMaterial color="#3f3f46" roughness={1} />
-              </mesh>
-            </group>
-          )}
-          {d.type === 'crypt' && (
-            <group>
-              <mesh position={[0, 1, 0]} castShadow>
-                <boxGeometry args={[2, 2, 2.5]} />
-                <meshStandardMaterial color="#52525b" roughness={0.8} />
-              </mesh>
-              <mesh position={[0, 2.2, 0]} rotation={[0, Math.PI/4, 0]} castShadow>
-                <coneGeometry args={[1.6, 0.8, 4]} />
-                <meshStandardMaterial color="#3f3f46" />
-              </mesh>
-              {/* Door */}
-              <mesh position={[0, 0.8, 1.26]}>
-                <boxGeometry args={[0.8, 1.6, 0.1]} />
-                <meshStandardMaterial color="#18181b" />
-              </mesh>
-            </group>
-          )}
-          {d.type === 'airplane' && (
-            <group>
-              {/* Fuselage */}
-              <mesh castShadow rotation={[0, 0, Math.PI/2]}>
-                <cylinderGeometry args={[0.5, 0.5, 4, 8]}  />
-                <meshStandardMaterial color="#f8fafc" roughness={0.2} metalness={0.8} />
-              </mesh>
-              {/* Wings */}
-              <mesh castShadow position={[0, 0, 0]}>
-                <boxGeometry args={[4, 0.1, 1]} />
-                <meshStandardMaterial color="#f8fafc" />
-              </mesh>
-              {/* Tail */}
-              <mesh castShadow position={[1.8, 0.5, 0]} rotation={[0, 0, 0.3]}>
-                <boxGeometry args={[0.1, 0.8, 0.8]} />
-                <meshStandardMaterial color="#3b82f6" />
-              </mesh>
-              {/* Engines */}
-              <mesh castShadow position={[0, -0.3, 1]} rotation={[0, 0, Math.PI/2]}>
-                <cylinderGeometry args={[0.2, 0.2, 0.5, 8]} />
-                <meshStandardMaterial color="#334155" />
-              </mesh>
-              <mesh castShadow position={[0, -0.3, -1]} rotation={[0, 0, Math.PI/2]}>
-                <cylinderGeometry args={[0.2, 0.2, 0.5, 8]} />
-                <meshStandardMaterial color="#334155" />
-              </mesh>
-            </group>
-          )}
-          {d.type === 'luggage_cart' && (
+          {d.type === 'bench' && (
             <group>
               <mesh position={[0, 0.2, 0]} castShadow>
-                <boxGeometry args={[1, 0.1, 0.6]} />
-                <meshStandardMaterial color="#94a3b8" />
+                <boxGeometry args={[1.2, 0.1, 0.5]} />
+                <meshStandardMaterial color="#4a3c2a" />
               </mesh>
-              <mesh position={[0.4, 0.5, 0]} castShadow>
-                <boxGeometry args={[0.05, 0.6, 0.6]} />
-                <meshStandardMaterial color="#64748b" />
+              <mesh position={[0.5, 0.1, 0]} castShadow>
+                <boxGeometry args={[0.1, 0.3, 0.5]} />
+                <meshStandardMaterial color="#222222" />
               </mesh>
-              <mesh position={[-0.4, 0.1, 0]} castShadow>
-                <sphereGeometry args={[0.1, 8, 8]} />
-                <meshStandardMaterial color="#1e293b" />
+              <mesh position={[-0.5, 0.1, 0]} castShadow>
+                <boxGeometry args={[0.1, 0.3, 0.5]} />
+                <meshStandardMaterial color="#222222" />
               </mesh>
             </group>
           )}
-          {d.type === 'terminal_sign' && (
+          {d.type === 'metro_sign' && (
             <group>
               <mesh position={[0, 1.5, 0]} castShadow>
-                <cylinderGeometry args={[0.05, 0.1, 3, 8]} />
-                <meshStandardMaterial color="#334155" />
+                <cylinderGeometry args={[0.05, 0.05, 3, 8]} />
+                <meshStandardMaterial color="#333333" />
               </mesh>
               <mesh position={[0, 2.5, 0]} castShadow>
-                <boxGeometry args={[1.2, 0.6, 0.1]} />
-                <meshStandardMaterial color="#1e293b" />
+                <boxGeometry args={[0.8, 0.8, 0.1]} />
+                <meshStandardMaterial color="#3b82f6" />
               </mesh>
               <mesh position={[0, 2.5, 0.06]}>
-                <planeGeometry args={[1.0, 0.4]} />
-                <meshBasicMaterial color="#eab308" />
-              </mesh>
-            </group>
-          )}
-          {d.type === 'flight_board' && (
-            <group>
-              <mesh position={[0, 1.5, 0]} castShadow>
-                <boxGeometry args={[0.1, 3, 0.1]} />
-                <meshStandardMaterial color="#1e293b" />
-              </mesh>
-              <mesh position={[0, 2.4, 0]} castShadow>
-                <boxGeometry args={[2, 1.2, 0.2]} />
-                <meshStandardMaterial color="#0f172a" />
-              </mesh>
-              <mesh position={[0, 2.4, 0.11]}>
-                <planeGeometry args={[1.8, 1]} />
-                <meshStandardMaterial color="#1e293b" emissive="#3b82f6" emissiveIntensity={0.5} />
-              </mesh>
-              {/* Small details */}
-              {[...Array(5)].map((_, i) => (
-                <mesh key={i} position={[-0.7 + i * 0.35, 2.1, 0.12]}>
-                  <planeGeometry args={[0.2, 0.05]} />
-                  <meshBasicMaterial color="#fbbf24" />
-                </mesh>
-              ))}
-            </group>
-          )}
-          {d.type === 'security_gate' && (
-            <group>
-              <mesh position={[-0.6, 1, 0]} castShadow>
-                <boxGeometry args={[0.2, 2, 0.3]} />
-                <meshStandardMaterial color="#334155" />
-              </mesh>
-              <mesh position={[0.6, 1, 0]} castShadow>
-                <boxGeometry args={[0.2, 2, 0.3]} />
-                <meshStandardMaterial color="#334155" />
-              </mesh>
-              <mesh position={[0, 2, 0]} castShadow>
-                <boxGeometry args={[1.4, 0.2, 0.3]} />
-                <meshStandardMaterial color="#334155" />
-              </mesh>
-              <mesh position={[0, 1.8, 0.16]}>
-                <sphereGeometry args={[0.05, 8, 8]} />
-                <meshBasicMaterial color="#ef4444" />
-              </mesh>
-            </group>
-          )}
-          {d.type === 'luggage_scanner' && (
-            <group>
-              <mesh position={[0, 0.6, 0]} castShadow>
-                <boxGeometry args={[1.5, 1.2, 2.5]} />
-                <meshStandardMaterial color="#475569" metalness={0.6} roughness={0.3} />
-              </mesh>
-              <mesh position={[0.8, 0.8, 0]} castShadow>
-                <boxGeometry args={[0.1, 0.8, 0.8]} />
-                <meshStandardMaterial color="#1e293b" />
-              </mesh>
-              <mesh position={[0.81, 0.8, 0]}>
                 <planeGeometry args={[0.6, 0.6]} />
-                <meshStandardMaterial color="#000000" emissive="#22c55e" emissiveIntensity={0.5} />
+                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.5} />
               </mesh>
-              {/* Lead curtains */}
-              <mesh position={[0, 0.6, 1.26]}>
-                <boxGeometry args={[1.2, 1, 0.1]} />
-                <meshStandardMaterial color="#1e293b" />
+            </group>
+          )}
+          {d.type === 'track' && (
+            <group>
+              <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <planeGeometry args={[1, 1]} />
+                <meshStandardMaterial color="#333333" />
               </mesh>
-              <mesh position={[0, 0.6, -1.26]}>
-                <boxGeometry args={[1.2, 1, 0.1]} />
-                <meshStandardMaterial color="#1e293b" />
+              <mesh position={[0.4, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <planeGeometry args={[0.1, 1]} />
+                <meshStandardMaterial color="#555555" metalness={0.8} />
+              </mesh>
+              <mesh position={[-0.4, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <planeGeometry args={[0.1, 1]} />
+                <meshStandardMaterial color="#555555" metalness={0.8} />
               </mesh>
             </group>
           )}
@@ -421,7 +219,7 @@ export function GridMap() {
             const userData = other.rigidBodyObject?.userData as any;
             if (userData?.type === 'player') {
                const { setPhase, enemies: currentEnemies, turrets: currentTurrets } = useGameStore.getState();
-               if (currentEnemies.every(e => e.hp <= 0) && currentTurrets.every(t => t.hp <= 0 || t.disabled)) {
+               if (currentEnemies.filter(e => !e.unkillable).every(e => e.hp <= 0) && currentTurrets.every(t => t.hp <= 0 || t.disabled)) {
                  setPhase('level_complete');
                }
             }

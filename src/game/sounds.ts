@@ -1,89 +1,97 @@
 import { useGameStore } from './store';
 
 const createAudio = (path: string, volume = 1) => {
-  // Use relative paths for GitHub Pages support (no leading slash)
   const audio = new Audio(path);
   audio.volume = volume;
   audio.preload = 'auto';
   return audio;
 };
 
-// Preload all SFX using relative paths
-const sfxAssets = {
+export const SFX = {
   hover: createAudio('sounds/button-hover.mp3', 0.5),
   click: createAudio('sounds/button-click.mp3', 0.5),
-  playerShoot: createAudio('sounds/player-gunshot.mp3', 0.4),
-  enemyShoot: createAudio('sounds/enemy-gunshot.mp3', 0.3),
-  gunEmpty: createAudio('sounds/gun-empty.mp3', 0.5),
-  teleport: createAudio('sounds/teleport.mp3', 0.6),
-  levelStart: createAudio('sounds/level-start.mp3', 0.6),
-  levelEnd: createAudio('sounds/level-end.mp3', 0.6),
-};
-
-export const SFX = {
-  buttonHover: () => {
-    if (useGameStore.getState().isMuted) return;
-    const sound = sfxAssets.hover.cloneNode(true) as HTMLAudioElement;
-    sound.volume = sfxAssets.hover.volume;
-    sound.play().catch(() => {});
-  },
-  buttonClick: () => {
-    if (useGameStore.getState().isMuted) return;
-    const sound = sfxAssets.click.cloneNode(true) as HTMLAudioElement;
-    sound.volume = sfxAssets.click.volume;
-    sound.play().catch(() => {});
-  },
   playerShoot: () => {
     if (useGameStore.getState().isMuted) return;
-    const sound = sfxAssets.playerShoot.cloneNode(true) as HTMLAudioElement;
-    sound.volume = sfxAssets.playerShoot.volume;
+    const sound = createAudio('sounds/player-gunshot.mp3', 0.4);
     sound.play().catch(() => {});
   },
   enemyShoot: () => {
     if (useGameStore.getState().isMuted) return;
-    const sound = sfxAssets.enemyShoot.cloneNode(true) as HTMLAudioElement;
-    sound.volume = sfxAssets.enemyShoot.volume;
+    const sound = createAudio('sounds/enemy-gunshot.mp3', 0.3);
     sound.play().catch(() => {});
   },
   gunEmpty: () => {
     if (useGameStore.getState().isMuted) return;
-    const sound = sfxAssets.gunEmpty.cloneNode(true) as HTMLAudioElement;
-    sound.volume = sfxAssets.gunEmpty.volume;
+    const sound = createAudio('sounds/gun-empty.mp3', 0.5);
     sound.play().catch(() => {});
   },
   teleport: () => {
     if (useGameStore.getState().isMuted) return;
-    const sound = sfxAssets.teleport.cloneNode(true) as HTMLAudioElement;
-    sound.volume = sfxAssets.teleport.volume;
+    const sound = createAudio('sounds/teleport.mp3', 0.6);
     sound.play().catch(() => {});
   },
   levelStart: () => {
     if (useGameStore.getState().isMuted) return;
-    sfxAssets.levelStart.play().catch(() => {});
+    const sound = createAudio('sounds/level-start.mp3', 0.6);
+    sound.play().catch(() => {});
   },
   levelEnd: () => {
     if (useGameStore.getState().isMuted) return;
-    sfxAssets.levelEnd.play().catch(() => {});
+    const sound = createAudio('sounds/level-end.mp3', 0.6);
+    sound.play().catch(() => {});
+  },
+  buttonHover: () => {
+    if (useGameStore.getState().isMuted) return;
+    const sound = createAudio('sounds/button-hover.mp3', 0.5);
+    sound.play().catch(() => {});
+  },
+  buttonClick: () => {
+    if (useGameStore.getState().isMuted) return;
+    const sound = createAudio('sounds/button-click.mp3', 0.5);
+    sound.play().catch(() => {});
   },
 };
 
+const playlist = [
+  { name: 'Alexgrohl - Electronic', path: 'sounds/music-alexgrohl-electronic-470603.mp3' },
+  { name: 'Watermello - Electronic', path: 'sounds/music-watermello-electronic-electro-477141.mp3' },
+];
+
+let currentTrackIndex = 0;
 let bgMusic: HTMLAudioElement | null = null;
 
 export const Music = {
   play: () => {
-    if (!bgMusic) {
-      bgMusic = new Audio('sounds/music-watermello-electronic-electro-477141.mp3');
-      bgMusic.loop = true;
-      bgMusic.volume = 0.4;
-      bgMusic.preload = 'auto';
-    }
-    if (useGameStore.getState().isMuted) {
-      bgMusic.muted = true;
-    }
-    bgMusic.play().catch(() => {
-      console.log("Music autoplay blocked. Waiting for user interaction.");
-    });
+    if (bgMusic && !bgMusic.paused) return;
+    if (!bgMusic) { Music.start(); return; }
+    if (useGameStore.getState().isMuted) bgMusic.muted = true;
+    bgMusic.play().catch(() => {});
   },
+  
+  start: () => {
+    Music.playTrack(currentTrackIndex);
+  },
+
+  playTrack: (index: number) => {
+    if (bgMusic) {
+      bgMusic.pause();
+      bgMusic.onended = null;
+    }
+    currentTrackIndex = index;
+    const track = playlist[currentTrackIndex];
+    bgMusic = new Audio(track.path);
+    bgMusic.volume = 0.4;
+    bgMusic.muted = useGameStore.getState().isMuted;
+    useGameStore.setState({ currentTrackName: track.name });
+    bgMusic.play().catch(() => {});
+    bgMusic.onended = () => Music.next();
+  },
+
+  next: () => {
+    const nextIndex = (currentTrackIndex + 1) % playlist.length;
+    Music.playTrack(nextIndex);
+  },
+
   stop: () => {
     if (bgMusic) {
       bgMusic.pause();

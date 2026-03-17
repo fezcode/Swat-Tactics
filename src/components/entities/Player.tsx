@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { RigidBody, RapierRigidBody, BallCollider } from '@react-three/rapier';
 import type { PlayerState } from '../../types';
@@ -11,17 +11,22 @@ export function Player({ state }: { state: PlayerState }) {
   const meshRef = useRef<THREE.Group>(null);
   const primaryGunRef = useRef<THREE.Group>(null);
   const secondaryGunRef = useRef<THREE.Group>(null);
+  const swordRef = useRef<THREE.Group>(null);
   const { camera, pointer, raycaster } = useThree();
   const playerShoot = useGameStore(s => s.playerShoot);
   const switchWeapon = useGameStore(s => s.switchWeapon);
   const dodge = useGameStore(s => s.dodge);
+  const slash = useGameStore(s => s.slash);
   const phase = useGameStore(s => s.phase);
   const countdown = useGameStore(s => s.countdown);
+  const isSlashZooming = useGameStore(s => s.isSlashZooming);
 
-  const keys = useRef({ w: false, a: false, s: false, d: false, shift: false });
+  const keys = useRef({ w: false, a: false, s: false, d: false, shift: false, e: false });
   const lastStoreUpdate = useRef(0);
   const mouseDown = useRef(false);
   const lastFireTime = useRef(0);
+  
+  const [slashActive, setSlashActive] = useState(false);
   
   // Track weapon switch animation
   const switchAnimProgress = useRef(0);
@@ -45,6 +50,17 @@ export function Player({ state }: { state: PlayerState }) {
     lastDodgeRef.current = state.lastDodgeTime;
   }, [state.lastDodgeTime, state.pos.x, state.pos.z]);
 
+  // Handle slash animation
+  const lastSlashRef = useRef(state.lastSlashTime);
+  useEffect(() => {
+    if (state.lastSlashTime > lastSlashRef.current) {
+      setSlashActive(true);
+      const timer = setTimeout(() => setSlashActive(false), 500);
+      return () => clearTimeout(timer);
+    }
+    lastSlashRef.current = state.lastSlashTime;
+  }, [state.lastSlashTime]);
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.current.w = true;
@@ -52,22 +68,22 @@ export function Player({ state }: { state: PlayerState }) {
       if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.current.s = true;
       if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.current.d = true;
       if (e.key === 'q' || e.key === 'Q') switchWeapon();
+      if (e.key === 'e' || e.key === 'E') {
+        const { levelIndex } = useGameStore.getState();
+        if (levelIndex >= 80) slash();
+      }
       if (e.key === 'Shift') {
         const { player, levelIndex } = useGameStore.getState();
-        if (!player || levelIndex < 70) return; // Only level 71+
+        if (!player || levelIndex < 70) return; 
         
         keys.current.shift = true;
-        // Dodge in current move direction or forward if standing still
         let dx = 0;
         let dz = 0;
         if (keys.current.w) dz -= 1;
         if (keys.current.s) dz += 1;
         if (keys.current.a) dx -= 1;
         if (keys.current.d) dx += 1;
-
-        if (dx === 0 && dz === 0) dz = -1; // Default forward
-        
-        // Normalize
+        if (dx === 0 && dz === 0) dz = -1;
         const len = Math.sqrt(dx * dx + dz * dz);
         dodge({ x: dx / len, z: dz / len });
       }
@@ -80,17 +96,11 @@ export function Player({ state }: { state: PlayerState }) {
       if (e.key === 'Shift') keys.current.shift = false;
     };
     
-    const onPointerDown = (e: MouseEvent) => {
-      if (e.button === 0) mouseDown.current = true;
-    };
-
-    const onPointerUp = (e: MouseEvent) => {
-      if (e.button === 0) mouseDown.current = false;
-    };
-
+    const onPointerDown = (e: MouseEvent) => { if (e.button === 0) mouseDown.current = true; };
+    const onPointerUp = (e: MouseEvent) => { if (e.button === 0) mouseDown.current = false; };
     const onContextMenu = (e: MouseEvent) => e.preventDefault();
     const onBlur = () => {
-      keys.current = { w: false, a: false, s: false, d: false, shift: false };
+      keys.current = { w: false, a: false, s: false, d: false, shift: false, e: false };
       mouseDown.current = false;
     };
 
@@ -108,7 +118,7 @@ export function Player({ state }: { state: PlayerState }) {
       window.removeEventListener('contextmenu', onContextMenu);
       window.removeEventListener('blur', onBlur);
     };
-  }, [phase, playerShoot, countdown, switchWeapon, dodge]);
+  }, [phase, playerShoot, countdown, switchWeapon, dodge, slash]);
 
   useFrame(({ clock }, delta) => {
     if (!rb.current || state.hp <= 0) return;
@@ -118,31 +128,22 @@ export function Player({ state }: { state: PlayerState }) {
       return;
     }
 
-    // Update position in store for AoE logic - throttled to 10fps
     const pos = rb.current.translation();
     if (clock.getElapsedTime() - lastStoreUpdate.current > 0.1) {
       lastStoreUpdate.current = clock.getElapsedTime();
       useGameStore.setState(s => ({ player: s.player ? { ...s.player, pos: { x: pos.x, z: pos.z } } : null }));
     }
 
-    // Rapid-fire shooting (hold mouse button)
-    if (mouseDown.current && meshRef.current) {
+    if (mouseDown.current && meshRef.current && !slashActive) {
       const { player } = useGameStore.getState();
       if (player && player.hp > 0) {
-        const activeWeapon = player.activeWeaponSlot === 'secondary' && player.secondaryWeapon
-          ? player.secondaryWeapon
-          : player.weapon;
-        
-        // Fire rate: SMG = 100ms, Pistol = 250ms
+        const activeWeapon = player.activeWeaponSlot === 'secondary' && player.secondaryWeapon ? player.secondaryWeapon : player.weapon;
         const fireInterval = player.activeWeaponSlot === 'secondary' && player.secondaryWeapon ? 0.1 : 0.25;
         const now = clock.getElapsedTime();
         
         if (now - lastFireTime.current >= fireInterval) {
           lastFireTime.current = now;
-          
-          if (activeWeapon.ammo <= 0) {
-            SFX.gunEmpty();
-          } else {
+          if (activeWeapon.ammo <= 0) { SFX.gunEmpty(); } else {
             const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(meshRef.current.quaternion).normalize();
             const spawnPos = { x: pos.x + direction.x * 0.6, z: pos.z + direction.z * 0.6 };
             playerShoot(spawnPos, { x: direction.x, z: direction.z });
@@ -152,7 +153,6 @@ export function Player({ state }: { state: PlayerState }) {
       }
     }
 
-    // Movement
     const speed = 10;
     let vx = 0;
     let vz = 0;
@@ -160,52 +160,36 @@ export function Player({ state }: { state: PlayerState }) {
     if (keys.current.s) vz += speed;
     if (keys.current.a) vx -= speed;
     if (keys.current.d) vx += speed;
-
     if (vx !== 0 && vz !== 0) {
       const length = Math.sqrt(vx * vx + vz * vz);
       vx = (vx / length) * speed;
       vz = (vz / length) * speed;
     }
-
     rb.current.setLinvel({ x: vx, y: 0, z: vz }, true);
 
-    // Robust Exit Check
     const { exitPos, enemies, setPhase } = useGameStore.getState();
-    if (exitPos && enemies.length > 0 && enemies.every(e => e.hp <= 0)) {
+    if (exitPos && enemies.length > 0 && enemies.filter(e => !e.unkillable).every(e => e.hp <= 0)) {
        const dist = Math.sqrt(Math.pow(pos.x - exitPos.x, 2) + Math.pow(pos.z - exitPos.z, 2));
-       if (dist < 1.2) {
-          setPhase('level_complete');
-       }
+       if (dist < 1.2) setPhase('level_complete');
     }
 
-    // Aiming
     const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.5);
     const target = new THREE.Vector3();
     raycaster.setFromCamera(pointer, camera);
     raycaster.ray.intersectPlane(plane, target);
-
     if (target && meshRef.current) {
       const pPos = rb.current.translation();
       const angle = Math.atan2(pPos.x - target.x, pPos.z - target.z);
       meshRef.current.rotation.y = angle;
     }
 
-    // Weapon switch animation — bob the guns up/down
     if (isSwitching.current) {
-      switchAnimProgress.current += delta * 6; // ~0.33s animation
-      if (switchAnimProgress.current >= 1) {
-        switchAnimProgress.current = 1;
-        isSwitching.current = false;
-      }
+      switchAnimProgress.current += delta * 6;
+      if (switchAnimProgress.current >= 1) { switchAnimProgress.current = 1; isSwitching.current = false; }
     }
-
     const animT = isSwitching.current ? switchAnimProgress.current : 1;
-    // Ease out
     const ease = 1 - Math.pow(1 - animT, 3);
-    
     const isPrimary = state.activeWeaponSlot === 'primary';
-    
-    // Active gun bobs up, inactive bobs down
     if (primaryGunRef.current) {
       const targetY = isPrimary ? 0.1 : -0.1;
       const startY = isPrimary ? -0.1 : 0.1;
@@ -216,25 +200,18 @@ export function Player({ state }: { state: PlayerState }) {
       const startY = !isPrimary ? -0.1 : 0.1;
       secondaryGunRef.current.position.y = startY + (targetY - startY) * ease;
     }
+
+    // Slash Animation Rotation
+    if (slashActive && swordRef.current) {
+        swordRef.current.rotation.y += delta * 20;
+    }
   });
 
   if (state.hp <= 0) return null;
-
   const isPrimary = state.activeWeaponSlot === 'primary';
 
   return (
-    <RigidBody 
-      ref={rb} 
-      type="dynamic" 
-      position={[state.pos.x, 0.5, state.pos.z]} 
-      lockRotations 
-      enabledTranslations={[true, false, true]}
-      friction={0}
-      restitution={0}
-      colliders={false}
-      name="player"
-      userData={{ type: 'player', id: state.id }}
-    >
+    <RigidBody ref={rb} type="dynamic" position={[state.pos.x, 0.5, state.pos.z]} lockRotations enabledTranslations={[true, false, true]} friction={0} restitution={0} colliders={false} name="player" userData={{ type: 'player', id: state.id }}>
       <BallCollider args={[0.3]} />
       <group ref={meshRef}>
         <mesh castShadow receiveShadow>
@@ -245,27 +222,32 @@ export function Player({ state }: { state: PlayerState }) {
           <sphereGeometry args={[0.25, 16, 16]} />
           <meshStandardMaterial color="#60a5fa" roughness={0.3} />
         </mesh>
-        {/* Primary gun (right side) */}
+
+        {/* Slash Sword Animation */}
+        {slashActive && (
+          <group ref={swordRef}>
+             <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+                <torusGeometry args={[2.5, 0.1, 16, 100, Math.PI * 2]} />
+                <meshStandardMaterial color="#ffffff" transparent opacity={0.6} emissive="#ffffff" emissiveIntensity={10} />
+             </mesh>
+             <mesh position={[2, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+                <cylinderGeometry args={[0.05, 0.02, 4, 8]} />
+                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={20} />
+             </mesh>
+          </group>
+        )}
+
         <group ref={primaryGunRef} position={[0.2, 0.1, -0.4]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[0.1, 0.1, 0.6]} />
-            <meshStandardMaterial 
-              color={isPrimary ? '#1e3a8a' : '#0f1d45'}
-              emissive={isPrimary ? '#1e3a8a' : '#000000'}
-              emissiveIntensity={isPrimary ? 0.3 : 0}
-            />
+            <meshStandardMaterial color={isPrimary ? '#1e3a8a' : '#0f1d45'} emissive={isPrimary ? '#1e3a8a' : '#000000'} emissiveIntensity={isPrimary ? 0.3 : 0} />
           </mesh>
         </group>
-        {/* Secondary gun (left side) — only when dual weapon is available */}
         {state.secondaryWeapon && (
           <group ref={secondaryGunRef} position={[-0.2, 0.1, -0.4]}>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[0.1, 0.1, 0.55]} />
-              <meshStandardMaterial 
-                color={!isPrimary ? '#1e5a1e' : '#0f2d0f'}
-                emissive={!isPrimary ? '#1e5a1e' : '#000000'}
-                emissiveIntensity={!isPrimary ? 0.3 : 0}
-              />
+              <meshStandardMaterial color={!isPrimary ? '#1e5a1e' : '#0f2d0f'} emissive={!isPrimary ? '#1e5a1e' : '#000000'} emissiveIntensity={!isPrimary ? 0.3 : 0} />
             </mesh>
           </group>
         )}
