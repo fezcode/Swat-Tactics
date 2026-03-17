@@ -19,23 +19,22 @@ export function Train() {
   const speed = 18;
 
   const trackZ = Math.floor(gridSize.height / 2);
+  const trackWidth = Math.ceil(gridSize.width) + 80;
 
   useEffect(() => {
     if (phase !== 'playing') return;
     
-    // Spawn immediately on level start
     const spawnTrain = () => {
         trainX.current = -40;
         setActive(true);
         setTrainActive(true);
     };
 
-    spawnTrain();
-
-    // Repeated spawn every 10 seconds
+    const timeout = setTimeout(spawnTrain, 2000);
     const interval = setInterval(spawnTrain, 10000); 
 
     return () => {
+        clearTimeout(timeout);
         clearInterval(interval);
         setTrainActive(false);
         setActive(false);
@@ -85,22 +84,22 @@ export function Train() {
 
   return (
     <group>
-      {Array.from({ length: Math.ceil(gridSize.width) + 60 }).map((_, i) => (
-        <group key={i} position={[i - 30, 0, trackZ]}>
-           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-              <planeGeometry args={[1.1, 1.4]} />
-              <meshStandardMaterial color="#1a1a1a" />
-           </mesh>
-           <mesh position={[0, 0.05, 0.45]} rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[1.1, 0.12]} />
-              <meshStandardMaterial color="#444" metalness={0.9} />
-           </mesh>
-           <mesh position={[0, 0.05, -0.45]} rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[1.1, 0.12]} />
-              <meshStandardMaterial color="#444" metalness={0.9} />
-           </mesh>
-        </group>
-      ))}
+      {/* Optimized Tracks - Just a few long meshes instead of hundreds */}
+      <group position={[gridSize.width / 2 - 0.5, 0, trackZ]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+          <planeGeometry args={[trackWidth, 1.4]} />
+          <meshStandardMaterial color="#1a1a1a" />
+        </mesh>
+        <mesh position={[0, 0.05, 0.45]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[trackWidth, 0.12]} />
+          <meshStandardMaterial color="#444" metalness={0.9} />
+        </mesh>
+        <mesh position={[0, 0.05, -0.45]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[trackWidth, 0.12]} />
+          <meshStandardMaterial color="#444" metalness={0.9} />
+        </mesh>
+        {/* Simplified sleepers using a repeating texture or fewer boxes could go here, but for now let's keep it minimal for FPS */}
+      </group>
 
       {active && (
         <RigidBody

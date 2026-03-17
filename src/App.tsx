@@ -82,7 +82,7 @@ function CameraRig() {
   const trainActive = useGameStore(s => s.trainActive);
   const isSlashZooming = useGameStore(s => s.isSlashZooming);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     let playerObj: THREE.Object3D | undefined;
     scene.traverse(child => { if (child.name === 'player') playerObj = child; });
 
@@ -104,14 +104,17 @@ function CameraRig() {
         offsetZ = (Math.random() - 0.5) * intensity;
       }
 
-      // Reverted to more stable direct lerp to avoid motion sickness
-      camera.position.x = THREE.MathUtils.lerp(camera.position.x, pos.x + offsetX, 0.1);
-      camera.position.z = THREE.MathUtils.lerp(camera.position.z, pos.z + 10 + offsetZ, 0.1);
+      // Frame-rate independent lerp for extreme smoothness
+      // formula: 1 - Math.pow(smoothing, delta)
+      const smoothing = 0.0001; // much lower = much faster
+      const alpha = 1 - Math.pow(smoothing, delta);
+
+      camera.position.x = THREE.MathUtils.lerp(camera.position.x, pos.x + offsetX, alpha);
+      camera.position.z = THREE.MathUtils.lerp(camera.position.z, pos.z + 10 + offsetZ, alpha);
       camera.lookAt(camera.position.x, 0, camera.position.z - 10);
 
-      // Keep smooth FOV zoom
       const targetFov = isSlashZooming ? 30 : 45;
-      (camera as THREE.PerspectiveCamera).fov = THREE.MathUtils.lerp((camera as THREE.PerspectiveCamera).fov, targetFov, 0.1);
+      (camera as THREE.PerspectiveCamera).fov = THREE.MathUtils.lerp((camera as THREE.PerspectiveCamera).fov, targetFov, alpha * 2);
       (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
     }
   });
