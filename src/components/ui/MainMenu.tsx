@@ -45,35 +45,88 @@ export function MainMenu() {
     { id: 'credits', label: 'CREDITS', action: () => setView('credits') },
   ];
 
+  const [levelPage, setLevelPage] = useState(0);
+  const levelsPerPage = 40;
+  const totalPages = Math.ceil(LEVELS.length / levelsPerPage);
+  
+  const currentLevels = LEVELS.slice(
+    levelPage * levelsPerPage, 
+    (levelPage + 1) * levelsPerPage
+  );
+
   if (view === 'level_select') {
     return (
       <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
         {crtEnabled && <div className="menu-crt" />}
-        <h2 className="text-5xl font-black italic text-white mb-12 neon-text transform -skew-x-12 relative z-10">SELECT SECTOR</h2>
-        <div className="grid grid-cols-10 gap-4 max-w-4xl transform -skew-x-12 relative z-10">
-          {LEVELS.map((_, i) => (
-            <button
-              key={i}
-              onMouseEnter={() => handleHover(i)}
-              onMouseLeave={() => setHovered(null)}
-              onClick={() => handleClick(() => loadLevel(i))}
+        
+        <div className="flex flex-col items-center relative z-10 w-full max-w-5xl px-4">
+          <div className="flex items-center justify-between w-full mb-8 transform -skew-x-12">
+            <h2 className="text-5xl font-black italic text-white neon-text">SELECT SECTOR</h2>
+            <div className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 p-2 px-6">
+              <span className="text-zinc-500 font-bold text-sm tracking-tighter">PAGE</span>
+              <span className="text-white font-black text-2xl neon-text-blue">{levelPage + 1}</span>
+              <span className="text-zinc-700 font-black text-xl">/</span>
+              <span className="text-zinc-600 font-bold text-sm">{totalPages}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-10 gap-3 transform -skew-x-12">
+            {currentLevels.map((_, i) => {
+              const absoluteIndex = levelPage * levelsPerPage + i;
+              return (
+                <button
+                  key={absoluteIndex}
+                  onMouseEnter={() => handleHover(absoluteIndex)}
+                  onMouseLeave={() => setHovered(null)}
+                  onClick={() => handleClick(() => loadLevel(absoluteIndex))}
+                  className={`
+                    w-14 h-14 text-xl font-black transition-all cursor-pointer border-2
+                    ${hovered === absoluteIndex 
+                      ? 'bg-white text-black border-white scale-110 shadow-[0_0_20px_rgba(255,255,255,0.8)]' 
+                      : 'bg-zinc-900 text-zinc-500 border-zinc-700 hover:border-zinc-500'}
+                  `}
+                >
+                  {absoluteIndex + 1}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-8 mt-12 transform -skew-x-12">
+            <button 
+              disabled={levelPage === 0}
+              onClick={() => handleClick(() => setLevelPage(levelPage - 1))}
               className={`
-                w-16 h-16 text-2xl font-black transition-all cursor-pointer border-2
-                ${hovered === i 
-                  ? 'bg-white text-black border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.8)]' 
-                  : 'bg-zinc-900 text-zinc-500 border-zinc-700'}
+                px-8 py-3 font-black italic tracking-tighter transition-all border-2
+                ${levelPage === 0 
+                  ? 'border-zinc-800 text-zinc-800 cursor-not-allowed' 
+                  : 'border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white cursor-pointer shadow-[0_0_10px_rgba(59,130,246,0.3)]'}
               `}
             >
-              {i + 1}
+              PREVIOUS DEPLOYMENT
             </button>
-          ))}
+            <button 
+              disabled={levelPage >= totalPages - 1}
+              onClick={() => handleClick(() => setLevelPage(levelPage + 1))}
+              className={`
+                px-8 py-3 font-black italic tracking-tighter transition-all border-2
+                ${levelPage >= totalPages - 1 
+                  ? 'border-zinc-800 text-zinc-800 cursor-not-allowed' 
+                  : 'border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-white cursor-pointer shadow-[0_0_10px_rgba(236,72,153,0.3)]'}
+              `}
+            >
+              NEXT DEPLOYMENT
+            </button>
+          </div>
+          
+          <button 
+            className="mt-12 text-lg font-bold text-zinc-600 hover:text-white transition-colors cursor-pointer transform -skew-x-12 flex items-center gap-2"
+            onClick={() => handleClick(() => setView('main'))}
+          >
+            <span className="text-zinc-800 font-black">{'<<'}</span>
+            BACK TO HQ
+          </button>
         </div>
-        <button 
-          className="mt-12 text-xl font-bold text-zinc-500 hover:text-white transition-colors cursor-pointer transform -skew-x-12 relative z-10"
-          onClick={() => handleClick(() => setView('main'))}
-        >
-          BACK TO HQ
-        </button>
       </div>
     );
   }
