@@ -1,5 +1,5 @@
 import type { LevelData } from '../types';
-import { defaultPistol, shotgun, rifle, createBoxRoom } from './levels_common';
+import { shotgun, rifle, createBoxRoom } from './levels_common';
 
 export const LEVELS_3: LevelData[] = [
   // ZONE 3: SUBWAY METRO (Trains & Slash) - Levels 81-90

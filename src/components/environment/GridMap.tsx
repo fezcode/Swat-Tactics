@@ -6,7 +6,6 @@ import { AmmoBox } from '../entities/AmmoBox';
 import { Portal } from '../entities/Portal';
 import { Turret } from '../entities/Turret';
 import { Button } from '../entities/Button';
-import * as THREE from 'three';
 
 export function GridMap() {
   const walls = useGameStore(s => s.walls);

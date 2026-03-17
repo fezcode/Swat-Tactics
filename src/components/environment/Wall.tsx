@@ -13,7 +13,8 @@ export function Wall({ pos }: { pos: Position }) {
     space_station: "#334155", // Dark slate
     beach: "#92400e", // Dark wood/rock brown
     cemetery: "#52525b", // Weathered stone grey
-    airport: "#94a3b8" // Brushed steel grey
+    airport: "#94a3b8", // Brushed steel grey
+    metro: "#334155"
   }[theme];
 
   return (

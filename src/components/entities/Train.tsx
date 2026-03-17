@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RigidBody, CuboidCollider, RapierRigidBody } from '@react-three/rapier';
 import { useGameStore } from '../../game/store';
-import * as THREE from 'three';
 import { SFX } from '../../game/sounds';
 
 export function Train() {

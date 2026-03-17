@@ -19,7 +19,6 @@ export function Player({ state }: { state: PlayerState }) {
   const slash = useGameStore(s => s.slash);
   const phase = useGameStore(s => s.phase);
   const countdown = useGameStore(s => s.countdown);
-  const isSlashZooming = useGameStore(s => s.isSlashZooming);
 
   const keys = useRef({ w: false, a: false, s: false, d: false, shift: false, e: false });
   const lastStoreUpdate = useRef(0);
