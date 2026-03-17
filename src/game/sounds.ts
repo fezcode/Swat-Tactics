@@ -64,6 +64,11 @@ export const Music = {
   play: () => {
     if (bgMusic && !bgMusic.paused) return;
     if (!bgMusic) { Music.start(); return; }
+    
+    // Ensure track name is set if we are resuming
+    const track = playlist[currentTrackIndex];
+    useGameStore.getState().setCurrentTrackName(track.name);
+    
     if (useGameStore.getState().isMuted) bgMusic.muted = true;
     bgMusic.play().catch(() => {});
   },
@@ -82,7 +87,10 @@ export const Music = {
     bgMusic = new Audio(track.path);
     bgMusic.volume = 0.4;
     bgMusic.muted = useGameStore.getState().isMuted;
-    useGameStore.setState({ currentTrackName: track.name });
+    
+    // Use the action from the store
+    useGameStore.getState().setCurrentTrackName(track.name);
+    
     bgMusic.play().catch(() => {});
     bgMusic.onended = () => Music.next();
   },
@@ -97,6 +105,7 @@ export const Music = {
       bgMusic.pause();
       bgMusic.currentTime = 0;
     }
+    useGameStore.getState().setCurrentTrackName("None");
   },
   setMuted: (muted: boolean) => {
     if (bgMusic) bgMusic.muted = muted;

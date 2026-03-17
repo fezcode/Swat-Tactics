@@ -118,15 +118,17 @@ export function HUD() {
       )}
 
       {/* Music Indicator - Top Center-ish */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none z-40 transform -skew-x-12 flex flex-col items-center">
-          <div className="bg-zinc-950/60 backdrop-blur-sm border-b-2 border-blue-500 px-4 py-1 flex items-center gap-3">
-              <div className="text-[10px] font-black text-blue-400 tracking-[0.2em] uppercase">Now Playing</div>
-              <div className="text-xs font-bold text-white tracking-wider flex items-center gap-2">
-                  <span className="text-blue-500 animate-pulse">♫</span>
-                  {currentTrackName}
-              </div>
-          </div>
-      </div>
+      {currentTrackName !== "None" && (
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none z-40 transform -skew-x-12 flex flex-col items-center">
+            <div className="bg-zinc-950/60 backdrop-blur-sm border-b-2 border-blue-500 px-4 py-1 flex items-center gap-3">
+                <div className="text-[10px] font-black text-blue-400 tracking-[0.2em] uppercase">Now Playing</div>
+                <div className="text-xs font-bold text-white tracking-wider flex items-center gap-2">
+                    <span className="text-blue-500 animate-pulse">♫</span>
+                    {currentTrackName}
+                </div>
+            </div>
+        </div>
+      )}
 
       {/* Ability Indicators - Left Side Center */}
       <div className="absolute left-12 top-1/2 -translate-y-1/2 flex flex-col gap-4 pointer-events-none z-40 transform -skew-x-12">
