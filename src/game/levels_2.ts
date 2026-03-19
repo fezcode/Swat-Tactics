@@ -314,7 +314,7 @@ export const LEVELS_2: LevelData[] = [
     id: 55,
     theme: 'beach',
     gridSize: { width: 22, height: 22 },
-    playerSpawn: { x: 11, z: 18 },
+    playerSpawn: { x: 11, z: 7 },
     walls: [
       ...createBoxRoom(22, 22),
       { x: 11, z: 9 }, { x: 11, z: 10 }, { x: 11, z: 12 }, { x: 11, z: 13 },
