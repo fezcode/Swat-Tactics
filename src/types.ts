@@ -27,6 +27,7 @@ export interface EnemyState extends EntityState {
   color: string;
   unkillable?: boolean;
   lastHitTime?: number;
+  lastSeenPlayerPos?: Position;
 }
 
 export interface TurretState extends EntityState {
