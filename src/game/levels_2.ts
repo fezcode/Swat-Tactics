@@ -247,7 +247,7 @@ export const LEVELS_2: LevelData[] = [
       { x: 7, z: 7 }, { x: 8, z: 7 }, { x: 9, z: 7 }, { x: 10, z: 7 }, { x: 11, z: 7 }, { x: 12, z: 7 },
       { x: 7, z: 12 }, { x: 8, z: 12 }, { x: 9, z: 12 }, { x: 10, z: 12 }, { x: 11, z: 12 }, { x: 12, z: 12 },
       { x: 7, z: 8 }, { x: 7, z: 9 }, { x: 7, z: 10 }, { x: 7, z: 11 },
-      { x: 12, z: 8 }, { x: 12, z: 9 }, { x: 12, z: 10 }, { x: 12, z: 11 },
+      { x: 12, z: 8 }, { x: 12, z: 11 }, // Created an opening by removing 12,9 and 12,10
       { x: 4, z: 4 }, { x: 15, z: 4 }, { x: 4, z: 15 }, { x: 15, z: 15 },
     ],
     enemies: [
@@ -258,8 +258,8 @@ export const LEVELS_2: LevelData[] = [
       { id: 'be5', pos: { x: 17, z: 16 }, hp: 120, weapon: { ...rifle }, color: '#3b82f6' },
     ],
     turrets: [
-      { id: 'bt1', pos: { x: 10, z: 7 }, hp: 400, damage: 20, fireRate: 1000, color: '#3b82f6' },
-      { id: 'bt2', pos: { x: 10, z: 12 }, hp: 400, damage: 20, fireRate: 1000, color: '#3b82f6' },
+      { id: 'bt1', pos: { x: 6, z: 6 }, hp: 400, damage: 20, fireRate: 1000, color: '#3b82f6' },
+      { id: 'bt2', pos: { x: 13, z: 13 }, hp: 400, damage: 20, fireRate: 1000, color: '#3b82f6' },
     ],
     buttons: [
       { pos: { x: 18, z: 18 }, targetId: 'bt1' },
