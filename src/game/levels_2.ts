@@ -164,11 +164,11 @@ export const LEVELS_2: LevelData[] = [
     playerSpawn: { x: 15, z: 28 },
     walls: [...createBoxRoom(30, 30), { x: 15, z: 15 }],
     enemies: [
-      { id: 'overlord', pos: { x: 15, z: 5 }, hp: 1000, weapon: { ...rifle, damage: 40, ammo: 5000, maxAmmo: 5000 }, color: '#78350f' },
-      { id: 's1', pos: { x: 5, z: 5 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
-      { id: 's2', pos: { x: 25, z: 5 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
-      { id: 's3', pos: { x: 5, z: 25 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
-      { id: 's4', pos: { x: 25, z: 25 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
+      { id: 'overlord', pos: { x: 15, z: 5 }, hp: 900, weapon: { ...rifle, damage: 40, ammo: 5000, maxAmmo: 5000 }, color: '#0f784c' },
+      { id: 's1', pos: { x: 5, z: 5 }, hp: 200, weapon: { ...rifle }, color: '#cf1ab2' },
+      { id: 's2', pos: { x: 25, z: 5 }, hp: 200, weapon: { ...rifle }, color: '#cf1ab2' },
+      { id: 's3', pos: { x: 5, z: 25 }, hp: 200, weapon: { ...rifle }, color: '#cf1ab2' },
+      { id: 's4', pos: { x: 25, z: 25 }, hp: 200, weapon: { ...rifle }, color: '#cf1ab2' },
     ],
     portal: { id: 'p50', posA: { x: 2, z: 15 }, posB: { x: 27, z: 15 } },
     ammoBoxes: [
