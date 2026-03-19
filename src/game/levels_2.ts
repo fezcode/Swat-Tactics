@@ -171,8 +171,13 @@ export const LEVELS_2: LevelData[] = [
       { id: 's4', pos: { x: 25, z: 25 }, hp: 200, weapon: { ...rifle }, color: '#78350f' },
     ],
     portal: { id: 'p50', posA: { x: 2, z: 15 }, posB: { x: 27, z: 15 } },
-    ammoBoxes: [{ id: 'a50', pos: { x: 15, z: 10 } }],
+    ammoBoxes: [
+      { id: 'a50', pos: { x: 15, z: 10 } },
+      { id: 'a50_2', pos: { x: 10, z: 20 } },
+      { id: 'a50_3', pos: { x: 20, z: 20 } },
+    ],
     healthBoxes: [{ id: 'h50', pos: { x: 2, z: 28 } }],
+    barrels: [{ id: 'b50_1', pos: { x: 15, z: 7 } }],
     exit: { x: 15, z: 1 },
   },
   // Level 51: Tidal Breach — Intro to dual-weapon era, multiple flanking enemies
