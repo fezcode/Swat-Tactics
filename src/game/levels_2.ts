@@ -304,7 +304,7 @@ export const LEVELS_2: LevelData[] = [
       { pos: { x: 2, z: 7 }, targetId: 'bt2' },
       { pos: { x: 6, z: 7 }, targetId: 'bt3' },
     ],
-    barrels: [{ id: 'bb54_1', pos: { x: 6, z: 22 } }, { id: 'bb54_2', pos: { x: 6, z: 16 } }, { id: 'bb54_3', pos: { x: 6, z: 10 } }],
+    barrels: [{ id: 'bb54_1', pos: { x: 3, z: 22 } }, { id: 'bb54_2', pos: { x: 9, z: 16 } }, { id: 'bb54_3', pos: { x: 3, z: 10 } }],
     healthBoxes: [{ id: 'bh54', pos: { x: 6, z: 13 } }],
     ammoBoxes: [{ id: 'ba54', pos: { x: 6, z: 19 } }],
     exit: { x: 6, z: 1 },
