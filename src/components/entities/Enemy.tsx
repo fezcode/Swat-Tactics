@@ -16,7 +16,6 @@ export function Enemy({ state }: { state: EnemyState }) {
   const phase = useGameStore(s => s.phase);
   const countdown = useGameStore(s => s.countdown);
   const theme = useGameStore(s => s.theme);
-  const walls = useGameStore(s => s.walls);
   const { rapier, world } = useRapier();
   
   const [aiState, setAIState] = useState<AIState>('idle');
@@ -212,7 +211,7 @@ export function Enemy({ state }: { state: EnemyState }) {
 
     // Avoid walls in moveDir
     if (moveDir.x !== 0 || moveDir.z !== 0) {
-        const rayMove = new rapier.Ray({ x: myPos.x, y: 0.5, z: myPos.z }, moveDir);
+        const rayMove = new rapier.Ray({ x: myPos.x, y: 0.5, z: myPos.z }, { x: moveDir.x, y: 0, z: moveDir.z });
         const wallHit = world.castRay(rayMove, 1.0, true, undefined, undefined, undefined, rb.current as any);
         if (wallHit) {
             const hitCollider = world.getCollider((wallHit as any).colliderHandle);
