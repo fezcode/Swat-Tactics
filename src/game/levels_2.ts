@@ -625,6 +625,7 @@ export const LEVELS_2: LevelData[] = [
       { id: 'e62_5', pos: { x: 9, z: 10 }, hp: 250, weapon: { ...rifle } },
     ],
     barrels: [{ id: 'b62_1', pos: { x: 10, z: 10 } }, { id: 'b62_2', pos: { x: 10, z: 14 } }, { id: 'b62_3', pos: { x: 10, z: 6 } }],
+    ammoBoxes: [{ id: 'a62_1', pos: { x: 2, z: 2 } }],
     exit: { x: 18, z: 2 }
   },
   {
@@ -641,15 +642,19 @@ export const LEVELS_2: LevelData[] = [
       { x: 7, z: 4 }, { x: 8, z: 4 }, { x: 9, z: 4 }, { x: 10, z: 4 }, { x: 11, z: 4 },
     ],
     enemies: [
-      { id: 'e63_1', pos: { x: 2, z: 9 }, hp: 200, weapon: { ...shotgun } },
-      { id: 'e63_2', pos: { x: 16, z: 9 }, hp: 200, weapon: { ...shotgun } },
-      { id: 'e63_3', pos: { x: 9, z: 9 }, hp: 300, weapon: { ...rifle } },
-      { id: 'e63_4', pos: { x: 5, z: 2 }, hp: 100, weapon: { ...defaultPistol } },
-      { id: 'e63_5', pos: { x: 13, z: 2 }, hp: 100, weapon: { ...defaultPistol } },
+      { id: 'e63_1', pos: { x: 2, z: 9 }, hp: 120, weapon: { ...shotgun } },
+      { id: 'e63_2', pos: { x: 16, z: 9 }, hp: 120, weapon: { ...shotgun } },
+      { id: 'e63_3', pos: { x: 9, z: 9 }, hp: 180, weapon: { ...rifle } },
+      { id: 'e63_4', pos: { x: 5, z: 2 }, hp: 80, weapon: { ...defaultPistol } },
+      { id: 'e63_5', pos: { x: 13, z: 2 }, hp: 80, weapon: { ...defaultPistol } },
     ],
     turrets: [
       { id: 't63_1', pos: { x: 9, z: 6 }, hp: 150, damage: 10, fireRate: 333 },
       { id: 't63_2', pos: { x: 9, z: 12 }, hp: 150, damage: 10, fireRate: 333 }
+    ],
+    ammoBoxes: [
+      { id: 'a63_1', pos: { x: 2, z: 16 } },
+      { id: 'a63_2', pos: { x: 16, z: 16 } }
     ],
     buttons: [
       { pos: { x: 2, z: 2 }, targetId: 't63_1' },
@@ -705,7 +710,11 @@ export const LEVELS_2: LevelData[] = [
       { id: 'e65_2', pos: { x: 7, z: 17 }, hp: 150, weapon: { ...smg } },
       { id: 'e65_3', pos: { x: 7, z: 12 }, hp: 200, weapon: { ...shotgun } },
       { id: 'e65_4', pos: { x: 7, z: 7 }, hp: 250, weapon: { ...rifle } },
-      { id: 'e65_5', pos: { x: 7, z: 2 }, hp: 400, weapon: { ...chaingun } },
+      { id: 'e65_5', pos: { x: 7, z: 2 }, hp: 350, weapon: { ...chaingun } },
+    ],
+    ammoBoxes: [
+      { id: 'a65_1', pos: { x: 2, z: 24 } },
+      { id: 'a65_2', pos: { x: 11, z: 4 } }
     ],
     exit: { x: 7, z: 1 }
   },
@@ -761,15 +770,19 @@ export const LEVELS_2: LevelData[] = [
       { x: 8, z: 10 }, { x: 9, z: 10 }, { x: 10, z: 10 },
     ],
     enemies: [
-      { id: 'e67_1', pos: { x: 9, z: 16 }, hp: 200, weapon: { ...smg } },
-      { id: 'e67_2', pos: { x: 16, z: 16 }, hp: 200, weapon: { ...smg } },
-      { id: 'e67_3', pos: { x: 2, z: 8 }, hp: 300, weapon: { ...rifle } },
-      { id: 'e67_4', pos: { x: 16, z: 8 }, hp: 300, weapon: { ...rifle } },
-      { id: 'e67_5', pos: { x: 9, z: 2 }, hp: 200, weapon: { ...smg } },
+      { id: 'e67_1', pos: { x: 9, z: 16 }, hp: 150, weapon: { ...smg } },
+      { id: 'e67_2', pos: { x: 16, z: 16 }, hp: 150, weapon: { ...smg } },
+      { id: 'e67_3', pos: { x: 2, z: 8 }, hp: 250, weapon: { ...rifle } },
+      { id: 'e67_4', pos: { x: 16, z: 8 }, hp: 250, weapon: { ...rifle } },
+      { id: 'e67_5', pos: { x: 9, z: 2 }, hp: 150, weapon: { ...smg } },
     ],
     barrels: [
       { id: 'b67_1', pos: { x: 4, z: 14 } }, { id: 'b67_2', pos: { x: 8, z: 14 } },
       { id: 'b67_3', pos: { x: 14, z: 4 } }, { id: 'b67_4', pos: { x: 10, z: 4 } }
+    ],
+    ammoBoxes: [
+      { id: 'a67_1', pos: { x: 2, z: 2 } },
+      { id: 'a67_2', pos: { x: 16, z: 14 } }
     ],
     exit: { x: 16, z: 2 }
   },
@@ -823,11 +836,15 @@ export const LEVELS_2: LevelData[] = [
       { id: 'e69_2', pos: { x: 14, z: 14 }, hp: 150, weapon: { ...smg } },
       { id: 'e69_3', pos: { x: 2, z: 8 }, hp: 250, weapon: { ...shotgun } },
       { id: 'e69_4', pos: { x: 14, z: 8 }, hp: 250, weapon: { ...shotgun } },
-      { id: 'e69_5', pos: { x: 8, z: 5 }, hp: 400, weapon: { ...rifle } },
+      { id: 'e69_5', pos: { x: 8, z: 5 }, hp: 350, weapon: { ...rifle } },
       { id: 'e69_6', pos: { x: 2, z: 2 }, hp: 150, weapon: { ...smg } },
       { id: 'e69_7', pos: { x: 14, z: 2 }, hp: 150, weapon: { ...smg } },
     ],
     barrels: [{ id: 'b69_1', pos: { x: 6, z: 10 } }, { id: 'b69_2', pos: { x: 10, z: 6 } }],
+    ammoBoxes: [
+      { id: 'a69_1', pos: { x: 2, z: 11 } },
+      { id: 'a69_2', pos: { x: 14, z: 11 } }
+    ],
     exit: { x: 8, z: 1 }
   },
   {
