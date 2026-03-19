@@ -8,6 +8,7 @@ function ProjectileItem({ p }: { p: ProjectileState }) {
   const removeProjectile = useGameStore(s => s.removeProjectile);
   const damageEntity = useGameStore(s => s.damageEntity);
   const theme = useGameStore(s => s.theme);
+  const hasHit = useRef(false);
 
   useEffect(() => {
     if (rb.current) {
@@ -27,6 +28,8 @@ function ProjectileItem({ p }: { p: ProjectileState }) {
       sensor
       userData={{ type: 'projectile' }}
       onIntersectionEnter={({ other }) => {
+        if (hasHit.current) return;
+        
         const otherRb = other.rigidBodyObject;
         const userData = otherRb?.userData as any;
         
@@ -35,6 +38,9 @@ function ProjectileItem({ p }: { p: ProjectileState }) {
         if (userData.type === 'floor' || userData.type === 'projectile' || userData.type === 'exit' || userData.type === 'health_box' || userData.type === 'ammo_box' || userData.type === 'train') return;
         if (p.isEnemy && (userData.type === 'enemy' || userData.type === 'turret')) return;
         if (!p.isEnemy && userData.type === 'player') return;
+        
+        // Mark as hit immediately to prevent double-processing in the same physics step
+        hasHit.current = true;
         
         // Get current physics position for precise impact reporting
         const currentPos = rb.current ? rb.current.translation() : p.pos;
