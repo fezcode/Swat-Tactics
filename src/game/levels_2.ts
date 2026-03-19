@@ -1000,6 +1000,7 @@ export const LEVELS_2: LevelData[] = [
       { id: 'e75_5', pos: { x: 18, z: 10 }, hp: 150, weapon: { ...rifle } },
       { id: 'e75_6', pos: { x: 12, z: 4 }, hp: 300, weapon: { ...chaingun } }
     ],
+    ammoBoxes: [{ id: 'ba75', pos: { x: 12, z: 12 } }],
     exit: { x: 12, z: 1 }
   },
   {
@@ -1027,6 +1028,7 @@ export const LEVELS_2: LevelData[] = [
       { pos: { x: 2, z: 2 }, targetId: 't76_1' },
       { pos: { x: 20, z: 2 }, targetId: 't76_1' }
     ],
+    ammoBoxes: [{ id: 'ba76', pos: { x: 11, z: 11 } }],
     exit: { x: 11, z: 1 }
   },
   {
@@ -1081,6 +1083,7 @@ export const LEVELS_2: LevelData[] = [
       { pos: { x: 2, z: 20 }, targetId: 't78_1' },
       { pos: { x: 20, z: 20 }, targetId: 't78_1' }
     ],
+    ammoBoxes: [{ id: 'ba78', pos: { x: 11, z: 11 } }],
     exit: { x: 11, z: 1 }
   },
   {
@@ -1115,6 +1118,7 @@ export const LEVELS_2: LevelData[] = [
       { id: 'b79_1', pos: { x: 4, z: 4 } }, { id: 'b79_2', pos: { x: 20, z: 4 } },
       { id: 'b79_3', pos: { x: 4, z: 20 } }, { id: 'b79_4', pos: { x: 20, z: 20 } }
     ],
+    ammoBoxes: [{ id: 'ba79', pos: { x: 12, z: 12 } }],
     exit: { x: 12, z: 1 }
   },
   {
@@ -1135,7 +1139,7 @@ export const LEVELS_2: LevelData[] = [
       { x: 23, z: 20 }, { x: 24, z: 20 }, { x: 25, z: 20 },
     ],
     enemies: [
-      { id: 'e80_boss_SKY_MARSHAL', pos: { x: 15, z: 8 }, hp: 3000, weapon: { ...chaingun, damage: 15, maxAmmo: 999 } },
+      { id: 'e80_boss_SKY_MARSHAL', pos: { x: 15, z: 8 }, hp: 2000, weapon: { ...chaingun, damage: 15, maxAmmo: 999 } },
       { id: 'e80_1', pos: { x: 5, z: 18 }, hp: 200, weapon: { ...smg } },
       { id: 'e80_2', pos: { x: 25, z: 18 }, hp: 200, weapon: { ...smg } },
       { id: 'e80_3', pos: { x: 10, z: 15 }, hp: 200, weapon: { ...rifle } },
@@ -1165,7 +1169,11 @@ export const LEVELS_2: LevelData[] = [
     ammoBoxes: [
       { id: 'a80_1', pos: { x: 5, z: 28 } },
       { id: 'a80_2', pos: { x: 25, z: 28 } },
-      { id: 'a80_3', pos: { x: 15, z: 2 } }
+      { id: 'a80_3', pos: { x: 15, z: 2 } },
+      { id: 'a80_4', pos: { x: 15, z: 15 } },
+      { id: 'a80_5', pos: { x: 2, z: 2 } },
+      { id: 'a80_6', pos: { x: 28, z: 2 } },
+      { id: 'a80_7', pos: { x: 15, z: 10 } }
     ],
     healthBoxes: [
       { id: 'h80_1', pos: { x: 15, z: 25 } }

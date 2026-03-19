@@ -15,6 +15,7 @@ export const LEVELS_3: LevelData[] = [
       { id: 'me1_81', pos: { x: 18, z: 2 }, hp: 100, weapon: { ...rifle } },
       { id: 'me2_81', pos: { x: 18, z: 10 }, hp: 100, weapon: { ...rifle } },
     ],
+    ammoBoxes: [{ id: 'ma81', pos: { x: 10, z: 6 } }],
     exit: { x: 18, z: 6 },
   },
   {
@@ -29,6 +30,7 @@ export const LEVELS_3: LevelData[] = [
       { id: 'me1_82', pos: { x: 20, z: 2 }, hp: 120, weapon: { ...rifle } },
       { id: 'me2_82', pos: { x: 20, z: 12 }, hp: 120, weapon: { ...rifle } },
     ],
+    ammoBoxes: [{ id: 'ma82', pos: { x: 11, z: 7 } }],
     exit: { x: 20, z: 7 },
   },
   {
@@ -73,6 +75,7 @@ export const LEVELS_3: LevelData[] = [
       { id: 'me1_85', pos: { x: 24, z: 3 }, hp: 200, weapon: { ...rifle } },
       { id: 'me2_85', pos: { x: 24, z: 11 }, hp: 200, weapon: { ...rifle } },
     ],
+    ammoBoxes: [{ id: 'ma85', pos: { x: 13, z: 7 } }],
     exit: { x: 24, z: 7 },
   },
   {
@@ -87,6 +90,7 @@ export const LEVELS_3: LevelData[] = [
       { id: 'me1_86', pos: { x: 2, z: 2 }, hp: 180, weapon: { ...rifle } },
       { id: 'me2_86', pos: { x: 20, z: 2 }, hp: 180, weapon: { ...rifle } },
     ],
+    ammoBoxes: [{ id: 'ma86', pos: { x: 11, z: 9 } }],
     exit: { x: 11, z: 2 },
   },
   {
@@ -131,6 +135,7 @@ export const LEVELS_3: LevelData[] = [
       { id: 'me1_89', pos: { x: 22, z: 2 }, hp: 300, weapon: { ...rifle } },
       { id: 'me2_89', pos: { x: 22, z: 14 }, hp: 300, weapon: { ...rifle } },
     ],
+    ammoBoxes: [{ id: 'ma89', pos: { x: 12, z: 8 } }],
     exit: { x: 22, z: 8 },
   },
   {
@@ -146,7 +151,7 @@ export const LEVELS_3: LevelData[] = [
       { id: 'me1_90', pos: { x: 5, z: 5 }, hp: 200, weapon: { ...shotgun } },
       { id: 'me2_90', pos: { x: 25, z: 5 }, hp: 200, weapon: { ...shotgun } },
     ],
-    ammoBoxes: [{ id: 'ma10', pos: { x: 5, z: 15 } }],
+    ammoBoxes: [{ id: 'ma10', pos: { x: 5, z: 15 } }, { id: 'ma10_2', pos: { x: 15, z: 10 } }],
     healthBoxes: [{ id: 'mh10', pos: { x: 25, z: 15 } }],
     exit: { x: 15, z: 1 },
   },
