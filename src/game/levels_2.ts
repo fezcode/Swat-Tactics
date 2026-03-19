@@ -398,7 +398,7 @@ export const LEVELS_2: LevelData[] = [
     walls: [
       ...createBoxRoom(24, 24),
       { x: 10, z: 10 }, { x: 11, z: 10 }, { x: 12, z: 10 }, { x: 13, z: 10 },
-      { x: 10, z: 13 }, { x: 11, z: 13 }, { x: 12, z: 13 }, { x: 13, z: 13 },
+      { x: 10, z: 13 }, { x: 13, z: 13 },
       { x: 10, z: 11 }, { x: 10, z: 12 },
       { x: 13, z: 11 }, { x: 13, z: 12 },
       { x: 6, z: 6 }, { x: 17, z: 6 }, { x: 6, z: 17 }, { x: 17, z: 17 },
@@ -469,7 +469,7 @@ export const LEVELS_2: LevelData[] = [
     ],
     barrels: [
       { id: 'bb58_1', pos: { x: 10, z: 2 } }, { id: 'bb58_2', pos: { x: 10, z: 11 } },
-      { id: 'bb58_3', pos: { x: 18, z: 7 } }, { id: 'bb58_4', pos: { x: 24, z: 7 } },
+      { id: 'bb58_3', pos: { x: 18, z: 6 } }, { id: 'bb58_4', pos: { x: 24, z: 7 } },
     ],
     healthBoxes: [{ id: 'bh58', pos: { x: 14, z: 12 } }],
     ammoBoxes: [{ id: 'ba58_1', pos: { x: 7, z: 7 } }, { id: 'ba58_2', pos: { x: 21, z: 7 } }],
