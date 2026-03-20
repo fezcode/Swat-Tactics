@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { shallow } from 'zustand/shallow';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGameStore } from './game/store';
 import { GridMap } from './components/environment/GridMap';
+import { SurvivalArena } from './components/environment/SurvivalArena';
 import { Player } from './components/entities/Player';
 import { Enemy } from './components/entities/Enemy';
 import { Barrel } from './components/entities/Barrel';
@@ -13,6 +15,8 @@ import { PauseHandler } from './components/ui/PauseHandler';
 import { ParticleSystem } from './components/entities/ParticleSystem';
 import { Projectiles } from './components/entities/Projectile';
 import { ExplosionEffects } from './components/entities/Explosion';
+import { XPOrbs } from './components/entities/XPOrb';
+import { ShadowClone } from './components/entities/ShadowClone';
 import { Music } from './game/sounds';
 import { Train } from './components/entities/Train';
 
@@ -31,7 +35,7 @@ function GameLoop() {
       frameCount.current = 0;
       lastTime.current = now;
     }
-    if (phase === 'playing' || phase === 'level_intro') tick(delta);
+    if (phase === 'playing' || phase === 'level_intro' || phase === 'survival_playing' || phase === 'survival_wave_intro') tick(delta);
   });
   return null;
 }
@@ -43,8 +47,21 @@ function GameScene() {
   const phase = useGameStore(s => s.phase);
   const theme = useGameStore(s => s.theme);
   const hasTrain = useGameStore(s => s.hasTrain);
+  const gameMode = useGameStore(s => s.gameMode);
+  const survivalMutations = useGameStore(s => s.survivalState?.mutations);
+  const survivalArenaSize = useGameStore(s => s.survivalState?.arenaSize);
 
   const bgColor = useMemo(() => {
+    if (gameMode === 'survival') {
+      if (survivalMutations?.includes('darkness')) return '#020202';
+      switch (theme) {
+        case 'desert': return '#1a1408';
+        case 'space_station': return '#050510';
+        case 'cemetery': return '#0a0a0c';
+        case 'metro': return '#080808';
+        default: return '#050510';
+      }
+    }
     switch (theme) {
       case 'garden': return '#1a2e1a';
       case 'skyscraper': return '#0a0c14';
@@ -53,22 +70,29 @@ function GameScene() {
       case 'metro': return '#1a1a1a';
       default: return '#050505';
     }
-  }, [theme]);
+  }, [theme, gameMode, survivalMutations]);
+
+  const isSurvival = gameMode === 'survival';
+  const ambientIntensity = isSurvival ? (survivalMutations?.includes('darkness') ? 0.4 : 0.9) : 1.2;
+  const arenaHalf = survivalArenaSize ? survivalArenaSize / 2 : 15;
 
   return (
     <>
       <color attach="background" args={[bgColor]} />
-      <ambientLight intensity={1.2} />
-      <directionalLight position={[20, 30, 20]} intensity={2.5} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} shadow-camera-near={0.5} shadow-camera-far={100} />
+      <ambientLight intensity={ambientIntensity} />
+      <directionalLight position={[20, 30, 20]} intensity={isSurvival ? 2.0 : 2.5} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} shadow-camera-near={0.5} shadow-camera-far={100} />
+      {isSurvival && <pointLight position={[arenaHalf, 8, arenaHalf]} intensity={5} distance={40} color="#6366f1" />}
       <Physics gravity={[0, 0, 0]} paused={phase === 'paused'}>
-        <GridMap />
+        {isSurvival ? <SurvivalArena /> : <GridMap />}
         {player && <Player state={player} />}
         {enemies.map(e => <Enemy key={e.id} state={e} />)}
-        {barrels.map(b => <Barrel key={b.id} state={b} />)}
-        {hasTrain && <Train key={useGameStore.getState().levelIndex} />}
+        {!isSurvival && barrels.map(b => <Barrel key={b.id} state={b} />)}
+        {!isSurvival && hasTrain && <Train key={useGameStore.getState().levelIndex} />}
         <Projectiles />
         <ExplosionEffects />
       </Physics>
+      {isSurvival && <XPOrbs />}
+      {isSurvival && <ShadowClone />}
       <ParticleSystem />
       <GameLoop />
     </>

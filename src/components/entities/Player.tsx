@@ -1,12 +1,13 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, memo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { RigidBody, RapierRigidBody, BallCollider } from '@react-three/rapier';
 import type { PlayerState } from '../../types';
 import { useGameStore } from '../../game/store';
+import { positionCache } from '../../game/positionCache';
 import * as THREE from 'three';
 import { SFX } from '../../game/sounds';
 
-export function Player({ state }: { state: PlayerState }) {
+export const Player = memo(function Player({ state }: { state: PlayerState }) {
   const rb = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Group>(null);
   const primaryGunRef = useRef<THREE.Group>(null);
@@ -68,12 +69,12 @@ export function Player({ state }: { state: PlayerState }) {
       if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.current.d = true;
       if (e.key === 'q' || e.key === 'Q') switchWeapon();
       if (e.key === 'e' || e.key === 'E') {
-        const { levelIndex } = useGameStore.getState();
-        if (levelIndex >= 80) slash();
+        const { levelIndex, gameMode } = useGameStore.getState();
+        if (gameMode === 'survival' || levelIndex >= 80) slash();
       }
       if (e.key === 'Shift') {
-        const { player, levelIndex } = useGameStore.getState();
-        if (!player || levelIndex < 70) return; 
+        const { player, levelIndex, gameMode } = useGameStore.getState();
+        if (!player || (gameMode !== 'survival' && levelIndex < 70)) return;
         
         keys.current.shift = true;
         let dx = 0;
@@ -122,13 +123,18 @@ export function Player({ state }: { state: PlayerState }) {
   useFrame(({ clock }, delta) => {
     if (!rb.current || state.hp <= 0) return;
 
-    if (phase !== 'playing' || (countdown !== null && countdown > 0.5)) {
+    const { gameMode: gm, survivalState: sv } = useGameStore.getState();
+    const validPhase = gm === 'survival' ? (phase === 'survival_playing') : (phase === 'playing');
+    if (!validPhase || (countdown !== null && countdown > 0.5)) {
       rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       return;
     }
 
     const pos = rb.current.translation();
-    if (clock.getElapsedTime() - lastStoreUpdate.current > 0.1) {
+    // Always update position cache (non-reactive, instant)
+    positionCache.set('player', { x: pos.x, z: pos.z });
+    // Update store less frequently (triggers re-renders)
+    if (clock.getElapsedTime() - lastStoreUpdate.current > 0.15) {
       lastStoreUpdate.current = clock.getElapsedTime();
       useGameStore.setState(s => ({ player: s.player ? { ...s.player, pos: { x: pos.x, z: pos.z } } : null }));
     }
@@ -137,7 +143,17 @@ export function Player({ state }: { state: PlayerState }) {
       const { player } = useGameStore.getState();
       if (player && player.hp > 0) {
         const activeWeapon = player.activeWeaponSlot === 'secondary' && player.secondaryWeapon ? player.secondaryWeapon : player.weapon;
-        const fireInterval = player.activeWeaponSlot === 'secondary' && player.secondaryWeapon ? 0.1 : 0.25;
+        let fireInterval = player.activeWeaponSlot === 'secondary' && player.secondaryWeapon ? 0.1 : 0.25;
+        // Apply survival perk modifiers
+        if (gm === 'survival' && sv) {
+          const rapidStacks = sv.perkStacks['rapid_fire'] || 0;
+          fireInterval *= Math.max(0.4, 1 - rapidStacks * 0.2);
+          // Adrenaline: below 30% HP boost
+          if (sv.activePerks.includes('adrenaline') && player.hp < player.maxHp * 0.3) {
+            fireInterval *= 0.5;
+          }
+          // Berserker mutation: enemies fire faster (handled in Enemy), but also makes player fire slightly faster
+        }
         const now = clock.getElapsedTime();
         
         if (now - lastFireTime.current >= fireInterval) {
@@ -152,7 +168,15 @@ export function Player({ state }: { state: PlayerState }) {
       }
     }
 
-    const speed = 10;
+    let speed = gm === 'survival' ? 12 : 10;
+    // Apply survival perk modifiers to speed
+    if (gm === 'survival' && sv) {
+      const swiftStacks = sv.perkStacks['swift_feet'] || 0;
+      speed *= (1 + swiftStacks * 0.15);
+      if (sv.activePerks.includes('adrenaline') && state.hp < state.maxHp * 0.3) {
+        speed *= 1.3;
+      }
+    }
     let vx = 0;
     let vz = 0;
     if (keys.current.w) vz -= speed;
@@ -166,10 +190,12 @@ export function Player({ state }: { state: PlayerState }) {
     }
     rb.current.setLinvel({ x: vx, y: 0, z: vz }, true);
 
-    const { exitPos, enemies, setPhase } = useGameStore.getState();
-    if (exitPos && enemies.length > 0 && enemies.filter(e => !e.unkillable).every(e => e.hp <= 0)) {
-       const dist = Math.sqrt(Math.pow(pos.x - exitPos.x, 2) + Math.pow(pos.z - exitPos.z, 2));
-       if (dist < 1.2) setPhase('level_complete');
+    if (gm !== 'survival') {
+      const { exitPos, enemies, setPhase } = useGameStore.getState();
+      if (exitPos && enemies.length > 0 && enemies.filter(e => !e.unkillable).every(e => e.hp <= 0)) {
+         const dist = Math.sqrt(Math.pow(pos.x - exitPos.x, 2) + Math.pow(pos.z - exitPos.z, 2));
+         if (dist < 1.2) setPhase('level_complete');
+      }
     }
 
     const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.5);
@@ -208,6 +234,9 @@ export function Player({ state }: { state: PlayerState }) {
 
   if (state.hp <= 0) return null;
   const isPrimary = state.activeWeaponSlot === 'primary';
+  const svPerks = useGameStore.getState().survivalState?.activePerks || [];
+  const hasDeathAura = svPerks.includes('death_aura');
+  const hasAdrenaline = svPerks.includes('adrenaline') && state.hp < state.maxHp * 0.3;
 
   return (
     <RigidBody ref={rb} type="dynamic" position={[state.pos.x, 0.5, state.pos.z]} lockRotations enabledTranslations={[true, false, true]} friction={0} restitution={0} colliders={false} name="player" userData={{ type: 'player', id: state.id }}>
@@ -215,12 +244,23 @@ export function Player({ state }: { state: PlayerState }) {
       <group ref={meshRef}>
         <mesh castShadow receiveShadow>
           <capsuleGeometry args={[0.3, 0.4, 4, 16]} />
-          <meshStandardMaterial color="#3b82f6" roughness={0.4} metalness={0.6} />
+          <meshStandardMaterial color={hasAdrenaline ? '#ef4444' : '#3b82f6'} roughness={0.4} metalness={0.6} emissive={hasAdrenaline ? '#ef4444' : '#000000'} emissiveIntensity={hasAdrenaline ? 2 : 0} />
         </mesh>
         <mesh castShadow receiveShadow position={[0, 0.5, 0]}>
           <sphereGeometry args={[0.25, 16, 16]} />
-          <meshStandardMaterial color="#60a5fa" roughness={0.3} />
+          <meshStandardMaterial color={hasAdrenaline ? '#fca5a5' : '#60a5fa'} roughness={0.3} />
         </mesh>
+
+        {/* Death Aura visual ring */}
+        {hasDeathAura && (
+          <>
+            <mesh position={[0, -0.45, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[2.5, 3.0, 64]} />
+              <meshBasicMaterial color="#dc2626" transparent opacity={0.15} />
+            </mesh>
+            <pointLight color="#dc2626" intensity={8} distance={4} />
+          </>
+        )}
 
         {/* Slash Sword Animation */}
         {slashActive && (
@@ -253,4 +293,4 @@ export function Player({ state }: { state: PlayerState }) {
       </group>
     </RigidBody>
   );
-}
+});

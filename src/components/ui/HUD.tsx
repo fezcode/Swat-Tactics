@@ -1,5 +1,6 @@
 import { useGameStore } from '../../game/store';
 import { MainMenu } from './MainMenu';
+import { SurvivalHUD } from './SurvivalHUD';
 import { SFX } from '../../game/sounds';
 import { useMemo, useState, useEffect, useRef } from 'react';
 
@@ -55,7 +56,14 @@ export function HUD() {
     SFX.buttonHover();
   };
 
+  const gameMode = useGameStore(s => s.gameMode);
+
   if (phase === 'main_menu') return <MainMenu />;
+
+  // Route to survival HUD for all survival phases
+  if (gameMode === 'survival' && (phase === 'survival_playing' || phase === 'survival_wave_intro' || phase === 'survival_perk_select' || phase === 'survival_game_over')) {
+    return <SurvivalHUD />;
+  }
 
   if (phase === 'paused') {
     return (
@@ -63,7 +71,7 @@ export function HUD() {
         <h1 className="text-7xl font-black italic tracking-tighter neon-text mb-12 transform -skew-x-12">PAUSED</h1>
         <div className="flex flex-col gap-6 items-center transform -skew-x-12">
           <button className="px-12 py-4 bg-white text-black text-2xl font-black hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none" onClick={() => handleClick(() => useGameStore.getState().togglePause())} onMouseEnter={handleHover}>RESUME MISSION</button>
-          <button className="text-zinc-400 font-bold hover:text-white transition-colors cursor-pointer" onClick={() => handleClick(() => useGameStore.setState({ phase: 'main_menu' }))} onMouseEnter={handleHover}>ABORT MISSION</button>
+          <button className="text-zinc-400 font-bold hover:text-white transition-colors cursor-pointer" onClick={() => handleClick(() => useGameStore.setState({ phase: 'main_menu', gameMode: 'campaign', survivalState: null }))} onMouseEnter={handleHover}>ABORT MISSION</button>
         </div>
       </div>
     );

@@ -117,7 +117,25 @@ export interface LevelData {
   hasTrain?: boolean;
 }
 
-export type GamePhase = 'main_menu' | 'level_intro' | 'playing' | 'paused' | 'game_over' | 'level_complete' | 'victory';
+export type GamePhase = 'main_menu' | 'level_intro' | 'playing' | 'paused' | 'game_over' | 'level_complete' | 'victory'
+  | 'survival_playing' | 'survival_wave_intro' | 'survival_perk_select' | 'survival_game_over';
+
+export type GameMode = 'campaign' | 'survival';
+
+export interface XPOrbState {
+  id: string;
+  pos: { x: number; z: number };
+  value: number;
+  spawnTime: number;
+}
+
+export interface FloatingText {
+  id: string;
+  text: string;
+  pos: { x: number; z: number };
+  color: string;
+  life: number;
+}
 
 export interface Particle {
   id: string;

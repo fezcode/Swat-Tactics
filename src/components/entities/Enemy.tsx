@@ -1,247 +1,221 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, memo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RigidBody, RapierRigidBody, useRapier, BallCollider } from '@react-three/rapier';
+import { RigidBody, RapierRigidBody, BallCollider } from '@react-three/rapier';
 import { Billboard } from '@react-three/drei';
 import type { EnemyState, Position } from '../../types';
 import { useGameStore } from '../../game/store';
+import { positionCache } from '../../game/positionCache';
 import * as THREE from 'three';
 import { SFX } from '../../game/sounds';
 
-type AIState = 'idle' | 'patrol' | 'chase' | 'search' | 'attack';
+type AIState = 'idle' | 'patrol' | 'chase' | 'attack';
 
-export function Enemy({ state }: { state: EnemyState }) {
+export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
   const rb = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Group>(null);
   const enemyShoot = useGameStore(s => s.enemyShoot);
   const phase = useGameStore(s => s.phase);
   const countdown = useGameStore(s => s.countdown);
   const theme = useGameStore(s => s.theme);
-  const { rapier, world } = useRapier();
-  
-  const [aiState, setAIState] = useState<AIState>('idle');
+
+  const aiState = useRef<AIState>('idle');
   const lastShootTime = useRef(0);
-  const lastStoreUpdate = useRef(0);
   const visualRotation = useRef(state.rotation);
-  
-  // Advanced AI variables
+
   const patrolTarget = useRef<Position | null>(null);
-  const searchTarget = useRef<Position | null>(null);
   const stateTimer = useRef(0);
-  const strafeDir = useRef(Math.random() > 0.5 ? 1 : -1);
+  const strafeDir = useRef(1);
   const lastHitTimeLocal = useRef(state.lastHitTime || 0);
+  
+  const sprintStateRef = useRef({
+    isSprinting: false,
+    sprintTimer: 0,
+    nextSprintIn: 0
+  });
 
   useEffect(() => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y = state.rotation;
-    }
+    strafeDir.current = Math.random() > 0.5 ? 1 : -1;
+    sprintStateRef.current.nextSprintIn = Math.random() * 5 + 3;
+    if (meshRef.current) meshRef.current.rotation.y = state.rotation;
+    return () => { positionCache.delete(state.id); };
   }, []);
 
   useFrame(({ clock }, dt) => {
     if (!rb.current || !meshRef.current || state.hp <= 0) return;
 
-    if (phase !== 'playing' || (countdown !== null && countdown > 0.5)) {
+    const gameMode = useGameStore.getState().gameMode;
+    const validPhase = gameMode === 'survival' ? (phase === 'survival_playing') : (phase === 'playing');
+    if (!validPhase || (countdown !== null && countdown > 0.5)) {
       rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       return;
     }
-    
-    const myPos = rb.current.translation();
-    const myPosition: Position = { x: myPos.x, z: myPos.z };
 
-    // Update global store less frequently for performance
-    if (clock.getElapsedTime() - lastStoreUpdate.current > 0.1) {
-      lastStoreUpdate.current = clock.getElapsedTime();
-      useGameStore.setState(s => ({
-        enemies: s.enemies.map(e => e.id === state.id ? { ...e, pos: myPosition } : e)
-      }));
-    }
+    const myPos = rb.current.translation();
+
+    // Write position to non-reactive cache (zero cost, every frame)
+    positionCache.set(state.id, { x: myPos.x, z: myPos.z });
 
     const player = useGameStore.getState().player;
     if (!player || player.hp <= 0) {
-        rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-        return;
+      rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      return;
     }
 
-    // 1. Perception
     const dx = player.pos.x - myPos.x;
     const dz = player.pos.z - myPos.z;
     const distToPlayer = Math.sqrt(dx * dx + dz * dz);
-    const dirToPlayer = { x: dx / distToPlayer, y: 0, z: dz / distToPlayer };
-    
-    // Line of sight check
-    const rayOrigin = { x: myPos.x, y: 0.5, z: myPos.z };
-    const hit = world.castRay(
-      new rapier.Ray(rayOrigin, dirToPlayer),
-      distToPlayer,
-      true,
-      undefined,
-      undefined,
-      undefined,
-      rb.current as any
-    );
-    
-    let hasLOS = true;
-    if (hit) {
-      const hitCollider = world.getCollider((hit as any).colliderHandle);
-      if (hitCollider) {
-        const hitBody = hitCollider.parent();
-        const hitData = hitBody?.userData as any;
-        if (hitData?.type === 'wall' && (hit as any).toi < distToPlayer - 0.2) hasLOS = false;
+    if (distToPlayer < 0.001) return; // avoid NaN
+    const dirX = dx / distToPlayer;
+    const dirZ = dz / distToPlayer;
+
+    // Reactive: If hit, immediately chase
+    if (state.lastHitTime && state.lastHitTime > lastHitTimeLocal.current) {
+      lastHitTimeLocal.current = state.lastHitTime;
+      if (aiState.current === 'idle' || aiState.current === 'patrol') {
+        aiState.current = 'chase';
       }
     }
 
-    // Reactive: If hit, immediately chase/search
-    if (state.lastHitTime && state.lastHitTime > lastHitTimeLocal.current) {
-        lastHitTimeLocal.current = state.lastHitTime;
-        if (aiState === 'idle' || aiState === 'patrol') {
-            setAIState('search');
-            searchTarget.current = player.pos;
-        }
-    }
-
-    // 2. State Machine Logic
+    // State transitions (simple, no raycasts)
     stateTimer.current -= dt;
+    const detectRange = gameMode === 'survival' ? 25 : 15;
 
-    if (hasLOS) {
-        // Player seen!
-        if (distToPlayer < 12) {
-            setAIState('attack');
-        } else {
-            setAIState('chase');
-        }
-        useGameStore.setState(s => ({
-            enemies: s.enemies.map(e => e.id === state.id ? { ...e, lastSeenPlayerPos: player.pos } : e)
-        }));
-    } else {
-        // Player lost
-        if (aiState === 'attack' || aiState === 'chase') {
-            setAIState('search');
-            searchTarget.current = state.lastSeenPlayerPos || player.pos;
-            stateTimer.current = 5; // Search for 5 seconds
-        } else if (aiState === 'search' && stateTimer.current <= 0) {
-            setAIState('patrol');
-            stateTimer.current = 0;
-        } else if (aiState === 'idle') {
-            setAIState('patrol');
-        }
+    if (distToPlayer < detectRange) {
+      aiState.current = distToPlayer < 13 ? 'attack' : 'chase';
+    } else if (aiState.current === 'attack' || aiState.current === 'chase') {
+      if (distToPlayer > detectRange + 5) {
+        aiState.current = 'patrol';
+        stateTimer.current = 3;
+      }
+    } else if (aiState.current === 'idle') {
+      aiState.current = 'patrol';
     }
 
-    // 3. Execution
-    let moveDir = { x: 0, z: 0 };
+    // Execution
+    let moveX = 0, moveZ = 0;
     let targetAngle = visualRotation.current;
-    let speed = 3.0;
-
-    switch (aiState) {
-        case 'attack':
-            // Strafe and shoot
-            targetAngle = Math.atan2(-dx, -dz);
-            speed = 2.5;
-            
-            // Strafe behavior
-            if (stateTimer.current <= 0) {
-                strafeDir.current *= -1;
-                stateTimer.current = 1 + Math.random() * 2;
-            }
-            
-            const strafeX = -dirToPlayer.z * strafeDir.current;
-            const strafeZ = dirToPlayer.x * strafeDir.current;
-            
-            // Maintain distance
-            const idealDist = 7;
-            const pushPull = (distToPlayer - idealDist) * 0.5;
-            
-            moveDir.x = strafeX + dirToPlayer.x * pushPull;
-            moveDir.z = strafeZ + dirToPlayer.z * pushPull;
-
-            // Shooting
-            if (clock.getElapsedTime() - lastShootTime.current > 0.8) {
-                lastShootTime.current = clock.getElapsedTime();
-                const spawnPos = { x: myPos.x + dirToPlayer.x * 0.8, z: myPos.z + dirToPlayer.z * 0.8 };
-                enemyShoot(spawnPos, dirToPlayer, state.weapon.damage);
-                SFX.enemyShoot();
-            }
-            break;
-
-        case 'chase':
-            moveDir = dirToPlayer;
-            targetAngle = Math.atan2(-dx, -dz);
-            speed = 4.0;
-            break;
-
-        case 'search':
-            if (searchTarget.current) {
-                const sdx = searchTarget.current.x - myPos.x;
-                const sdz = searchTarget.current.z - myPos.z;
-                const sdist = Math.sqrt(sdx * sdx + sdz * sdz);
-                if (sdist > 0.5) {
-                    moveDir = { x: sdx / sdist, z: sdz / sdist };
-                    targetAngle = Math.atan2(-sdx, -sdz);
-                } else {
-                    // Look around at search target
-                    targetAngle += dt * 5;
-                    if (stateTimer.current < 2) searchTarget.current = null;
-                }
-            }
-            speed = 3.0;
-            break;
-
-        case 'patrol':
-            if (!patrolTarget.current || stateTimer.current <= 0) {
-                // Pick random nearby point not in wall
-                const angle = Math.random() * Math.PI * 2;
-                const dist = 3 + Math.random() * 5;
-                const tx = Math.max(1, Math.min(useGameStore.getState().gridSize.width - 1, myPos.x + Math.cos(angle) * dist));
-                const tz = Math.max(1, Math.min(useGameStore.getState().gridSize.height - 1, myPos.z + Math.sin(angle) * dist));
-                patrolTarget.current = { x: tx, z: tz };
-                stateTimer.current = 4 + Math.random() * 4;
-            }
-            
-            const pdx = patrolTarget.current.x - myPos.x;
-            const pdz = patrolTarget.current.z - myPos.z;
-            const pdist = Math.sqrt(pdx * pdx + pdz * pdz);
-            
-            if (pdist > 0.5) {
-                moveDir = { x: pdx / pdist, z: pdz / pdist };
-                targetAngle = Math.atan2(-pdx, -pdz);
-                speed = 1.5;
-            } else {
-                patrolTarget.current = null;
-            }
-            break;
-    }
-
-    // Avoid walls in moveDir
-    if (moveDir.x !== 0 || moveDir.z !== 0) {
-        const rayMove = new rapier.Ray({ x: myPos.x, y: 0.5, z: myPos.z }, { x: moveDir.x, y: 0, z: moveDir.z });
-        const wallHit = world.castRay(rayMove, 1.0, true, undefined, undefined, undefined, rb.current as any);
-        if (wallHit) {
-            const hitCollider = world.getCollider((wallHit as any).colliderHandle);
-            if (hitCollider?.parent()?.userData && (hitCollider.parent()!.userData as any).type === 'wall') {
-                // Try to slide along wall
-                const normal = (wallHit as any).normal;
-                if (normal) {
-                    const dot = moveDir.x * normal.x + moveDir.z * normal.z;
-                    moveDir.x -= normal.x * dot;
-                    moveDir.z -= normal.z * dot;
-                }
-            }
+    const survivalSpeed = (state as any).survivalSpeed as number | undefined;
+    
+    // Dynamic sprint logic for survival mode
+    let speedMult = 1.0;
+    if (gameMode === 'survival') {
+      const sprintState = sprintStateRef.current;
+      if (sprintState.isSprinting) {
+        sprintState.sprintTimer -= dt;
+        speedMult = 1.8; // 80% faster when sprinting
+        if (sprintState.sprintTimer <= 0) {
+          sprintState.isSprinting = false;
+          sprintState.nextSprintIn = Math.random() * 4 + 3; // wait 3-7 seconds before next sprint
         }
+      } else {
+        sprintState.nextSprintIn -= dt;
+        if (sprintState.nextSprintIn <= 0) {
+          sprintState.isSprinting = true;
+          sprintState.sprintTimer = Math.random() * 1.5 + 1.0; // sprint for 1-2.5 seconds
+        }
+      }
+    }
+    
+    let speed = (survivalSpeed || 3.0) * speedMult;
+
+    switch (aiState.current) {
+      case 'attack': {
+        targetAngle = Math.atan2(-dx, -dz);
+        speed = (survivalSpeed ? survivalSpeed * 0.7 : 2.5) * speedMult;
+
+        if (stateTimer.current <= 0) {
+          strafeDir.current *= -1;
+          stateTimer.current = 1.5 + Math.random() * 2;
+        }
+
+        // Strafe perpendicular to player
+        const sx = -dirZ * strafeDir.current;
+        const sz = dirX * strafeDir.current;
+
+        // Push/pull to maintain ideal range
+        const idealDist = 7;
+        const pull = (distToPlayer - idealDist) * 0.4;
+        moveX = sx + dirX * pull;
+        moveZ = sz + dirZ * pull;
+
+        // Normalize
+        const ml = Math.sqrt(moveX * moveX + moveZ * moveZ);
+        if (ml > 0) { moveX /= ml; moveZ /= ml; }
+
+        // Shoot
+        const now = clock.getElapsedTime();
+        const fireRate = gameMode === 'survival' ? 1.0 : 0.8;
+        if (now - lastShootTime.current > fireRate) {
+          lastShootTime.current = now;
+          enemyShoot(
+            { x: myPos.x + dirX * 0.8, z: myPos.z + dirZ * 0.8 },
+            { x: dirX, z: dirZ },
+            state.weapon.damage
+          );
+          SFX.enemyShoot();
+        }
+        break;
+      }
+
+      case 'chase':
+        moveX = dirX;
+        moveZ = dirZ;
+        targetAngle = Math.atan2(-dx, -dz);
+        speed = (survivalSpeed || 4.0) * speedMult;
+        break;
+
+      case 'patrol': {
+        if (!patrolTarget.current || stateTimer.current <= 0) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 3 + Math.random() * 5;
+          const gs = useGameStore.getState().gridSize;
+          patrolTarget.current = {
+            x: Math.max(1, Math.min(gs.width - 1, myPos.x + Math.cos(angle) * dist)),
+            z: Math.max(1, Math.min(gs.height - 1, myPos.z + Math.sin(angle) * dist)),
+          };
+          stateTimer.current = 4 + Math.random() * 4;
+        }
+
+        const pdx = patrolTarget.current.x - myPos.x;
+        const pdz = patrolTarget.current.z - myPos.z;
+        const pdist = Math.sqrt(pdx * pdx + pdz * pdz);
+
+        if (pdist > 0.5) {
+          moveX = pdx / pdist;
+          moveZ = pdz / pdist;
+          targetAngle = Math.atan2(-pdx, -pdz);
+          speed = 1.5;
+        } else {
+          patrolTarget.current = null;
+        }
+        break;
+      }
     }
 
-    // Apply movement and rotation
-    rb.current.setLinvel({ x: moveDir.x * speed, y: 0, z: moveDir.z * speed }, true);
-    visualRotation.current = THREE.MathUtils.lerp(visualRotation.current, targetAngle, 0.1);
+    // Boundary clamp
+    const gs = useGameStore.getState().gridSize;
+    const m = 1.0;
+    if (myPos.x < m && moveX < 0) moveX = 0;
+    if (myPos.x > gs.width - m && moveX > 0) moveX = 0;
+    if (myPos.z < m && moveZ < 0) moveZ = 0;
+    if (myPos.z > gs.height - m && moveZ > 0) moveZ = 0;
+
+    rb.current.setLinvel({ x: moveX * speed, y: 0, z: moveZ * speed }, true);
+    visualRotation.current += (targetAngle - visualRotation.current) * 0.15;
     meshRef.current.rotation.y = visualRotation.current;
   });
 
   if (state.hp <= 0) return null;
 
   const barWidth = 0.8 * Math.pow(state.maxHp / 40, 0.5);
+  const enemyScale = (state as any).scale as number || 1.0;
+  const isGhost = (state as any).transparent as boolean || false;
 
   return (
-    <RigidBody 
-      ref={rb} 
-      type="dynamic" 
-      position={[state.pos.x, 0.5, state.pos.z]} 
+    <RigidBody
+      ref={rb}
+      type="dynamic"
+      position={[state.pos.x, 0.5, state.pos.z]}
       rotation={[0, 0, 0]}
       lockRotations
       enabledTranslations={[true, false, true]}
@@ -252,8 +226,8 @@ export function Enemy({ state }: { state: EnemyState }) {
       name={`enemy_${state.id}`}
       userData={{ type: 'enemy', id: state.id }}
     >
-      <BallCollider args={[0.3]} />
-      
+      <BallCollider args={[0.3 * enemyScale]} />
+
       <Billboard position={[0, 1.2, 0]}>
         <mesh>
           <planeGeometry args={[barWidth, 0.12]} />
@@ -265,19 +239,19 @@ export function Enemy({ state }: { state: EnemyState }) {
         </mesh>
       </Billboard>
 
-      <group ref={meshRef}>
+      <group ref={meshRef} scale={[enemyScale, enemyScale, enemyScale]}>
         <mesh position={[0, -0.45, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.4, 0.5, 32]} />
-          <meshBasicMaterial color="#ff0000" transparent opacity={0.3} />
+          <meshBasicMaterial color={state.color} transparent opacity={0.3} />
         </mesh>
 
-        <mesh castShadow receiveShadow position={[0, 0, 0]}>
+        <mesh castShadow receiveShadow>
           <capsuleGeometry args={[0.3, 0.4, 4, 16]} />
-          <meshStandardMaterial color={state.color} roughness={0.5} />
+          <meshStandardMaterial color={state.color} roughness={0.5} transparent={isGhost} opacity={isGhost ? 0.4 : 1.0} emissive={isGhost ? state.color : '#000000'} emissiveIntensity={isGhost ? 2 : 0} />
         </mesh>
         <mesh castShadow receiveShadow position={[0, 0.5, 0]}>
           <sphereGeometry args={[0.25, 16, 16]} />
-          <meshStandardMaterial color="#fca5a5" roughness={0.4} />
+          <meshStandardMaterial color={isGhost ? state.color : '#fca5a5'} roughness={0.4} transparent={isGhost} opacity={isGhost ? 0.5 : 1.0} />
         </mesh>
 
         {theme === 'beach' && (
@@ -301,4 +275,4 @@ export function Enemy({ state }: { state: EnemyState }) {
       </group>
     </RigidBody>
   );
-}
+});

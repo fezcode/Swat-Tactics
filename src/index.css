@@ -112,3 +112,52 @@ body {
 .weapon-switch-anim {
   animation: weapon-switch-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
+
+/* Survival Mode Styles */
+.survival-title-glow {
+  color: #ff4400;
+  text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff4400, 0 0 40px #ff4400, 0 0 60px #ff2200, 0 0 80px #ff2200;
+}
+
+.survival-menu-pulse {
+  color: #ff6633;
+  animation: survival-pulse 2s ease-in-out infinite;
+}
+
+@keyframes survival-pulse {
+  0%, 100% {
+    text-shadow: 0 0 5px #ff440060, 0 0 15px #ff440030;
+    opacity: 0.85;
+  }
+  50% {
+    text-shadow: 0 0 10px #ff4400, 0 0 20px #ff440080, 0 0 40px #ff440040;
+    opacity: 1;
+  }
+}
+
+@keyframes wave-ring-expand {
+  0% { transform: scale(0); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes float-up-fade {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+}
+
+@keyframes boss-slam {
+  0% { transform: translateY(-100px) scale(2) skewX(-12deg); opacity: 0; }
+  30% { transform: translateY(10px) scale(0.95) skewX(-12deg); opacity: 1; }
+  50% { transform: translateY(-5px) scale(1.02) skewX(-12deg); opacity: 1; }
+  100% { transform: translateY(0) scale(1) skewX(-12deg); opacity: 1; }
+}
+
+.neon-text-blue {
+  text-shadow: 0 0 5px #fff, 0 0 10px #3b82f6, 0 0 20px #3b82f6;
+}
+
+@keyframes perk-activate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); filter: brightness(2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}

@@ -15,7 +15,7 @@ export function PauseHandler() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Esc') {
         // Only toggle pause if the game is playing or already paused
-        if (phase === 'playing' || phase === 'paused') {
+        if (phase === 'playing' || phase === 'paused' || phase === 'survival_playing') {
           console.log('[PauseHandler] ESC caught at window level (capture)', { currentPhase: phase });
           // Prevent other listeners from seeing this to avoid conflicts
           e.stopImmediatePropagation();

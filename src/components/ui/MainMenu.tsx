@@ -38,7 +38,10 @@ export function MainMenu() {
     action();
   };
 
+  const startSurvival = useGameStore(s => s.startSurvival);
+
   const mainMenuItems = [
+    { id: 'survival', label: 'SURVIVAL MODE', action: () => startSurvival() },
     { id: 'start', label: 'START DEPLOYMENT', action: () => loadLevel(0) },
     { id: 'levels', label: 'LEVEL SELECT', action: () => setView('level_select') },
     { id: 'options', label: 'OPTIONS', action: () => setView('options') },
@@ -168,8 +171,8 @@ export function MainMenu() {
         </div>
         <div className="flex flex-col gap-6 items-center">
           {mainMenuItems.map((item) => (
-            <button key={item.id} onMouseEnter={() => handleHover(item.id)} onMouseLeave={() => setHovered(null)} onClick={() => handleClick(item.action)} className={`text-3xl font-black italic tracking-tight transition-all duration-200 cursor-pointer ${hovered === item.id ? 'text-white scale-110 skew-x-[-12deg] translate-x-2' : 'text-zinc-500 skew-x-[-12deg]'}`}>
-              <span className={hovered === item.id ? 'neon-text' : ''}>{item.label}</span>
+            <button key={item.id} onMouseEnter={() => handleHover(item.id)} onMouseLeave={() => setHovered(null)} onClick={() => handleClick(item.action)} className={`text-3xl font-black italic tracking-tight transition-all duration-200 cursor-pointer ${item.id === 'survival' ? (hovered === item.id ? 'text-white scale-115 skew-x-[-12deg] translate-x-2' : 'skew-x-[-12deg] survival-menu-pulse') : (hovered === item.id ? 'text-white scale-110 skew-x-[-12deg] translate-x-2' : 'text-zinc-500 skew-x-[-12deg]')}`}>
+              <span className={item.id === 'survival' ? (hovered === item.id ? 'survival-title-glow' : 'survival-title-glow') : (hovered === item.id ? 'neon-text' : '')}>{item.label}</span>
             </button>
           ))}
         </div>
