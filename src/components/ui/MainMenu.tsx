@@ -14,6 +14,8 @@ export function MainMenu() {
   const showWireframe = useGameStore(s => s.showWireframe);
   const setShowWireframe = useGameStore(s => s.setShowWireframe);
   const resetStats = useGameStore(s => s.resetStats);
+  const musicVolume = useGameStore(s => s.musicVolume);
+  const setMusicVolume = useGameStore(s => s.setMusicVolume);
   const [view, setView] = useState<MenuState>('main');
   const [hovered, setHovered] = useState<string | number | null>(null);
 
@@ -44,7 +46,7 @@ export function MainMenu() {
 
   const mainMenuItems = [
     { id: 'survival', label: 'SURVIVAL MODE', action: () => startSurvival() },
-    { id: 'start', label: 'START DEPLOYMENT', action: () => loadLevel(0) },
+    { id: 'start', label: 'CAMPAIGN', action: () => loadLevel(0) },
     { id: 'levels', label: 'LEVEL SELECT', action: () => setView('level_select') },
     { id: 'options', label: 'OPTIONS', action: () => setView('options') },
     { id: 'credits', label: 'CREDITS', action: () => setView('credits') },
@@ -106,11 +108,18 @@ export function MainMenu() {
       <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
         {crtEnabled && <div className="menu-crt" />}
         <h2 className="text-5xl font-black italic text-white mb-12 neon-text transform -skew-x-12 relative z-10">SYSTEM CONFIG</h2>
-        <div className="flex flex-col gap-8 w-80 transform -skew-x-12 relative z-10">
+        <div className="flex flex-col gap-8 w-80 relative z-10">
           <button onClick={() => setMuted(!isMuted)} onMouseEnter={() => handleHover('mute')} onMouseLeave={() => setHovered(null)} className="flex justify-between items-center bg-zinc-900 p-4 border-l-4 border-blue-500 cursor-pointer hover:bg-zinc-800 transition-colors">
             <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs text-left">Audio System</span>
             <span className={`font-black ${isMuted ? 'text-red-500' : 'text-blue-400'}`}>{isMuted ? 'MUTED' : 'ACTIVE'}</span>
           </button>
+          <div className="flex flex-col gap-2 bg-zinc-900 p-4 border-l-4 border-purple-500">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs">Music Volume</span>
+              <span className="font-black text-purple-400 text-sm w-12 text-right">{Math.round(musicVolume * 100)}%</span>
+            </div>
+            <input type="range" min="0" max="100" value={Math.round(musicVolume * 100)} onChange={e => setMusicVolume(Number(e.target.value) / 100)} className="w-full h-2 bg-zinc-700 rounded-full appearance-none cursor-pointer accent-purple-500" />
+          </div>
           <div className="flex justify-between items-center bg-zinc-900 p-4 border-l-4 border-pink-500">
             <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs">Graphics</span>
             <span className="text-white font-black">ULTRA</span>
@@ -128,7 +137,7 @@ export function MainMenu() {
             <span className="font-black text-red-500">RESET STATS</span>
           </button>
         </div>
-        <button className="mt-12 text-xl font-bold text-zinc-500 hover:text-white transition-colors cursor-pointer transform -skew-x-12 relative z-10" onClick={() => handleClick(() => setView('main'))}>APPLY & RETURN</button>
+        <button className="mt-12 text-xl font-bold text-zinc-500 hover:text-white transition-colors cursor-pointer relative z-10" onClick={() => handleClick(() => setView('main'))}>APPLY & RETURN</button>
       </div>
     );
   }

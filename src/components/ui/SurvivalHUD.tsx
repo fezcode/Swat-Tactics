@@ -222,6 +222,9 @@ export function SurvivalHUD() {
               WAVE {survivalState.wave}
             </h2>
           </div>
+          <div key={Math.ceil(survivalState.waveIntroTimer)} className="mt-4 animate-countdown">
+            <span className="text-5xl font-black italic text-white/80 tracking-tighter">{Math.ceil(survivalState.waveIntroTimer)}</span>
+          </div>
           {survivalState.wave % 5 === 0 && survivalState.wave > 0 && (
             <div className="mt-4 animate-pulse">
               <span className="text-3xl font-black italic text-red-500 tracking-tighter">BOSS WAVE</span>

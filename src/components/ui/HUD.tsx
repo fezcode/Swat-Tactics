@@ -66,12 +66,128 @@ export function HUD() {
   }
 
   if (phase === 'paused') {
+    const survivalState = useGameStore.getState().survivalState;
+    const isSurvival = gameMode === 'survival';
     return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/80 text-white z-50 scanlines overflow-hidden">
-        <h1 className="text-7xl font-black italic tracking-tighter neon-text mb-12 transform -skew-x-12">PAUSED</h1>
-        <div className="flex flex-col gap-6 items-center transform -skew-x-12">
-          <button className="px-12 py-4 bg-white text-black text-2xl font-black hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none" onClick={() => handleClick(() => useGameStore.getState().togglePause())} onMouseEnter={handleHover}>RESUME MISSION</button>
-          <button className="text-zinc-400 font-bold hover:text-white transition-colors cursor-pointer" onClick={() => handleClick(() => useGameStore.setState({ phase: 'main_menu', gameMode: 'campaign', survivalState: null }))} onMouseEnter={handleHover}>ABORT MISSION</button>
+      <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/85 text-white z-50 scanlines overflow-hidden">
+        <div className="flex flex-col items-center max-h-[90vh] w-full max-w-5xl px-4">
+          <h1 className="text-7xl font-black italic tracking-tighter neon-text mb-8 transform -skew-x-12">PAUSED</h1>
+
+          <div className="flex flex-col gap-4 items-center transform -skew-x-12 mb-8">
+            <button className="px-12 py-4 bg-white text-black text-2xl font-black hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none" onClick={() => handleClick(() => useGameStore.getState().togglePause())} onMouseEnter={handleHover}>RESUME MISSION</button>
+            <button className="text-zinc-400 font-bold hover:text-white transition-colors cursor-pointer" onClick={() => handleClick(() => useGameStore.setState({ phase: 'main_menu', gameMode: 'campaign', survivalState: null }))} onMouseEnter={handleHover}>ABORT MISSION</button>
+          </div>
+
+          <div className="w-full overflow-y-auto flex-1 pr-2 border-t border-zinc-700/50 pt-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#444 transparent' }}>
+            {/* CONTROLS */}
+            <div className="mb-6">
+              <h2 className="text-xl font-black italic tracking-tight text-blue-400 mb-3 transform -skew-x-12 border-b border-blue-400/30 pb-1">CONTROLS</h2>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-zinc-400">Move</span><span className="font-bold">W A S D / Arrow Keys</span></div>
+                <div className="flex justify-between"><span className="text-zinc-400">Aim / Look</span><span className="font-bold">Mouse</span></div>
+                <div className="flex justify-between"><span className="text-zinc-400">Shoot</span><span className="font-bold">Left Click (Hold)</span></div>
+                <div className="flex justify-between"><span className="text-zinc-400">Dodge Roll</span><span className="font-bold">Shift</span></div>
+                <div className="flex justify-between"><span className="text-zinc-400">Slash Attack</span><span className="font-bold">E</span></div>
+                <div className="flex justify-between"><span className="text-zinc-400">Switch Weapon</span><span className="font-bold">Q</span></div>
+                <div className="flex justify-between"><span className="text-zinc-400">Pause</span><span className="font-bold">Escape</span></div>
+                <div className="flex justify-between"><span className="text-zinc-400">Next Track</span><span className="font-bold">. (Period)</span></div>
+              </div>
+            </div>
+
+            {/* PERKS - only show in survival */}
+            {isSurvival && (
+              <div className="mb-6">
+                <h2 className="text-xl font-black italic tracking-tight text-purple-400 mb-3 transform -skew-x-12 border-b border-purple-400/30 pb-1">PERKS</h2>
+                <p className="text-xs text-zinc-500 mb-3">Offered after each wave. Tier 1 from Wave 1, Tier 2 from Wave 10, Tier 3 from Wave 20.</p>
+
+                <div className="mb-3">
+                  <h3 className="text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wider">Tier 1 - Standard</h3>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                    <div><span className="font-bold" style={{ color: '#94a3b8' }}>IRON SKIN</span> <span className="text-zinc-400">— +25 Max HP & full heal. Stackable.</span></div>
+                    <div><span className="font-bold" style={{ color: '#f59e0b' }}>RAPID FIRE</span> <span className="text-zinc-400">— -20% fire interval. Max 3 stacks.</span></div>
+                    <div><span className="font-bold" style={{ color: '#3b82f6' }}>EXTENDED MAG</span> <span className="text-zinc-400">— +50% max ammo. Stackable.</span></div>
+                    <div><span className="font-bold" style={{ color: '#22c55e' }}>SWIFT FEET</span> <span className="text-zinc-400">— +15% movement speed. Max 3 stacks.</span></div>
+                    <div><span className="font-bold" style={{ color: '#a855f7' }}>SCAVENGER</span> <span className="text-zinc-400">— Pickups give 50% more. Stackable.</span></div>
+                    <div><span className="font-bold" style={{ color: '#ef4444' }}>COMBAT REGEN</span> <span className="text-zinc-400">— Regenerate 2 HP/sec. Stackable.</span></div>
+                    <div><span className="font-bold" style={{ color: '#dc2626' }}>HOLLOW POINTS</span> <span className="text-zinc-400">— +25% bullet damage. Stackable.</span></div>
+                  </div>
+                </div>
+
+                <div className="mb-3">
+                  <h3 className="text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wider">Tier 2 - Advanced</h3>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                    <div><span className="font-bold" style={{ color: '#06b6d4' }}>RICOCHET</span> <span className="text-zinc-400">— Bullets bounce off arena edges.</span></div>
+                    <div><span className="font-bold" style={{ color: '#f97316' }}>EXPLOSIVE ROUNDS</span> <span className="text-zinc-400">— Bullets explode on impact.</span></div>
+                    <div><span className="font-bold" style={{ color: '#e2e8f0' }}>DODGE MASTER</span> <span className="text-zinc-400">— Dodge cooldown -50%, range +50%.</span></div>
+                    <div><span className="font-bold" style={{ color: '#f472b6' }}>BLADE STORM</span> <span className="text-zinc-400">— Slash cooldown -60%, damage x2.</span></div>
+                    <div><span className="font-bold" style={{ color: '#8b5cf6' }}>MAGNETISM</span> <span className="text-zinc-400">— Pickup radius doubled. Stackable.</span></div>
+                    <div><span className="font-bold" style={{ color: '#10b981' }}>DUAL WIELD</span> <span className="text-zinc-400">— Unlock SMG secondary weapon.</span></div>
+                    <div><span className="font-bold" style={{ color: '#ef4444' }}>ADRENALINE</span> <span className="text-zinc-400">— Below 30% HP: +50% fire rate & speed.</span></div>
+                  </div>
+                </div>
+
+                <div className="mb-3">
+                  <h3 className="text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wider">Tier 3 - Legendary</h3>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                    <div><span className="font-bold" style={{ color: '#fbbf24' }}>ORBITAL STRIKE</span> <span className="text-zinc-400">— Massive explosion every 25 seconds.</span></div>
+                    <div><span className="font-bold" style={{ color: '#6366f1' }}>SHADOW CLONE</span> <span className="text-zinc-400">— AI companion fights alongside you.</span></div>
+                    <div><span className="font-bold" style={{ color: '#dc2626' }}>DEATH AURA</span> <span className="text-zinc-400">— Nearby enemies take 8 DPS. Stackable.</span></div>
+                    <div><span className="font-bold" style={{ color: '#14b8a6' }}>TIME WARP</span> <span className="text-zinc-400">— 25% chance on kill to slow all enemies.</span></div>
+                    <div><span className="font-bold" style={{ color: '#f97316' }}>PHOENIX</span> <span className="text-zinc-400">— Revive once with 50% HP + explosion.</span></div>
+                    <div><span className="font-bold" style={{ color: '#ec4899' }}>BULLET HELL</span> <span className="text-zinc-400">— Fire 3 bullets in a spread.</span></div>
+                  </div>
+                </div>
+
+                {/* Active perks */}
+                {survivalState && survivalState.activePerks.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-zinc-700/50">
+                    <h3 className="text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wider">Your Active Perks</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {survivalState.activePerks.map((perkId, i) => {
+                        const stacks = survivalState.perkStacks[perkId] || 1;
+                        const perkName = perkId.replace(/_/g, ' ').toUpperCase();
+                        return <span key={i} className="text-xs font-bold px-2 py-0.5 bg-zinc-800 rounded">{perkName}{stacks > 1 ? ` x${stacks}` : ''}</span>;
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ENEMIES - only show in survival */}
+            {isSurvival && (
+              <div className="mb-6">
+                <h2 className="text-xl font-black italic tracking-tight text-red-400 mb-3 transform -skew-x-12 border-b border-red-400/30 pb-1">ENEMIES</h2>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                  <div><span className="font-bold" style={{ color: '#fcd34d' }}>GRUNT</span> <span className="text-zinc-400">— Basic shooter. Low HP, slow.</span></div>
+                  <div><span className="font-bold" style={{ color: '#ea580c' }}>RUSHER</span> <span className="text-zinc-400">— Fast, aggressive. Closes distance quickly.</span></div>
+                  <div><span className="font-bold" style={{ color: '#3b82f6' }}>SNIPER</span> <span className="text-zinc-400">— High damage, shoots from distance.</span></div>
+                  <div><span className="font-bold" style={{ color: '#7f1d1d' }}>TANK</span> <span className="text-zinc-400">— High HP, slow, heavy damage.</span></div>
+                  <div><span className="font-bold" style={{ color: '#ff4400' }}>BOMBER</span> <span className="text-zinc-400">— Explodes on death, damaging nearby.</span></div>
+                  <div><span className="font-bold" style={{ color: '#a78bfa' }}>GHOST</span> <span className="text-zinc-400">— Semi-transparent, hard to see.</span></div>
+                  <div><span className="font-bold" style={{ color: '#6ee7b7' }}>SPLITTER</span> <span className="text-zinc-400">— Splits into 2 smaller enemies on death.</span></div>
+                </div>
+              </div>
+            )}
+
+            {/* WAVE MUTATIONS - only show in survival */}
+            {isSurvival && (
+              <div className="mb-4">
+                <h2 className="text-xl font-black italic tracking-tight text-yellow-400 mb-3 transform -skew-x-12 border-b border-yellow-400/30 pb-1">WAVE MUTATIONS</h2>
+                <p className="text-xs text-zinc-500 mb-3">Mutations stack as waves progress, making enemies increasingly dangerous.</p>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                  <div><span className="font-bold text-yellow-300">ACCELERATED</span> <span className="text-zinc-400">— Wave 10+. Enemies move faster.</span></div>
+                  <div><span className="font-bold text-yellow-300">ARMORED</span> <span className="text-zinc-400">— Wave 20+. Enemies have more HP.</span></div>
+                  <div><span className="font-bold text-yellow-300">VENGEFUL</span> <span className="text-zinc-400">— Wave 30+. Enemies explode on death.</span></div>
+                  <div><span className="font-bold text-yellow-300">DARKNESS</span> <span className="text-zinc-400">— Wave 40+. Reduced visibility.</span></div>
+                  <div><span className="font-bold text-yellow-300">BERSERKER</span> <span className="text-zinc-400">— Wave 50+. Enemies deal more damage.</span></div>
+                </div>
+                {survivalState && survivalState.mutations.length > 0 && (
+                  <div className="mt-2 text-xs text-zinc-500">Active: <span className="text-yellow-400 font-bold">{survivalState.mutations.map(m => m.replace(/_/g, ' ').toUpperCase()).join(', ')}</span></div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );

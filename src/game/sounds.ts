@@ -55,6 +55,11 @@ export const SFX = {
 const playlist = [
   { name: 'Alexgrohl - Electronic', path: 'sounds/music-alexgrohl-electronic-470603.mp3' },
   { name: 'Watermello - Electronic', path: 'sounds/music-watermello-electronic-electro-477141.mp3' },
+  { name: 'Amarantamusic - Slowly', path: 'sounds/music-amarantamusic-slowly-110894.mp3' },
+  { name: 'Electronic Senses - Indigo', path: 'sounds/music-electronic-senses-indigo-946.mp3' },
+  { name: 'Electronic Senses - You Bore Me', path: 'sounds/music-electronic-senses-you-bore-me-413191.mp3' },
+  { name: 'Kaazoom - Breakout', path: 'sounds/music-kaazoom-breakout-2-min-editaggressive-electronic-rock-game-music-419557.mp3' },
+  { name: 'Rockot - Homo Digital', path: 'sounds/music-rockot-homo-digital-futuristic-synth-ambient-powerful-electronic-synths-245041.mp3' },
 ];
 
 let currentTrackIndex = 0;
@@ -85,7 +90,7 @@ export const Music = {
     currentTrackIndex = index;
     const track = playlist[currentTrackIndex];
     bgMusic = new Audio(track.path);
-    bgMusic.volume = 0.4;
+    bgMusic.volume = useGameStore.getState().musicVolume;
     bgMusic.muted = useGameStore.getState().isMuted;
     
     // Use the action from the store

@@ -77,6 +77,7 @@ interface GameState {
   projectiles: ProjectileState[];
   explosions: ExplosionEffect[];
   isMuted: boolean;
+  musicVolume: number;
   crtEnabled: boolean;
   showWireframe: boolean;
   countdown: number | null;
@@ -95,6 +96,7 @@ interface GameState {
   setPhase: (phase: GamePhase) => void;
   loadLevel: (index: number) => void;
   setMuted: (muted: boolean) => void;
+  setMusicVolume: (volume: number) => void;
   setCrtEnabled: (enabled: boolean) => void;
   setShowWireframe: (enabled: boolean) => void;
   resetStats: () => void;
@@ -161,6 +163,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   projectiles: [],
   explosions: [],
   isMuted: false,
+  musicVolume: 0.4,
   crtEnabled: true,
   showWireframe: false,
   countdown: null,
@@ -263,6 +266,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
   setMuted: (muted) => { set({ isMuted: muted }); Music.setMuted(muted); },
+  setMusicVolume: (volume) => { set({ musicVolume: volume }); Music.setVolume(volume); },
   setCrtEnabled: (enabled) => set({ crtEnabled: enabled }),
   setShowWireframe: (enabled) => set({ showWireframe: enabled }),
   resetStats: () => set({ stats: { kills: 0, deaths: 0, runs: 1 } }),
@@ -281,7 +285,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (theme === 'metro') { for (let i = 0; i < 20; i++) { let x = nextRandom() * (level.gridSize.width + 30) - 15; let z = nextRandom() * (level.gridSize.height + 30) - 15; if (x >= -1 && x <= level.gridSize.width + 1 && z >= -1 && z <= level.gridSize.height + 1) continue; const rand = nextRandom(); let type: DecorationState['type'] = 'bench'; if (rand > 0.7) type = 'metro_sign'; else if (rand > 0.4) type = 'pipe'; decorations.push({ id: `metro-prop-${i}`, type, pos: { x, z }, scale: 1 + nextRandom() * 0.5, rotation: nextRandom() * Math.PI * 2 }); } }
     else if (theme === 'garden') { for (let i = 0; i < 40; i++) { const side = Math.floor(nextRandom() * 4); let x = 0, z = 0; const margin = 5; if (side === 0) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = -margin - nextRandom() * 10; } else if (side === 1) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + nextRandom() * 10; } else if (side === 2) { x = -margin - nextRandom() * 10; z = nextRandom() * (level.gridSize.height + margin*2) - margin; } else { x = level.gridSize.width + margin + nextRandom() * 10; z = nextRandom() * (level.gridSize.height + margin*2) - margin; } decorations.push({ id: `garden-${i}`, type: nextRandom() > 0.3 ? 'tree' : 'rock', pos: { x, z }, scale: 0.8 + nextRandom() * 1.5, rotation: nextRandom() * Math.PI * 2 }); } }
     else if (theme === 'skyscraper') { for (let i = 0; i < 30; i++) { const side = Math.floor(nextRandom() * 4); let x = 0, z = 0; const margin = 10; if (side === 0) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = -margin - nextRandom() * 20; } else if (side === 1) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + nextRandom() * 20; } else if (side === 2) { x = -margin - nextRandom() * 20; z = nextRandom() * (level.gridSize.height + margin*2) - margin; } else { x = level.gridSize.width + margin + nextRandom() * 20; z = nextRandom() * (level.gridSize.height + margin*2) - margin; } decorations.push({ id: `sky-${i}`, type: 'building', pos: { x, z }, scale: 1, rotation: 0, w: 2 + nextRandom() * 4, h: 5 + nextRandom() * 30, d: 2 + nextRandom() * 4, color: nextRandom() > 0.5 ? "#1a202c" : "#2d3748" }); } }
-    set({ phase: 'level_intro', levelIndex: index, theme, hasTrain: level.hasTrain || false, trainActive: false, timeLeft: level.timeLimit || null, player: newPlayer, enemies: level.enemies.map(e => { const dx = level.playerSpawn.x - e.pos.x; const dz = level.playerSpawn.z - e.pos.z; const rotation = Math.atan2(dx, dz); const color = e.color && e.color !== '#ff0000' && e.color !== '#3b82f6' ? e.color : getThreatColor(e.hp); return { type: 'enemy', id: e.id, pos: e.pos, rotation, hp: e.hp, maxHp: e.hp, weapon: { ...e.weapon }, color, unkillable: e.unkillable }; }), turrets: (level.turrets || []).map(t => ({ type: 'turret', id: t.id, pos: t.pos, rotation: 0, hp: t.hp, maxHp: t.hp, damage: t.damage, fireRate: t.fireRate, lastFireTime: 0, color: t.color || '#ef4444', disabled: false })), buttons: (level.buttons || []).map(b => ({ type: 'button', id: `button-${b.targetId}`, pos: b.pos, rotation: 0, hp: 1, maxHp: 1, targetId: b.targetId, active: false })), barrels: (level.barrels || []).map(b => ({ type: 'barrel', id: b.id, pos: b.pos, rotation: 0, hp: 1, maxHp: 1 })), healthBoxes: (level.healthBoxes || []).map(h => ({ type: 'health_box', id: h.id, pos: h.pos, rotation: 0, hp: 1, maxHp: 1 })), ammoBoxes: (level.ammoBoxes || []).map(a => ({ type: 'ammo_box', id: a.id, pos: a.pos, rotation: 0, hp: 1, maxHp: 1 })), portal: level.portal ? { ...level.portal, used: false } : null, walls: level.walls, decorations, gridSize: level.gridSize, exitPos: level.exit, particles: [], projectiles: [], explosions: [], countdown: 4, lastDamageTime: 0, lastShakeTime: 0, isSlashZooming: false, timeScale: 1.0 });
+    set({ phase: 'level_intro', levelIndex: index, theme, hasTrain: level.hasTrain || false, trainActive: false, timeLeft: level.timeLimit || null, player: newPlayer, enemies: level.enemies.map(e => { const dx = level.playerSpawn.x - e.pos.x; const dz = level.playerSpawn.z - e.pos.z; const rotation = Math.atan2(dx, dz); const color = e.color && e.color !== '#ff0000' && e.color !== '#3b82f6' ? e.color : getThreatColor(e.hp); return { type: 'enemy', id: e.id, pos: e.pos, rotation, hp: e.hp, maxHp: e.hp, weapon: { ...e.weapon }, color, unkillable: e.unkillable }; }), turrets: (level.turrets || []).map(t => ({ type: 'turret', id: t.id, pos: t.pos, rotation: 0, hp: t.hp, maxHp: t.hp, damage: t.damage, fireRate: t.fireRate, lastFireTime: 0, color: t.color || '#ef4444', disabled: false })), buttons: (level.buttons || []).map(b => ({ type: 'button', id: `button-${b.targetId}`, pos: b.pos, rotation: 0, hp: 1, maxHp: 1, targetId: b.targetId, active: false })), barrels: (level.barrels || []).map(b => ({ type: 'barrel', id: b.id, pos: b.pos, rotation: 0, hp: 1, maxHp: 1 })), healthBoxes: (level.healthBoxes || []).map(h => ({ type: 'health_box', id: h.id, pos: h.pos, rotation: 0, hp: 1, maxHp: 1 })), ammoBoxes: (level.ammoBoxes || []).map(a => ({ type: 'ammo_box', id: a.id, pos: a.pos, rotation: 0, hp: 1, maxHp: 1 })), portal: level.portal ? { ...level.portal, used: false } : null, walls: level.walls, decorations, gridSize: level.gridSize, exitPos: level.exit, particles: [], projectiles: [], explosions: [], bloodDecals: [], countdown: 4, lastDamageTime: 0, lastShakeTime: 0, isSlashZooming: false, timeScale: 1.0 });
     SFX.levelStart();
   },
   damageEntity: (id, amount, pos) => {
@@ -502,8 +506,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (hit) {
       const exPos = explodedBarrel?.pos || pos;
       if (exPos) {
-        const explosionRadius = 3;
-        newExplosions.push({ id: Math.random().toString(36).substr(2, 9), pos: exPos, radius: explosionRadius, life: 1.0 });
+        const explosionRadius = 4.5;
+        newExplosions.push({ id: Math.random().toString(36).substr(2, 9), pos: exPos, radius: 3, life: 1.0 });
         for (let i = 0; i < 10; i++) { mkParticle([exPos.x, 0.5, exPos.z], '#ff4400'); mkParticle([exPos.x, 0.5, exPos.z], '#ffaa00'); }
         const explosionDamage = 50;
 
@@ -786,7 +790,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       const bz = 3 + Math.random() * (sv.arenaSize - 6);
       newBarrels.push({ type: 'barrel', id: `barrel_w${newWave}_${i}`, pos: { x: bx, z: bz }, rotation: 0, hp: 1, maxHp: 1 });
     }
-    set({ barrels: newBarrels });
+    set({ barrels: newBarrels, bloodDecals: [] });
 
     // Spawn health/ammo boxes
     const newHealthBoxes: HealthBoxState[] = [];
