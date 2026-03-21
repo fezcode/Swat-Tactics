@@ -528,14 +528,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       const scavengerStacks = state.survivalState?.perkStacks['scavenger'] || 0; 
       const healAmount = Math.floor(50 * (1 + scavengerStacks * 0.5)); 
       const newParticles: Particle[] = [];
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 6; i++) {
         newParticles.push({ id: Math.random().toString(36).substr(2, 9), pos: [box.pos.x, 0.5, box.pos.z], color: '#22c55e', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 });
       }
-      set(s => ({ 
-        player: s.player ? { ...s.player, hp: Math.min(s.player.maxHp, s.player.hp + healAmount) } : null, 
-        healthBoxes: s.healthBoxes.filter(h => h.id !== id),
-        particles: [...s.particles, ...newParticles]
-      })); 
+      set(s => {
+        const mergedParticles = [...s.particles, ...newParticles];
+        if (mergedParticles.length > 100) mergedParticles.splice(0, mergedParticles.length - 100);
+        return { 
+          player: s.player ? { ...s.player, hp: Math.min(s.player.maxHp, s.player.hp + healAmount) } : null, 
+          healthBoxes: s.healthBoxes.filter(h => h.id !== id),
+          particles: mergedParticles
+        };
+      }); 
     } 
   },
   collectAmmo: (id) => { 
@@ -543,14 +547,18 @@ export const useGameStore = create<GameState>((set, get) => ({
     const box = state.ammoBoxes.find(a => a.id === id); 
     if (box && state.player) { 
       const newParticles: Particle[] = [];
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 6; i++) {
         newParticles.push({ id: Math.random().toString(36).substr(2, 9), pos: [box.pos.x, 0.5, box.pos.z], color: '#fbbf24', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 });
       }
-      set(s => ({ 
-        player: s.player ? { ...s.player, weapon: { ...s.player.weapon, ammo: s.player.weapon.maxAmmo }, secondaryWeapon: s.player.secondaryWeapon ? { ...s.player.secondaryWeapon, ammo: s.player.secondaryWeapon.maxAmmo } : null } : null, 
-        ammoBoxes: s.ammoBoxes.filter(a => a.id !== id),
-        particles: [...s.particles, ...newParticles]
-      })); 
+      set(s => {
+        const mergedParticles = [...s.particles, ...newParticles];
+        if (mergedParticles.length > 100) mergedParticles.splice(0, mergedParticles.length - 100);
+        return { 
+          player: s.player ? { ...s.player, weapon: { ...s.player.weapon, ammo: s.player.weapon.maxAmmo }, secondaryWeapon: s.player.secondaryWeapon ? { ...s.player.secondaryWeapon, ammo: s.player.secondaryWeapon.maxAmmo } : null } : null, 
+          ammoBoxes: s.ammoBoxes.filter(a => a.id !== id),
+          particles: mergedParticles
+        };
+      }); 
     } 
   },
   usePortal: () => { const state = get(); if (state.portal && !state.portal.used && state.player) { const ps: Particle[] = []; for (let i = 0; i < 10; i++) { ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posA.x, 0.5, state.portal.posA.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posB.x, 0.5, state.portal.posB.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); } set({ portal: { ...state.portal, used: true }, particles: [...state.particles, ...ps] }); SFX.teleport(); } },
@@ -571,7 +579,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         life: 1.0
       });
     }
-    set(state => ({ particles: [...state.particles, ...newParticles] }));
+    set(state => {
+      const merged = [...state.particles, ...newParticles];
+      if (merged.length > 100) merged.splice(0, merged.length - 100);
+      return { particles: merged };
+    });
   },
   addBloodDecal: (pos) => {
     set(state => {
