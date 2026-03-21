@@ -137,6 +137,13 @@ export interface FloatingText {
   life: number;
 }
 
+export interface BloodDecal {
+  id: string;
+  pos: Position;
+  rot: number;
+  scale: number;
+}
+
 export interface Particle {
   id: string;
   pos: [number, number, number];

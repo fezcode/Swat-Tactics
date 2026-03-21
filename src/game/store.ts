@@ -63,6 +63,7 @@ interface GameState {
   gridSize: { width: number; height: number };
   exitPos: Position | null;
   particles: Particle[];
+  bloodDecals: BloodDecal[];
   projectiles: ProjectileState[];
   explosions: ExplosionEffect[];
   isMuted: boolean;
@@ -96,6 +97,7 @@ interface GameState {
   addProjectile: (proj: Omit<ProjectileState, 'id'>) => void;
   removeProjectile: (id: string) => void;
   addParticle: (pos: [number, number, number], color: string, count?: number) => void;
+  addBloodDecal: (pos: Position) => void;
   tick: (dt: number) => void;
   restartGame: () => void;
   togglePause: () => void;
@@ -142,6 +144,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   gridSize: { width: 10, height: 10 },
   exitPos: null,
   particles: [],
+  bloodDecals: [],
   projectiles: [],
   explosions: [],
   isMuted: false,
@@ -315,7 +318,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     let enemies = state.enemies.map(e => {
       if (e.id === id && e.hp > 0) {
         hit = true;
-        if (pos) mkParticle([pos.x, 0.5, pos.z], '#ff0000');
+        if (pos) {
+          mkParticle([pos.x, 0.5, pos.z], '#ff0000');
+          if (state.gameMode === 'survival') get().addBloodDecal({ x: pos.x, z: pos.z });
+        }
         if (e.unkillable) return { ...e, lastHitTime: Date.now() };
         const hp = Math.max(0, e.hp - amount);
         if (hp === 0) { killed = true; killedRef.enemy = e; }
@@ -512,8 +518,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
   },
-  collectHealth: (id) => { const state = get(); const box = state.healthBoxes.find(h => h.id === id); if (box && state.player) { const scavengerStacks = state.survivalState?.perkStacks['scavenger'] || 0; const healAmount = Math.floor(50 * (1 + scavengerStacks * 0.5)); const ps: Particle[] = []; for (let i = 0; i < 10; i++) ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [box.pos.x, 0.5, box.pos.z], color: '#22c55e', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); set({ player: { ...state.player, hp: Math.min(state.player.maxHp, state.player.hp + healAmount) }, healthBoxes: state.healthBoxes.filter(h => h.id !== id), particles: [...state.particles, ...ps] }); } },
-  collectAmmo: (id) => { const state = get(); const box = state.ammoBoxes.find(a => a.id === id); if (box && state.player) { const ps: Particle[] = []; for (let i = 0; i < 10; i++) ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [box.pos.x, 0.5, box.pos.z], color: '#fbbf24', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); set({ player: { ...state.player, weapon: { ...state.player.weapon, ammo: state.player.weapon.maxAmmo }, secondaryWeapon: state.player.secondaryWeapon ? { ...state.player.secondaryWeapon, ammo: state.player.secondaryWeapon.maxAmmo } : null }, ammoBoxes: state.ammoBoxes.filter(a => a.id !== id), particles: [...state.particles, ...ps] }); } },
+  collectHealth: (id) => { const state = get(); const box = state.healthBoxes.find(h => h.id === id); if (box && state.player) { const scavengerStacks = state.survivalState?.perkStacks['scavenger'] || 0; const healAmount = Math.floor(50 * (1 + scavengerStacks * 0.5)); set({ player: { ...state.player, hp: Math.min(state.player.maxHp, state.player.hp + healAmount) }, healthBoxes: state.healthBoxes.filter(h => h.id !== id) }); get().addParticle([box.pos.x, 0.5, box.pos.z], '#22c55e', 10); } },
+  collectAmmo: (id) => { const state = get(); const box = state.ammoBoxes.find(a => a.id === id); if (box && state.player) { set({ player: { ...state.player, weapon: { ...state.player.weapon, ammo: state.player.weapon.maxAmmo }, secondaryWeapon: state.player.secondaryWeapon ? { ...state.player.secondaryWeapon, ammo: state.player.secondaryWeapon.maxAmmo } : null }, ammoBoxes: state.ammoBoxes.filter(a => a.id !== id) }); get().addParticle([box.pos.x, 0.5, box.pos.z], '#fbbf24', 10); } },
   usePortal: () => { const state = get(); if (state.portal && !state.portal.used && state.player) { const ps: Particle[] = []; for (let i = 0; i < 10; i++) { ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posA.x, 0.5, state.portal.posA.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posB.x, 0.5, state.portal.posB.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); } set({ portal: { ...state.portal, used: true }, particles: [...state.particles, ...ps] }); SFX.teleport(); } },
   toggleButton: (id, active) => { const state = get(); const button = state.buttons.find(b => b.id === id); if (!button) return; set(s => ({ buttons: s.buttons.map(b => b.id === id ? { ...b, active } : b), turrets: s.turrets.map(t => t.id === button.targetId ? { ...t, disabled: active } : t) })); },
   playerShoot: (spawnPos, direction) => { const state = get(); const isSurvival = state.gameMode === 'survival'; const validPhase = isSurvival ? state.phase === 'survival_playing' : state.phase === 'playing'; if (!validPhase || !state.player || state.player.hp <= 0 || (state.countdown !== null && state.countdown > 0.5)) return; const activeWeapon = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? state.player.secondaryWeapon : state.player.weapon; if (activeWeapon.ammo <= 0) { SFX.gunEmpty(); return; } const updatedWeapon = { ...activeWeapon, ammo: activeWeapon.ammo - 1 }; const newPlayer = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? { ...state.player, secondaryWeapon: updatedWeapon } : { ...state.player, weapon: updatedWeapon }; set({ player: newPlayer }); const isSmg = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon; const hollowStacks = isSurvival ? (state.survivalState?.perkStacks['hollow_points'] || 0) : 0; const dmgMult = 1 + hollowStacks * 0.25; const hasBulletHell = isSurvival && state.survivalState?.activePerks.includes('bullet_hell'); const hasExplosiveRounds = isSurvival && state.survivalState?.activePerks.includes('explosive_rounds'); const bulletDamage = Math.floor(activeWeapon.damage * dmgMult); const bulletColor = hasExplosiveRounds ? '#ff6600' : isSmg ? '#22ff44' : undefined; if (hasBulletHell) { const angles = [-0.15, 0, 0.15]; angles.forEach(a => { const cos = Math.cos(a); const sin = Math.sin(a); const dx = direction.x * cos - direction.z * sin; const dz = direction.x * sin + direction.z * cos; get().addProjectile({ pos: { ...spawnPos }, velocity: { x: dx * 30, z: dz * 30 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor }); }); } else { get().addProjectile({ pos: spawnPos, velocity: { x: direction.x * 30, z: direction.z * 30 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor }); } },
@@ -533,6 +539,20 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
     }
     set(state => ({ particles: [...state.particles, ...newParticles] }));
+  },
+  addBloodDecal: (pos) => {
+    set(state => {
+      const newDecal = {
+        id: Math.random().toString(36).substr(2, 9),
+        pos: { ...pos },
+        rot: Math.random() * Math.PI * 2,
+        scale: 0.5 + Math.random() * 1.5
+      };
+      // Keep max 60 blood decals to ensure high performance on all devices
+      const newDecals = [...state.bloodDecals, newDecal];
+      if (newDecals.length > 60) newDecals.shift();
+      return { bloodDecals: newDecals };
+    });
   },
   tick: (dt) => { const state = get(); if (state.gameMode === 'survival') { get().survivalTick(dt); return; } const effectiveDt = dt * state.timeScale; let newPhase = state.phase; let newCountdown = state.countdown; if (newCountdown !== null) { newCountdown -= dt * 2; if (newCountdown <= 0) { newCountdown = null; newPhase = 'playing'; } } let newTimeLeft = state.timeLeft; if (newTimeLeft !== null && newPhase === 'playing' && newCountdown === null) { newTimeLeft -= effectiveDt; if (newTimeLeft <= 0) { newTimeLeft = 0; newPhase = 'game_over'; SFX.levelEnd(); } } if (newPhase !== state.phase) { set(s => ({ ...s, phase: newPhase, timeLeft: newTimeLeft, stats: { ...s.stats, deaths: s.stats.deaths + 1 } })); return; } set(state => ({ countdown: newCountdown, timeLeft: newTimeLeft, particles: state.particles.map(p => ({ ...p, life: p.life - effectiveDt * 2, pos: [p.pos[0] + p.velocity[0] * effectiveDt, p.pos[1] + p.velocity[1] * effectiveDt, p.pos[2] + p.velocity[2] * effectiveDt] as [number, number, number] })).filter(p => p.life > 0), projectiles: state.projectiles.map(p => ({ ...p, life: p.life - effectiveDt })).filter(p => p.life > 0), explosions: state.explosions.map(e => ({ ...e, life: e.life - effectiveDt * 3 })).filter(e => e.life > 0) })); },
   switchWeapon: () => { const state = get(); if (!state.player || !state.player.secondaryWeapon || (state.phase !== 'playing' && state.phase !== 'survival_playing')) return; set({ player: { ...state.player, activeWeaponSlot: state.player.activeWeaponSlot === 'primary' ? 'secondary' : 'primary' } }); },

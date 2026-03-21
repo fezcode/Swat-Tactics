@@ -137,8 +137,10 @@ function CameraRig() {
       camera.position.z = THREE.MathUtils.lerp(camera.position.z, pos.z + 10 + offsetZ, alpha);
       camera.lookAt(camera.position.x, 0, camera.position.z - 10);
 
-      const targetFov = isSlashZooming ? 30 : 45;
-      (camera as THREE.PerspectiveCamera).fov = THREE.MathUtils.lerp((camera as THREE.PerspectiveCamera).fov, targetFov, alpha * 2);
+      const targetFov = isSlashZooming ? 25 : 45;
+      const zoomSmoothing = isSlashZooming ? 0.000000000001 : 0.005; // extremely fast zoom in, slower zoom out
+      const zoomAlpha = 1 - Math.pow(zoomSmoothing, delta);
+      (camera as THREE.PerspectiveCamera).fov = THREE.MathUtils.lerp((camera as THREE.PerspectiveCamera).fov, targetFov, zoomAlpha);
       (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
     }
   });
@@ -151,6 +153,7 @@ function App() {
   const theme = useGameStore(s => s.theme);
   const phase = useGameStore(s => s.phase);
   const crtEnabled = useGameStore(s => s.crtEnabled);
+  const isSlashZooming = useGameStore(s => s.isSlashZooming);
 
   const containerBg = useMemo(() => {
     if (phase === 'main_menu') return '#050505';
@@ -186,7 +189,7 @@ function App() {
   }, [phase]);
 
   return (
-    <div className="w-full h-screen relative overflow-hidden cursor-none" style={{ backgroundColor: containerBg }}>
+    <div className={`w-full h-screen relative overflow-hidden cursor-none ${isSlashZooming ? 'glitch-effect' : ''}`} style={{ backgroundColor: containerBg }}>
       <Canvas shadows>
         <CameraRig />
         <GameScene />

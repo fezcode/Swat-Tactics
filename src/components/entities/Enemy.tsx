@@ -44,6 +44,7 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
     if (!rb.current || !meshRef.current || state.hp <= 0) return;
 
     const gameMode = useGameStore.getState().gameMode;
+    const timeScale = useGameStore.getState().timeScale;
     const validPhase = gameMode === 'survival' ? (phase === 'survival_playing') : (phase === 'playing');
     if (!validPhase || (countdown !== null && countdown > 0.5)) {
       rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -77,7 +78,8 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
     }
 
     // State transitions (simple, no raycasts)
-    stateTimer.current -= dt;
+    const effectiveDt = dt * timeScale;
+    stateTimer.current -= effectiveDt;
     const detectRange = gameMode === 'survival' ? 25 : 15;
 
     if (distToPlayer < detectRange) {
@@ -101,14 +103,14 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
     if (gameMode === 'survival') {
       const sprintState = sprintStateRef.current;
       if (sprintState.isSprinting) {
-        sprintState.sprintTimer -= dt;
+        sprintState.sprintTimer -= effectiveDt;
         speedMult = 1.8; // 80% faster when sprinting
         if (sprintState.sprintTimer <= 0) {
           sprintState.isSprinting = false;
           sprintState.nextSprintIn = Math.random() * 4 + 3; // wait 3-7 seconds before next sprint
         }
       } else {
-        sprintState.nextSprintIn -= dt;
+        sprintState.nextSprintIn -= effectiveDt;
         if (sprintState.nextSprintIn <= 0) {
           sprintState.isSprinting = true;
           sprintState.sprintTimer = Math.random() * 1.5 + 1.0; // sprint for 1-2.5 seconds
@@ -200,9 +202,23 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
     if (myPos.z < m && moveZ < 0) moveZ = 0;
     if (myPos.z > gs.height - m && moveZ > 0) moveZ = 0;
 
-    rb.current.setLinvel({ x: moveX * speed, y: 0, z: moveZ * speed }, true);
+    rb.current.setLinvel({ x: moveX * speed * timeScale, y: 0, z: moveZ * speed * timeScale }, true);
     visualRotation.current += (targetAngle - visualRotation.current) * 0.15;
     meshRef.current.rotation.y = visualRotation.current;
+
+    // Hit animation (shake and scale bump)
+    const enemyScale = (state as any).scale as number || 1.0;
+    if (state.lastHitTime && Date.now() - state.lastHitTime < 150) {
+      const hitAlpha = (Date.now() - state.lastHitTime) / 150;
+      meshRef.current.position.x = (Math.random() - 0.5) * 0.3 * (1 - hitAlpha);
+      meshRef.current.position.y = (Math.random() - 0.5) * 0.3 * (1 - hitAlpha);
+      meshRef.current.position.z = (Math.random() - 0.5) * 0.3 * (1 - hitAlpha);
+      const hitScale = enemyScale * (1 + 0.4 * Math.sin(hitAlpha * Math.PI));
+      meshRef.current.scale.set(hitScale, hitScale, hitScale);
+    } else {
+      meshRef.current.position.set(0, 0, 0);
+      meshRef.current.scale.set(enemyScale, enemyScale, enemyScale);
+    }
   });
 
   if (state.hp <= 0) return null;

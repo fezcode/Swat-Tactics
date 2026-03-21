@@ -123,7 +123,7 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
   useFrame(({ clock }, delta) => {
     if (!rb.current || state.hp <= 0) return;
 
-    const { gameMode: gm, survivalState: sv } = useGameStore.getState();
+    const { gameMode: gm, survivalState: sv, timeScale } = useGameStore.getState();
     const validPhase = gm === 'survival' ? (phase === 'survival_playing') : (phase === 'playing');
     if (!validPhase || (countdown !== null && countdown > 0.5)) {
       rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -188,7 +188,7 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
       vx = (vx / length) * speed;
       vz = (vz / length) * speed;
     }
-    rb.current.setLinvel({ x: vx, y: 0, z: vz }, true);
+    rb.current.setLinvel({ x: vx * timeScale, y: 0, z: vz * timeScale }, true);
 
     if (gm !== 'survival') {
       const { exitPos, enemies, setPhase } = useGameStore.getState();
