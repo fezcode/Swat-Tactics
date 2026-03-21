@@ -1,8 +1,18 @@
 import { create } from 'zustand';
-import type { PlayerState, EnemyState, BarrelState, GamePhase, GameMode, Position, Weapon, Particle, ProjectileState, HealthBoxState, AmmoBoxState, LevelTheme, DecorationState, PortalState, TurretState, ButtonState, XPOrbState, FloatingText } from '../types';
+import type { PlayerState, EnemyState, BarrelState, GamePhase, GameMode, Position, Weapon, Particle, ProjectileState, HealthBoxState, AmmoBoxState, LevelTheme, DecorationState, PortalState, TurretState, ButtonState, XPOrbState, FloatingText, BloodDecal } from '../types';
 import { LEVELS } from './levels';
 import { SFX, Music } from './sounds';
 import type { PerkId } from './survivalPerks';
+import { positionCache } from './positionCache';
+
+// Helper to get enemy position from cache, falling back to store
+function getEnemyPos(e: EnemyState): Position {
+  return positionCache.get(e.id) || e.pos;
+}
+function getPlayerPos(state: { player: PlayerState | null }): Position {
+  if (!state.player) return { x: 0, z: 0 };
+  return positionCache.get('player') || state.player.pos;
+}
 import { pickRandomPerks } from './survivalPerks';
 import type { WaveMutation, SurvivalEnemyDef } from './survivalWaves';
 import { generateWave, getSpawnPosition, getMutationsForWave } from './survivalWaves';
@@ -213,26 +223,36 @@ export const useGameStore = create<GameState>((set, get) => ({
     setTimeout(() => { set({ isSlashZooming: false, timeScale: 1.0 }); }, 500);
     const slashRadius = 4.5;
     const slashDamage = hasBladeStorm ? 80 : 40;
+    const playerPos = getPlayerPos(state);
     state.enemies.forEach(e => {
         if (e.hp > 0) {
-            const dx = e.pos.x - player.pos.x;
-            const dz = e.pos.z - player.pos.z;
-            if (Math.sqrt(dx * dx + dz * dz) <= slashRadius) get().damageEntity(e.id, slashDamage, e.pos);
+            const ePos = getEnemyPos(e);
+            const dx = ePos.x - playerPos.x;
+            const dz = ePos.z - playerPos.z;
+            if (Math.sqrt(dx * dx + dz * dz) <= slashRadius) get().damageEntity(e.id, slashDamage, ePos);
         }
     });
     state.barrels.forEach(b => {
         if (b.hp > 0) {
-            const dx = b.pos.x - player.pos.x;
-            const dz = b.pos.z - player.pos.z;
+            const dx = b.pos.x - playerPos.x;
+            const dz = b.pos.z - playerPos.z;
             if (Math.sqrt(dx * dx + dz * dz) <= slashRadius) get().damageEntity(b.id, slashDamage, b.pos);
         }
     });
+    const slashParticles: Particle[] = [];
     for (let i = 0; i < 30; i++) {
       const angle = (i / 30) * Math.PI * 2;
       const dist = 1 + Math.random() * 2;
-      get().addParticle([player.pos.x + Math.cos(angle) * dist, 0.5, player.pos.z + Math.sin(angle) * dist], '#ffffff');
+      slashParticles.push({
+        id: Math.random().toString(36).substr(2, 9),
+        pos: [playerPos.x + Math.cos(angle) * dist, 0.5, playerPos.z + Math.sin(angle) * dist],
+        color: '#ffffff',
+        velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4],
+        life: 1.0,
+      });
     }
-    SFX.playerShoot(); 
+    set(s => ({ particles: [...s.particles, ...slashParticles] }));
+    SFX.playerShoot();
   },
   setPhase: (phase) => {
     set({ phase });
@@ -282,7 +302,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         // Phoenix revive
         if (state.gameMode === 'survival' && state.survivalState?.hasPhoenix && !state.survivalState?.phoenixUsed) {
           const maxHp = state.player.maxHp;
-          const pPos = state.player.pos;
+          const pPos = getPlayerPos(state);
           const explosionId = Math.random().toString(36).substr(2, 9);
           newExplosions.push({ id: explosionId, pos: pPos, radius: 5, life: 1.0 });
           for (let i = 0; i < 20; i++) {
@@ -292,8 +312,9 @@ export const useGameStore = create<GameState>((set, get) => ({
           // Damage enemies in radius directly
           const updatedEnemies = state.enemies.map(e => {
             if (e.hp > 0) {
-              const edx = e.pos.x - pPos.x;
-              const edz = e.pos.z - pPos.z;
+              const e2Pos = getEnemyPos(e);
+              const edx = e2Pos.x - pPos.x;
+              const edz = e2Pos.z - pPos.z;
               if (Math.sqrt(edx * edx + edz * edz) <= 5) return { ...e, hp: Math.max(0, e.hp - 100) };
             }
             return e;
@@ -322,12 +343,15 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // --- Enemy damage ---
     let hit = false; let killed = false; const killedRef: { enemy: EnemyState | null } = { enemy: null };
+    const newBloodDecals: BloodDecal[] = [];
     let enemies = state.enemies.map(e => {
       if (e.id === id && e.hp > 0) {
         hit = true;
         if (pos) {
           mkParticle([pos.x, 0.5, pos.z], '#ff0000');
-          if (state.gameMode === 'survival') get().addBloodDecal({ x: pos.x, z: pos.z });
+          if (state.gameMode === 'survival') {
+            newBloodDecals.push({ id: Math.random().toString(36).substr(2, 9), pos: { x: pos.x, z: pos.z }, rot: Math.random() * Math.PI * 2, scale: 0.5 + Math.random() * 1.5 });
+          }
         }
         if (e.unkillable) return { ...e, lastHitTime: Date.now() };
         const hp = Math.max(0, e.hp - amount);
@@ -347,7 +371,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         const killedEnemy = killedRef.enemy;
 
         if (state.gameMode === 'survival' && updatedSv && killedEnemy) {
-          const ePos = killedEnemy.pos;
+          const ePos = getEnemyPos(killedEnemy);
 
           // XP orb
           const orbId = Math.random().toString(36).substr(2, 9);
@@ -369,18 +393,19 @@ export const useGameStore = create<GameState>((set, get) => ({
             for (let i = 0; i < 8; i++) mkParticle([ePos.x, 0.5, ePos.z], '#ff4400');
             enemies = enemies.map(e2 => {
               if (e2.hp > 0 && e2.id !== id) {
-                const dx2 = e2.pos.x - ePos.x;
-                const dz2 = e2.pos.z - ePos.z;
+                const e2Pos = getEnemyPos(e2);
+                const dx2 = e2Pos.x - ePos.x;
+                const dz2 = e2Pos.z - ePos.z;
                 if (Math.sqrt(dx2 * dx2 + dz2 * dz2) <= 3) return { ...e2, hp: Math.max(0, e2.hp - 40) };
               }
               return e2;
             });
+            const pPos = getPlayerPos(state);
             if (state.player && state.player.hp > 0) {
-              const dx2 = state.player.pos.x - ePos.x;
-              const dz2 = state.player.pos.z - ePos.z;
+              const dx2 = pPos.x - ePos.x;
+              const dz2 = pPos.z - ePos.z;
               if (Math.sqrt(dx2 * dx2 + dz2 * dz2) <= 3) {
-                // Queue player damage for after this set
-                setTimeout(() => get().damageEntity('player', 30, state.player!.pos), 0);
+                setTimeout(() => get().damageEntity('player', 30, pPos), 0);
               }
             }
           }
@@ -402,11 +427,12 @@ export const useGameStore = create<GameState>((set, get) => ({
           // Vengeful mutation
           if (updatedSv.mutations.includes('vengeful')) {
             newExplosions.push({ id: Math.random().toString(36).substr(2, 9), pos: ePos, radius: 2, life: 0.8 });
+            const pPos = getPlayerPos(state);
             if (state.player && state.player.hp > 0) {
-              const dx2 = state.player.pos.x - ePos.x;
-              const dz2 = state.player.pos.z - ePos.z;
+              const dx2 = pPos.x - ePos.x;
+              const dz2 = pPos.z - ePos.z;
               if (Math.sqrt(dx2 * dx2 + dz2 * dz2) <= 2) {
-                setTimeout(() => get().damageEntity('player', 15, state.player!.pos), 0);
+                setTimeout(() => get().damageEntity('player', 15, pPos), 0);
               }
             }
           }
@@ -416,8 +442,9 @@ export const useGameStore = create<GameState>((set, get) => ({
             newExplosions.push({ id: Math.random().toString(36).substr(2, 9), pos: ePos, radius: 2, life: 0.6 });
             enemies = enemies.map(e2 => {
               if (e2.hp > 0 && e2.id !== id) {
-                const dx2 = e2.pos.x - ePos.x;
-                const dz2 = e2.pos.z - ePos.z;
+                const e2Pos = getEnemyPos(e2);
+                const dx2 = e2Pos.x - ePos.x;
+                const dz2 = e2Pos.z - ePos.z;
                 if (Math.sqrt(dx2 * dx2 + dz2 * dz2) <= 2) return { ...e2, hp: Math.max(0, e2.hp - 20) };
               }
               return e2;
@@ -435,12 +462,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
 
       const finalEnemies = extraEnemies.length > 0 ? [...enemies, ...extraEnemies] : enemies;
+      const bloodDecals = newBloodDecals.length > 0
+        ? [...state.bloodDecals, ...newBloodDecals].slice(-60)
+        : state.bloodDecals;
       set({
         enemies: finalEnemies,
         stats: updatedStats,
         survivalState: updatedSv,
         particles: [...state.particles, ...newParticles],
         explosions: [...state.explosions, ...newExplosions],
+        bloodDecals,
       });
       return;
     }
@@ -479,8 +510,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         // Batch damage all entities in radius directly
         let updatedEnemies = state.enemies.map(e => {
           if (e.hp > 0) {
-            const edx = e.pos.x - exPos.x;
-            const edz = e.pos.z - exPos.z;
+            const e2Pos = getEnemyPos(e);
+            const edx = e2Pos.x - exPos.x;
+            const edz = e2Pos.z - exPos.z;
             if (Math.sqrt(edx * edx + edz * edz) <= explosionRadius) return { ...e, hp: Math.max(0, e.hp - explosionDamage) };
           }
           return e;
@@ -505,10 +537,11 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         // Player damage via deferred call to avoid recursive set
         if (state.player && state.player.hp > 0) {
-          const pdx = state.player.pos.x - exPos.x;
-          const pdz = state.player.pos.z - exPos.z;
+          const pPos = getPlayerPos(state);
+          const pdx = pPos.x - exPos.x;
+          const pdz = pPos.z - exPos.z;
           if (Math.sqrt(pdx * pdx + pdz * pdz) <= explosionRadius) {
-            setTimeout(() => get().damageEntity('player', explosionDamage, get().player!.pos), 0);
+            setTimeout(() => get().damageEntity('player', explosionDamage, pPos), 0);
           }
         }
 
@@ -525,27 +558,27 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
   },
-  collectHealth: (id) => { 
-    const state = get(); 
-    const box = state.healthBoxes.find(h => h.id === id); 
-    if (box && state.player) { 
-      const scavengerStacks = state.survivalState?.perkStacks['scavenger'] || 0; 
-      const healAmount = Math.floor(50 * (1 + scavengerStacks * 0.5)); 
-      set(s => ({ 
-        player: s.player ? { ...s.player, hp: Math.min(s.player.maxHp, s.player.hp + healAmount) } : null, 
+  collectHealth: (id) => {
+    const state = get();
+    const box = state.healthBoxes.find(h => h.id === id);
+    if (box && state.player) {
+      const scavengerStacks = state.survivalState?.perkStacks['scavenger'] || 0;
+      const healAmount = Math.floor(50 * (1 + scavengerStacks * 0.5));
+      setTimeout(() => set(s => ({
+        player: s.player ? { ...s.player, hp: Math.min(s.player.maxHp, s.player.hp + healAmount) } : null,
         healthBoxes: s.healthBoxes.filter(h => h.id !== id)
-      })); 
-    } 
+      })), 0);
+    }
   },
-  collectAmmo: (id) => { 
-    const state = get(); 
-    const box = state.ammoBoxes.find(a => a.id === id); 
-    if (box && state.player) { 
-      set(s => ({ 
-        player: s.player ? { ...s.player, weapon: { ...s.player.weapon, ammo: s.player.weapon.maxAmmo }, secondaryWeapon: s.player.secondaryWeapon ? { ...s.player.secondaryWeapon, ammo: s.player.secondaryWeapon.maxAmmo } : null } : null, 
+  collectAmmo: (id) => {
+    const state = get();
+    const box = state.ammoBoxes.find(a => a.id === id);
+    if (box && state.player) {
+      setTimeout(() => set(s => ({
+        player: s.player ? { ...s.player, weapon: { ...s.player.weapon, ammo: s.player.weapon.maxAmmo }, secondaryWeapon: s.player.secondaryWeapon ? { ...s.player.secondaryWeapon, ammo: s.player.secondaryWeapon.maxAmmo } : null } : null,
         ammoBoxes: s.ammoBoxes.filter(a => a.id !== id)
-      })); 
-    } 
+      })), 0);
+    }
   },
   usePortal: () => { const state = get(); if (state.portal && !state.portal.used && state.player) { const ps: Particle[] = []; for (let i = 0; i < 10; i++) { ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posA.x, 0.5, state.portal.posA.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posB.x, 0.5, state.portal.posB.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); } set({ portal: { ...state.portal, used: true }, particles: [...state.particles, ...ps] }); SFX.teleport(); } },
   toggleButton: (id, active) => { const state = get(); const button = state.buttons.find(b => b.id === id); if (!button) return; set(s => ({ buttons: s.buttons.map(b => b.id === id ? { ...b, active } : b), turrets: s.turrets.map(t => t.id === button.targetId ? { ...t, disabled: active } : t) })); },
@@ -902,6 +935,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     // --- Death aura (batch damage into enemies array directly) ---
+    const pPos = getPlayerPos(state);
     const deathAuraStacks = newSv.perkStacks['death_aura'] || 0;
     let auraParticles: [number, number, number][] = [];
     if (deathAuraStacks > 0 && state.player.hp > 0) {
@@ -910,12 +944,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       const auraRadius = 3;
       const updatedEnemies = state.enemies.map(e => {
         if (e.hp > 0) {
-          const dx = e.pos.x - state.player!.pos.x;
-          const dz = e.pos.z - state.player!.pos.z;
+          const ep = getEnemyPos(e);
+          const dx = ep.x - pPos.x;
+          const dz = ep.z - pPos.z;
           if (Math.sqrt(dx * dx + dz * dz) <= auraRadius) {
             const newHp = Math.max(0, e.hp - auraDmg);
             if (newHp !== e.hp) {
-              auraParticles.push([e.pos.x, 0.5, e.pos.z]);
+              auraParticles.push([ep.x, 0.5, ep.z]);
               return { ...e, hp: newHp };
             }
           }
@@ -937,13 +972,14 @@ export const useGameStore = create<GameState>((set, get) => ({
         const aliveEnemies = state.enemies.filter(e => e.hp > 0);
         if (aliveEnemies.length > 0) {
           const target = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
-          orbitalExplosion = { id: Math.random().toString(36).substr(2, 9), pos: target.pos, radius: 5, life: 1.0 };
-          orbitalParticlePos = target.pos;
-          // Batch damage all enemies in radius
+          const tPos = getEnemyPos(target);
+          orbitalExplosion = { id: Math.random().toString(36).substr(2, 9), pos: tPos, radius: 5, life: 1.0 };
+          orbitalParticlePos = tPos;
           const updatedEnemies = get().enemies.map(e => {
             if (e.hp > 0) {
-              const dx = e.pos.x - target.pos.x;
-              const dz = e.pos.z - target.pos.z;
+              const ep = getEnemyPos(e);
+              const dx = ep.x - tPos.x;
+              const dz = ep.z - tPos.z;
               if (Math.sqrt(dx * dx + dz * dz) <= 5) {
                 return { ...e, hp: Math.max(0, e.hp - 80) };
               }
@@ -952,7 +988,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           });
           set({ enemies: updatedEnemies });
           get().triggerShake();
-          get().addFloatingText('ORBITAL STRIKE!', target.pos, '#fbbf24');
+          get().addFloatingText('ORBITAL STRIKE!', tPos, '#fbbf24');
         }
       }
     }
@@ -960,27 +996,27 @@ export const useGameStore = create<GameState>((set, get) => ({
     // --- Shadow clone AI ---
     if (newSv.activePerks.includes('shadow_clone') && state.player.hp > 0) {
       const cloneSpeed = 6;
-      let cPos = newSv.clonePos || { x: state.player.pos.x + 2, z: state.player.pos.z + 2 };
-      // Find nearest enemy
+      let cPos = newSv.clonePos || { x: pPos.x + 2, z: pPos.z + 2 };
       let nearestEnemy: EnemyState | null = null;
       let nearestDist = Infinity;
       state.enemies.forEach(e => {
         if (e.hp > 0) {
-          const dx = e.pos.x - cPos.x;
-          const dz = e.pos.z - cPos.z;
+          const ep = getEnemyPos(e);
+          const dx = ep.x - cPos.x;
+          const dz = ep.z - cPos.z;
           const d = Math.sqrt(dx * dx + dz * dz);
           if (d < nearestDist) { nearestDist = d; nearestEnemy = e; }
         }
       });
       if (nearestEnemy) {
-        const dx = (nearestEnemy as EnemyState).pos.x - cPos.x;
-        const dz = (nearestEnemy as EnemyState).pos.z - cPos.z;
+        const nep = getEnemyPos(nearestEnemy);
+        const dx = nep.x - cPos.x;
+        const dz = nep.z - cPos.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
         if (dist > 5) {
           cPos = { x: cPos.x + (dx / dist) * cloneSpeed * effectiveDt, z: cPos.z + (dz / dist) * cloneSpeed * effectiveDt };
         }
         newSv.cloneRotation = Math.atan2(-dx, -dz);
-        // Clone shoots
         const now = Date.now();
         if (now - newSv.cloneLastFireTime > 500 && dist < 12) {
           newSv.cloneLastFireTime = now;
@@ -988,9 +1024,8 @@ export const useGameStore = create<GameState>((set, get) => ({
           get().addProjectile({ pos: { x: cPos.x + dir.x * 0.6, z: cPos.z + dir.z * 0.6 }, velocity: { x: dir.x * 25, z: dir.z * 25 }, damage: 8, life: 2.0, isEnemy: false, color: '#818cf8' });
         }
       } else {
-        // Follow player
-        const dx = state.player.pos.x + 2 - cPos.x;
-        const dz = state.player.pos.z + 2 - cPos.z;
+        const dx = pPos.x + 2 - cPos.x;
+        const dz = pPos.z + 2 - cPos.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
         if (dist > 1) {
           cPos = { x: cPos.x + (dx / dist) * cloneSpeed * effectiveDt, z: cPos.z + (dz / dist) * cloneSpeed * effectiveDt };
@@ -1003,8 +1038,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const magnetismRadius = newSv.activePerks.includes('magnetism') ? 6 : 3;
     const collectedOrbs: string[] = [];
     const newOrbs = newSv.xpOrbs.map(orb => {
-      const dx = state.player!.pos.x - orb.pos.x;
-      const dz = state.player!.pos.z - orb.pos.z;
+      const dx = pPos.x - orb.pos.x;
+      const dz = pPos.z - orb.pos.z;
       const dist = Math.sqrt(dx * dx + dz * dz);
       if (dist < 0.5) { collectedOrbs.push(orb.id); return orb; }
       if (dist < magnetismRadius) {
@@ -1055,9 +1090,12 @@ export const useGameStore = create<GameState>((set, get) => ({
             secondaryWeapon: updatedPlayer.secondaryWeapon ? { ...updatedPlayer.secondaryWeapon, ammo: Math.min(updatedPlayer.secondaryWeapon.maxAmmo, updatedPlayer.secondaryWeapon.ammo + 1) } : null,
           };
         }
-        // Combat regen
+        // Combat regen - only update when HP crosses an integer to avoid new object every frame
         if (regenPerSec > 0) {
-          updatedPlayer = { ...updatedPlayer, hp: Math.min(updatedPlayer.maxHp, updatedPlayer.hp + regenPerSec * effectiveDt) };
+          const newHp = Math.min(updatedPlayer.maxHp, updatedPlayer.hp + regenPerSec * effectiveDt);
+          if (Math.floor(newHp) !== Math.floor(updatedPlayer.hp) || newHp >= updatedPlayer.maxHp) {
+            updatedPlayer = { ...updatedPlayer, hp: newHp };
+          }
         }
       }
 

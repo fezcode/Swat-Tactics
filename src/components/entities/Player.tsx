@@ -61,7 +61,7 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
         rb.current.setTranslation({ x: state.pos.x, y: 0.5, z: state.pos.z }, true);
       }
       setDodgeActive(true);
-      const timer = setTimeout(() => setDodgeActive(false), 250);
+      setTimeout(() => setDodgeActive(false), 250);
       lastDodgeRef.current = state.lastDodgeTime;
     }
     prevPos.current = state.pos;

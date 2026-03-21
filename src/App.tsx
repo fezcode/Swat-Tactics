@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { shallow } from 'zustand/shallow';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
@@ -44,7 +43,6 @@ function GameScene() {
   const player = useGameStore(s => s.player);
   const enemies = useGameStore(s => s.enemies);
   const barrels = useGameStore(s => s.barrels);
-  const phase = useGameStore(s => s.phase);
   const theme = useGameStore(s => s.theme);
   const hasTrain = useGameStore(s => s.hasTrain);
   const gameMode = useGameStore(s => s.gameMode);

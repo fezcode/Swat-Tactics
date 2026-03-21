@@ -1,4 +1,5 @@
 import { useGameStore } from '../../game/store';
+import { positionCache } from '../../game/positionCache';
 import { SFX } from '../../game/sounds';
 import { PerkSelection } from './PerkSelection';
 import { PERKS } from '../../game/survivalPerks';
@@ -7,89 +8,88 @@ import { useState, useEffect, useRef } from 'react';
 
 function Minimap() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const player = useGameStore(s => s.player);
-  const enemies = useGameStore(s => s.enemies);
-  const survivalState = useGameStore(s => s.survivalState);
+  const rafRef = useRef<number>(0);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    let lastDraw = 0;
+    const draw = (time: number) => {
+      rafRef.current = requestAnimationFrame(draw);
+      // Throttle to ~5 FPS — minimap doesn't need 60fps
+      if (time - lastDraw < 200) return;
+      lastDraw = time;
 
-    const size = 160;
-    const arenaSize = survivalState?.arenaSize || 30;
-    const scale = size / arenaSize;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    // Clear
-    ctx.fillStyle = '#0a0a0f';
-    ctx.fillRect(0, 0, size, size);
+      const state = useGameStore.getState();
+      const player = state.player;
+      const enemies = state.enemies;
+      const survivalState = state.survivalState;
 
-    // Grid lines
-    ctx.strokeStyle = 'rgba(100, 100, 140, 0.15)';
-    ctx.lineWidth = 0.5;
-    const gridStep = 5;
-    for (let i = 0; i <= arenaSize; i += gridStep) {
-      ctx.beginPath();
-      ctx.moveTo(i * scale, 0);
-      ctx.lineTo(i * scale, size);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, i * scale);
-      ctx.lineTo(size, i * scale);
-      ctx.stroke();
-    }
+      const size = 160;
+      const arenaSize = survivalState?.arenaSize || 30;
+      const scale = size / arenaSize;
 
-    // Arena border
-    ctx.strokeStyle = '#6366f1';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(1, 1, size - 2, size - 2);
+      ctx.fillStyle = '#0a0a0f';
+      ctx.fillRect(0, 0, size, size);
 
-    // XP Orbs
-    if (survivalState) {
-      survivalState.xpOrbs.forEach(orb => {
+      ctx.strokeStyle = 'rgba(100, 100, 140, 0.15)';
+      ctx.lineWidth = 0.5;
+      const gridStep = 5;
+      for (let i = 0; i <= arenaSize; i += gridStep) {
+        ctx.beginPath(); ctx.moveTo(i * scale, 0); ctx.lineTo(i * scale, size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i * scale); ctx.lineTo(size, i * scale); ctx.stroke();
+      }
+
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(1, 1, size - 2, size - 2);
+
+      // XP Orbs
+      if (survivalState) {
         ctx.fillStyle = 'rgba(6, 182, 212, 0.6)';
+        survivalState.xpOrbs.forEach(orb => {
+          ctx.beginPath();
+          ctx.arc(orb.pos.x * scale, orb.pos.z * scale, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      // Enemies - read from position cache for accurate positions
+      enemies.forEach(e => {
+        if (e.hp <= 0) return;
+        const ep = positionCache.get(e.id) || e.pos;
+        ctx.fillStyle = e.color || '#ef4444';
         ctx.beginPath();
-        ctx.arc(orb.pos.x * scale, orb.pos.z * scale, 1.5, 0, Math.PI * 2);
+        ctx.arc(ep.x * scale, ep.z * scale, 2.5, 0, Math.PI * 2);
         ctx.fill();
       });
-    }
 
-    // Enemies
-    enemies.forEach(e => {
-      if (e.hp <= 0) return;
-      ctx.fillStyle = e.color || '#ef4444';
-      ctx.beginPath();
-      ctx.arc(e.pos.x * scale, e.pos.z * scale, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-    });
+      // Shadow clone
+      if (survivalState?.clonePos) {
+        ctx.fillStyle = '#818cf8';
+        ctx.beginPath();
+        ctx.arc(survivalState.clonePos.x * scale, survivalState.clonePos.z * scale, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
-    // Shadow clone
-    if (survivalState?.clonePos) {
-      ctx.fillStyle = '#818cf8';
-      ctx.beginPath();
-      ctx.arc(survivalState.clonePos.x * scale, survivalState.clonePos.z * scale, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
+      // Player
+      if (player) {
+        const pp = positionCache.get('player') || player.pos;
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+        ctx.beginPath(); ctx.arc(pp.x * scale, pp.z * scale, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath(); ctx.arc(pp.x * scale, pp.z * scale, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(pp.x * scale, pp.z * scale, 1.5, 0, Math.PI * 2); ctx.fill();
+      }
+    };
 
-    // Player - always on top
-    if (player) {
-      // Player glow
-      ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
-      ctx.beginPath();
-      ctx.arc(player.pos.x * scale, player.pos.z * scale, 6, 0, Math.PI * 2);
-      ctx.fill();
-      // Player dot
-      ctx.fillStyle = '#3b82f6';
-      ctx.beginPath();
-      ctx.arc(player.pos.x * scale, player.pos.z * scale, 3.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(player.pos.x * scale, player.pos.z * scale, 1.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  });
+    rafRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
 
   return (
     <div className="relative">
