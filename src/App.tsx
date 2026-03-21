@@ -105,6 +105,7 @@ function CameraRig() {
   const lastShakeTime = useGameStore(s => s.lastShakeTime);
   const trainActive = useGameStore(s => s.trainActive);
   const isSlashZooming = useGameStore(s => s.isSlashZooming);
+  const isDodging = useGameStore(s => s.isDodging);
 
   useFrame((_, delta) => {
     let playerObj: THREE.Object3D | undefined;
@@ -113,12 +114,12 @@ function CameraRig() {
     if (playerObj) {
       const pos = new THREE.Vector3();
       playerObj.getWorldPosition(pos);
-      
+
       let offsetX = 0;
       let offsetZ = 0;
       const timeSinceDamage = Date.now() - lastDamageTime;
       const timeSinceShake = Date.now() - lastShakeTime;
-      
+
       if (timeSinceDamage < 300 || timeSinceShake < 400 || trainActive) {
         const intensity = trainActive ? 0.4 : Math.max(
             timeSinceDamage < 300 ? (1 - timeSinceDamage / 300) * 0.5 : 0,
@@ -137,14 +138,13 @@ function CameraRig() {
       camera.position.z = THREE.MathUtils.lerp(camera.position.z, pos.z + 10 + offsetZ, alpha);
       camera.lookAt(camera.position.x, 0, camera.position.z - 10);
 
-      const targetFov = isSlashZooming ? 25 : 45;
-      const zoomSmoothing = isSlashZooming ? 0.000000000001 : 0.005; // extremely fast zoom in, slower zoom out
+      const targetFov = isSlashZooming ? 25 : (isDodging ? 38 : 45);
+      const zoomSmoothing = isSlashZooming ? 0.000000000001 : 0.005; // extremely fast zoom in, slower zoom out 
       const zoomAlpha = 1 - Math.pow(zoomSmoothing, delta);
       (camera as THREE.PerspectiveCamera).fov = THREE.MathUtils.lerp((camera as THREE.PerspectiveCamera).fov, targetFov, zoomAlpha);
       (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
     }
   });
-
   return <PerspectiveCamera makeDefault position={[0, 15, 10]} fov={45} />;
 }
 
@@ -154,6 +154,7 @@ function App() {
   const phase = useGameStore(s => s.phase);
   const crtEnabled = useGameStore(s => s.crtEnabled);
   const isSlashZooming = useGameStore(s => s.isSlashZooming);
+  const isDodging = useGameStore(s => s.isDodging);
 
   const containerBg = useMemo(() => {
     if (phase === 'main_menu') return '#050505';
@@ -194,6 +195,7 @@ function App() {
         <CameraRig />
         <GameScene />
       </Canvas>
+      <div className={`vignette ${isDodging ? 'vignette-active' : ''}`} />
       {crtEnabled && <div className="scanlines-container" />}
       <PauseHandler />
       <HUD />

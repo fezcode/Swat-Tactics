@@ -75,6 +75,7 @@ interface GameState {
   trainActive: boolean;
   hasTrain: boolean;
   isSlashZooming: boolean;
+  isDodging: boolean;
   timeScale: number;
   currentTrackName: string;
   fps: number;
@@ -156,6 +157,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   trainActive: false,
   hasTrain: false,
   isSlashZooming: false,
+  isDodging: false,
   timeScale: 1.0,
   currentTrackName: "None",
   fps: 0,
@@ -189,7 +191,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         finalZ = stepZ;
     }
     const newPos = { x: finalX, z: finalZ };
-    set(s => ({ player: s.player ? { ...s.player, pos: newPos, lastDodgeTime: now } : null }));
+    set(s => ({ player: s.player ? { ...s.player, pos: newPos, lastDodgeTime: now } : null, isDodging: true }));
+    setTimeout(() => set({ isDodging: false }), 200);
     for (let i = 0; i < 10; i++) get().addParticle([player.pos.x, 0.5, player.pos.z], '#ffffff');
     SFX.enemyShoot();
   },
@@ -518,8 +521,38 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
   },
-  collectHealth: (id) => { const state = get(); const box = state.healthBoxes.find(h => h.id === id); if (box && state.player) { const scavengerStacks = state.survivalState?.perkStacks['scavenger'] || 0; const healAmount = Math.floor(50 * (1 + scavengerStacks * 0.5)); set({ player: { ...state.player, hp: Math.min(state.player.maxHp, state.player.hp + healAmount) }, healthBoxes: state.healthBoxes.filter(h => h.id !== id) }); get().addParticle([box.pos.x, 0.5, box.pos.z], '#22c55e', 10); } },
-  collectAmmo: (id) => { const state = get(); const box = state.ammoBoxes.find(a => a.id === id); if (box && state.player) { set({ player: { ...state.player, weapon: { ...state.player.weapon, ammo: state.player.weapon.maxAmmo }, secondaryWeapon: state.player.secondaryWeapon ? { ...state.player.secondaryWeapon, ammo: state.player.secondaryWeapon.maxAmmo } : null }, ammoBoxes: state.ammoBoxes.filter(a => a.id !== id) }); get().addParticle([box.pos.x, 0.5, box.pos.z], '#fbbf24', 10); } },
+  collectHealth: (id) => { 
+    const state = get(); 
+    const box = state.healthBoxes.find(h => h.id === id); 
+    if (box && state.player) { 
+      const scavengerStacks = state.survivalState?.perkStacks['scavenger'] || 0; 
+      const healAmount = Math.floor(50 * (1 + scavengerStacks * 0.5)); 
+      const newParticles: Particle[] = [];
+      for (let i = 0; i < 10; i++) {
+        newParticles.push({ id: Math.random().toString(36).substr(2, 9), pos: [box.pos.x, 0.5, box.pos.z], color: '#22c55e', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 });
+      }
+      set(s => ({ 
+        player: s.player ? { ...s.player, hp: Math.min(s.player.maxHp, s.player.hp + healAmount) } : null, 
+        healthBoxes: s.healthBoxes.filter(h => h.id !== id),
+        particles: [...s.particles, ...newParticles]
+      })); 
+    } 
+  },
+  collectAmmo: (id) => { 
+    const state = get(); 
+    const box = state.ammoBoxes.find(a => a.id === id); 
+    if (box && state.player) { 
+      const newParticles: Particle[] = [];
+      for (let i = 0; i < 10; i++) {
+        newParticles.push({ id: Math.random().toString(36).substr(2, 9), pos: [box.pos.x, 0.5, box.pos.z], color: '#fbbf24', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 });
+      }
+      set(s => ({ 
+        player: s.player ? { ...s.player, weapon: { ...s.player.weapon, ammo: s.player.weapon.maxAmmo }, secondaryWeapon: s.player.secondaryWeapon ? { ...s.player.secondaryWeapon, ammo: s.player.secondaryWeapon.maxAmmo } : null } : null, 
+        ammoBoxes: s.ammoBoxes.filter(a => a.id !== id),
+        particles: [...s.particles, ...newParticles]
+      })); 
+    } 
+  },
   usePortal: () => { const state = get(); if (state.portal && !state.portal.used && state.player) { const ps: Particle[] = []; for (let i = 0; i < 10; i++) { ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posA.x, 0.5, state.portal.posA.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posB.x, 0.5, state.portal.posB.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); } set({ portal: { ...state.portal, used: true }, particles: [...state.particles, ...ps] }); SFX.teleport(); } },
   toggleButton: (id, active) => { const state = get(); const button = state.buttons.find(b => b.id === id); if (!button) return; set(s => ({ buttons: s.buttons.map(b => b.id === id ? { ...b, active } : b), turrets: s.turrets.map(t => t.id === button.targetId ? { ...t, disabled: active } : t) })); },
   playerShoot: (spawnPos, direction) => { const state = get(); const isSurvival = state.gameMode === 'survival'; const validPhase = isSurvival ? state.phase === 'survival_playing' : state.phase === 'playing'; if (!validPhase || !state.player || state.player.hp <= 0 || (state.countdown !== null && state.countdown > 0.5)) return; const activeWeapon = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? state.player.secondaryWeapon : state.player.weapon; if (activeWeapon.ammo <= 0) { SFX.gunEmpty(); return; } const updatedWeapon = { ...activeWeapon, ammo: activeWeapon.ammo - 1 }; const newPlayer = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? { ...state.player, secondaryWeapon: updatedWeapon } : { ...state.player, weapon: updatedWeapon }; set({ player: newPlayer }); const isSmg = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon; const hollowStacks = isSurvival ? (state.survivalState?.perkStacks['hollow_points'] || 0) : 0; const dmgMult = 1 + hollowStacks * 0.25; const hasBulletHell = isSurvival && state.survivalState?.activePerks.includes('bullet_hell'); const hasExplosiveRounds = isSurvival && state.survivalState?.activePerks.includes('explosive_rounds'); const bulletDamage = Math.floor(activeWeapon.damage * dmgMult); const bulletColor = hasExplosiveRounds ? '#ff6600' : isSmg ? '#22ff44' : undefined; if (hasBulletHell) { const angles = [-0.15, 0, 0.15]; angles.forEach(a => { const cos = Math.cos(a); const sin = Math.sin(a); const dx = direction.x * cos - direction.z * sin; const dz = direction.x * sin + direction.z * cos; get().addProjectile({ pos: { ...spawnPos }, velocity: { x: dx * 30, z: dz * 30 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor }); }); } else { get().addProjectile({ pos: spawnPos, velocity: { x: direction.x * 30, z: direction.z * 30 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor }); } },

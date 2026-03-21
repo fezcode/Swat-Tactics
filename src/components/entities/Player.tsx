@@ -27,6 +27,9 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
   const lastFireTime = useRef(0);
   
   const [slashActive, setSlashActive] = useState(false);
+  const [dodgeActive, setDodgeActive] = useState(false);
+  const dodgeDir = useRef({ x: 0, z: 0 });
+  const prevPos = useRef(state.pos);
   
   // Track weapon switch animation
   const switchAnimProgress = useRef(0);
@@ -44,11 +47,25 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
   // Handle dodge teleport
   const lastDodgeRef = useRef(state.lastDodgeTime);
   useEffect(() => {
-    if (state.lastDodgeTime > lastDodgeRef.current && rb.current) {
-      rb.current.setTranslation({ x: state.pos.x, y: 0.5, z: state.pos.z }, true);
+    if (state.lastDodgeTime > lastDodgeRef.current) {
+      // Calculate dodge direction from movement delta
+      const dx = state.pos.x - prevPos.current.x;
+      const dz = state.pos.z - prevPos.current.z;
+      const len = Math.sqrt(dx * dx + dz * dz);
+      if (len > 0.1) {
+        // We want the trail to point BACKWARDS from where we moved
+        dodgeDir.current = { x: -dx / len, z: -dz / len };
+      }
+
+      if (rb.current) {
+        rb.current.setTranslation({ x: state.pos.x, y: 0.5, z: state.pos.z }, true);
+      }
+      setDodgeActive(true);
+      const timer = setTimeout(() => setDodgeActive(false), 250);
+      lastDodgeRef.current = state.lastDodgeTime;
     }
-    lastDodgeRef.current = state.lastDodgeTime;
-  }, [state.lastDodgeTime, state.pos.x, state.pos.z]);
+    prevPos.current = state.pos;
+  }, [state.lastDodgeTime, state.pos]);
 
   // Handle slash animation
   const lastSlashRef = useRef(state.lastSlashTime);
@@ -241,6 +258,8 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
   return (
     <RigidBody ref={rb} type="dynamic" position={[state.pos.x, 0.5, state.pos.z]} lockRotations enabledTranslations={[true, false, true]} friction={0} restitution={0} colliders={false} name="player" userData={{ type: 'player', id: state.id }}>
       <BallCollider args={[0.3]} />
+
+      {/* Visual representation that ROTATES to face mouse */}
       <group ref={meshRef}>
         <mesh castShadow receiveShadow>
           <capsuleGeometry args={[0.3, 0.4, 4, 16]} />
@@ -291,6 +310,19 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
           </group>
         )}
       </group>
+
+      {/* Non-rotating group for effects */}
+      <group>
+        {/* Rainbow Dodge Trail - Positioned in opposite direction of dodge */}
+        {dodgeActive && [0, 1, 2, 3, 4, 5, 6].map(i => {
+          const dist = (i + 1) * 0.45;
+          return (
+            <mesh key={i} position={[dodgeDir.current.x * dist, 0, dodgeDir.current.z * dist]} scale={[1 - i * 0.1, 1 - i * 0.1, 1 - i * 0.1]}>
+              <sphereGeometry args={[0.2, 8, 8]} />
+              <meshBasicMaterial color={['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8b00ff'][i]} transparent opacity={0.8 - i * 0.1} />
+            </mesh>
+          );
+        })}
+      </group>
     </RigidBody>
-  );
-});
+  );});
