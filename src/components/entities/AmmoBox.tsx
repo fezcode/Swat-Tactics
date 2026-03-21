@@ -1,9 +1,11 @@
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import type { AmmoBoxState } from '../../types';
 import { useGameStore } from '../../game/store';
+import { useRef } from 'react';
 
 export function AmmoBox({ state }: { state: AmmoBoxState }) {
   const collectAmmo = useGameStore(s => s.collectAmmo);
+  const collected = useRef(false);
 
   return (
     <RigidBody 
@@ -11,8 +13,10 @@ export function AmmoBox({ state }: { state: AmmoBoxState }) {
       position={[state.pos.x, 0.3, state.pos.z]}
       sensor
       onIntersectionEnter={({ other }) => {
+        if (collected.current) return;
         const userData = other.rigidBodyObject?.userData as any;
         if (userData?.type === 'player') {
+          collected.current = true;
           collectAmmo(state.id);
         }
       }}

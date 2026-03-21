@@ -11,6 +11,8 @@ export function MainMenu() {
   const setMuted = useGameStore(s => s.setMuted);
   const crtEnabled = useGameStore(s => s.crtEnabled);
   const setCrtEnabled = useGameStore(s => s.setCrtEnabled);
+  const showWireframe = useGameStore(s => s.showWireframe);
+  const setShowWireframe = useGameStore(s => s.setShowWireframe);
   const resetStats = useGameStore(s => s.resetStats);
   const [view, setView] = useState<MenuState>('main');
   const [hovered, setHovered] = useState<string | number | null>(null);
@@ -116,6 +118,10 @@ export function MainMenu() {
           <button onClick={() => setCrtEnabled(!crtEnabled)} onMouseEnter={() => handleHover('crt')} onMouseLeave={() => setHovered(null)} className="flex justify-between items-center bg-zinc-900 p-4 border-l-4 border-yellow-500 cursor-pointer hover:bg-zinc-800 transition-colors">
             <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs text-left">CRT Filter</span>
             <span className={`font-black ${crtEnabled ? 'text-yellow-500' : 'text-zinc-500'}`}>{crtEnabled ? 'ACTIVE' : 'OFF'}</span>
+          </button>
+          <button onClick={() => setShowWireframe(!showWireframe)} onMouseEnter={() => handleHover('wireframe')} onMouseLeave={() => setHovered(null)} className="flex justify-between items-center bg-zinc-900 p-4 border-l-4 border-green-500 cursor-pointer hover:bg-zinc-800 transition-colors">
+            <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs text-left">Show Wireframe</span>
+            <span className={`font-black ${showWireframe ? 'text-green-500' : 'text-zinc-500'}`}>{showWireframe ? 'ACTIVE' : 'OFF'}</span>
           </button>
           <button onClick={() => handleClick(() => resetStats())} onMouseEnter={() => handleHover('reset')} onMouseLeave={() => setHovered(null)} className="flex justify-between items-center bg-red-950/20 p-4 border-l-4 border-red-600 cursor-pointer hover:bg-red-900/40 transition-colors mt-4">
             <span className="font-bold text-red-500/70 uppercase tracking-widest text-xs text-left">Records</span>

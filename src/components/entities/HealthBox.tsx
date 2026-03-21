@@ -1,9 +1,11 @@
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import type { HealthBoxState } from '../../types';
 import { useGameStore } from '../../game/store';
+import { useRef } from 'react';
 
 export function HealthBox({ state }: { state: HealthBoxState }) {
   const collectHealth = useGameStore(s => s.collectHealth);
+  const collected = useRef(false);
 
   return (
     <RigidBody 
@@ -11,8 +13,10 @@ export function HealthBox({ state }: { state: HealthBoxState }) {
       position={[state.pos.x, 0.3, state.pos.z]}
       sensor
       onIntersectionEnter={({ other }) => {
+        if (collected.current) return;
         const userData = other.rigidBodyObject?.userData as any;
         if (userData?.type === 'player') {
+          collected.current = true;
           collectHealth(state.id);
         }
       }}

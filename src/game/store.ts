@@ -68,6 +68,7 @@ interface GameState {
   explosions: ExplosionEffect[];
   isMuted: boolean;
   crtEnabled: boolean;
+  showWireframe: boolean;
   countdown: number | null;
   timeLeft: number | null;
   lastDamageTime: number;
@@ -85,6 +86,7 @@ interface GameState {
   loadLevel: (index: number) => void;
   setMuted: (muted: boolean) => void;
   setCrtEnabled: (enabled: boolean) => void;
+  setShowWireframe: (enabled: boolean) => void;
   resetStats: () => void;
   setTrainActive: (active: boolean) => void;
   triggerShake: () => void;
@@ -150,6 +152,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   explosions: [],
   isMuted: false,
   crtEnabled: true,
+  showWireframe: false,
   countdown: null,
   timeLeft: null,
   lastDamageTime: 0,
@@ -241,6 +244,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
   setMuted: (muted) => { set({ isMuted: muted }); Music.setMuted(muted); },
   setCrtEnabled: (enabled) => set({ crtEnabled: enabled }),
+  setShowWireframe: (enabled) => set({ showWireframe: enabled }),
   resetStats: () => set({ stats: { kills: 0, deaths: 0, runs: 1 } }),
   loadLevel: (index) => {
     if (index >= LEVELS.length) { get().setPhase('victory'); return; }
@@ -527,38 +531,20 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (box && state.player) { 
       const scavengerStacks = state.survivalState?.perkStacks['scavenger'] || 0; 
       const healAmount = Math.floor(50 * (1 + scavengerStacks * 0.5)); 
-      const newParticles: Particle[] = [];
-      for (let i = 0; i < 6; i++) {
-        newParticles.push({ id: Math.random().toString(36).substr(2, 9), pos: [box.pos.x, 0.5, box.pos.z], color: '#22c55e', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 });
-      }
-      set(s => {
-        const mergedParticles = [...s.particles, ...newParticles];
-        if (mergedParticles.length > 100) mergedParticles.splice(0, mergedParticles.length - 100);
-        return { 
-          player: s.player ? { ...s.player, hp: Math.min(s.player.maxHp, s.player.hp + healAmount) } : null, 
-          healthBoxes: s.healthBoxes.filter(h => h.id !== id),
-          particles: mergedParticles
-        };
-      }); 
+      set(s => ({ 
+        player: s.player ? { ...s.player, hp: Math.min(s.player.maxHp, s.player.hp + healAmount) } : null, 
+        healthBoxes: s.healthBoxes.filter(h => h.id !== id)
+      })); 
     } 
   },
   collectAmmo: (id) => { 
     const state = get(); 
     const box = state.ammoBoxes.find(a => a.id === id); 
     if (box && state.player) { 
-      const newParticles: Particle[] = [];
-      for (let i = 0; i < 6; i++) {
-        newParticles.push({ id: Math.random().toString(36).substr(2, 9), pos: [box.pos.x, 0.5, box.pos.z], color: '#fbbf24', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 });
-      }
-      set(s => {
-        const mergedParticles = [...s.particles, ...newParticles];
-        if (mergedParticles.length > 100) mergedParticles.splice(0, mergedParticles.length - 100);
-        return { 
-          player: s.player ? { ...s.player, weapon: { ...s.player.weapon, ammo: s.player.weapon.maxAmmo }, secondaryWeapon: s.player.secondaryWeapon ? { ...s.player.secondaryWeapon, ammo: s.player.secondaryWeapon.maxAmmo } : null } : null, 
-          ammoBoxes: s.ammoBoxes.filter(a => a.id !== id),
-          particles: mergedParticles
-        };
-      }); 
+      set(s => ({ 
+        player: s.player ? { ...s.player, weapon: { ...s.player.weapon, ammo: s.player.weapon.maxAmmo }, secondaryWeapon: s.player.secondaryWeapon ? { ...s.player.secondaryWeapon, ammo: s.player.secondaryWeapon.maxAmmo } : null } : null, 
+        ammoBoxes: s.ammoBoxes.filter(a => a.id !== id)
+      })); 
     } 
   },
   usePortal: () => { const state = get(); if (state.portal && !state.portal.used && state.player) { const ps: Particle[] = []; for (let i = 0; i < 10; i++) { ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posA.x, 0.5, state.portal.posA.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posB.x, 0.5, state.portal.posB.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); } set({ portal: { ...state.portal, used: true }, particles: [...state.particles, ...ps] }); SFX.teleport(); } },

@@ -82,15 +82,13 @@ function GameScene() {
       <ambientLight intensity={ambientIntensity} />
       <directionalLight position={[20, 30, 20]} intensity={isSurvival ? 2.0 : 2.5} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} shadow-camera-near={0.5} shadow-camera-far={100} />
       {isSurvival && <pointLight position={[arenaHalf, 8, arenaHalf]} intensity={5} distance={40} color="#6366f1" />}
-      <Physics gravity={[0, 0, 0]} paused={phase === 'paused'}>
-        {isSurvival ? <SurvivalArena /> : <GridMap />}
-        {player && <Player state={player} />}
-        {enemies.map(e => <Enemy key={e.id} state={e} />)}
-        {!isSurvival && barrels.map(b => <Barrel key={b.id} state={b} />)}
-        {!isSurvival && hasTrain && <Train key={useGameStore.getState().levelIndex} />}
-        <Projectiles />
-        <ExplosionEffects />
-      </Physics>
+      {isSurvival ? <SurvivalArena /> : <GridMap />}
+      {player && <Player state={player} />}
+      {enemies.map(e => <Enemy key={e.id} state={e} />)}
+      {!isSurvival && barrels.map(b => <Barrel key={b.id} state={b} />)}
+      {!isSurvival && hasTrain && <Train key={useGameStore.getState().levelIndex} />}
+      <Projectiles />
+      <ExplosionEffects />
       {isSurvival && <XPOrbs />}
       {isSurvival && <ShadowClone />}
       <ParticleSystem />
@@ -153,6 +151,7 @@ function App() {
   const theme = useGameStore(s => s.theme);
   const phase = useGameStore(s => s.phase);
   const crtEnabled = useGameStore(s => s.crtEnabled);
+  const showWireframe = useGameStore(s => s.showWireframe);
   const isSlashZooming = useGameStore(s => s.isSlashZooming);
   const isDodging = useGameStore(s => s.isDodging);
 
@@ -193,7 +192,9 @@ function App() {
     <div className={`w-full h-screen relative overflow-hidden cursor-none ${isSlashZooming ? 'glitch-effect' : ''}`} style={{ backgroundColor: containerBg }}>
       <Canvas shadows>
         <CameraRig />
-        <GameScene />
+        <Physics gravity={[0, 0, 0]} paused={phase === 'paused'} debug={showWireframe}>
+          <GameScene />
+        </Physics>
       </Canvas>
       <div className={`vignette ${isDodging ? 'vignette-active' : ''}`} />
       {crtEnabled && <div className="scanlines-container" />}
