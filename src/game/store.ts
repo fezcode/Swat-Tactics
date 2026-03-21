@@ -5,6 +5,30 @@ import { SFX, Music } from './sounds';
 import type { PerkId } from './survivalPerks';
 import { positionCache } from './positionCache';
 
+// --- LocalStorage persistence for settings ---
+const SETTINGS_KEY = 'swat-tactics-settings';
+interface SavedSettings {
+  isMuted: boolean;
+  musicVolume: number;
+  crtEnabled: boolean;
+  showWireframe: boolean;
+  renderQuality: 'low' | 'medium' | 'high';
+}
+const defaultSettings: SavedSettings = { isMuted: false, musicVolume: 0.4, crtEnabled: true, showWireframe: false, renderQuality: 'high' };
+function loadSettings(): SavedSettings {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) return { ...defaultSettings, ...JSON.parse(raw) };
+  } catch {}
+  return { ...defaultSettings };
+}
+function saveSettings(s: Partial<SavedSettings>) {
+  try {
+    const current = loadSettings();
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...current, ...s }));
+  } catch {}
+}
+
 // Helper to get enemy position from cache, falling back to store
 function getEnemyPos(e: EnemyState): Position {
   return positionCache.get(e.id) || e.pos;
@@ -80,6 +104,7 @@ interface GameState {
   musicVolume: number;
   crtEnabled: boolean;
   showWireframe: boolean;
+  renderQuality: 'low' | 'medium' | 'high';
   countdown: number | null;
   timeLeft: number | null;
   lastDamageTime: number;
@@ -99,6 +124,7 @@ interface GameState {
   setMusicVolume: (volume: number) => void;
   setCrtEnabled: (enabled: boolean) => void;
   setShowWireframe: (enabled: boolean) => void;
+  setRenderQuality: (quality: 'low' | 'medium' | 'high') => void;
   resetStats: () => void;
   setTrainActive: (active: boolean) => void;
   triggerShake: () => void;
@@ -162,10 +188,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   bloodDecals: [],
   projectiles: [],
   explosions: [],
-  isMuted: false,
-  musicVolume: 0.4,
-  crtEnabled: true,
-  showWireframe: false,
+  isMuted: loadSettings().isMuted,
+  musicVolume: loadSettings().musicVolume,
+  crtEnabled: loadSettings().crtEnabled,
+  showWireframe: loadSettings().showWireframe,
+  renderQuality: loadSettings().renderQuality,
   countdown: null,
   timeLeft: null,
   lastDamageTime: 0,
@@ -265,11 +292,17 @@ export const useGameStore = create<GameState>((set, get) => ({
       set(s => ({ stats: { ...s.stats, deaths: s.stats.deaths + 1 } }));
     }
   },
-  setMuted: (muted) => { set({ isMuted: muted }); Music.setMuted(muted); },
-  setMusicVolume: (volume) => { set({ musicVolume: volume }); Music.setVolume(volume); },
-  setCrtEnabled: (enabled) => set({ crtEnabled: enabled }),
-  setShowWireframe: (enabled) => set({ showWireframe: enabled }),
-  resetStats: () => set({ stats: { kills: 0, deaths: 0, runs: 1 } }),
+  setMuted: (muted) => { set({ isMuted: muted }); Music.setMuted(muted); saveSettings({ isMuted: muted }); },
+  setMusicVolume: (volume) => { set({ musicVolume: volume }); Music.setVolume(volume); saveSettings({ musicVolume: volume }); },
+  setCrtEnabled: (enabled) => { set({ crtEnabled: enabled }); saveSettings({ crtEnabled: enabled }); },
+  setShowWireframe: (enabled) => { set({ showWireframe: enabled }); saveSettings({ showWireframe: enabled }); },
+  setRenderQuality: (quality) => { set({ renderQuality: quality }); saveSettings({ renderQuality: quality }); },
+  resetStats: () => {
+    set({ stats: { kills: 0, deaths: 0, runs: 1 }, ...defaultSettings });
+    Music.setMuted(defaultSettings.isMuted);
+    Music.setVolume(defaultSettings.musicVolume);
+    try { localStorage.removeItem(SETTINGS_KEY); } catch {}
+  },
   loadLevel: (index) => {
     if (index >= LEVELS.length) { get().setPhase('victory'); return; }
     const level = LEVELS[index];
@@ -568,20 +601,20 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (box && state.player) {
       const scavengerStacks = state.survivalState?.perkStacks['scavenger'] || 0;
       const healAmount = Math.floor(50 * (1 + scavengerStacks * 0.5));
-      setTimeout(() => set(s => ({
+      set(s => ({
         player: s.player ? { ...s.player, hp: Math.min(s.player.maxHp, s.player.hp + healAmount) } : null,
         healthBoxes: s.healthBoxes.filter(h => h.id !== id)
-      })), 0);
+      }));
     }
   },
   collectAmmo: (id) => {
     const state = get();
     const box = state.ammoBoxes.find(a => a.id === id);
     if (box && state.player) {
-      setTimeout(() => set(s => ({
+      set(s => ({
         player: s.player ? { ...s.player, weapon: { ...s.player.weapon, ammo: s.player.weapon.maxAmmo }, secondaryWeapon: s.player.secondaryWeapon ? { ...s.player.secondaryWeapon, ammo: s.player.secondaryWeapon.maxAmmo } : null } : null,
         ammoBoxes: s.ammoBoxes.filter(a => a.id !== id)
-      })), 0);
+      }));
     }
   },
   usePortal: () => { const state = get(); if (state.portal && !state.portal.used && state.player) { const ps: Particle[] = []; for (let i = 0; i < 10; i++) { ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posA.x, 0.5, state.portal.posA.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posB.x, 0.5, state.portal.posB.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); } set({ portal: { ...state.portal, used: true }, particles: [...state.particles, ...ps] }); SFX.teleport(); } },
@@ -682,9 +715,14 @@ export const useGameStore = create<GameState>((set, get) => ({
       decorations: [],
       gridSize: { width: arenaSize, height: arenaSize },
       exitPos: null,
-      particles: [],
+      particles: [
+        { id: 'warmup_p', pos: [0, -50, 0] as [number, number, number], color: '#ff0000', velocity: [0, 0, 0], life: 0.01 },
+      ],
       projectiles: [],
-      explosions: [],
+      explosions: [
+        { id: 'warmup_e', pos: { x: 0, z: 0 }, radius: 3, life: 0.01 },
+      ],
+      bloodDecals: [],
       countdown: null,
       lastDamageTime: 0,
       lastShakeTime: 0,

@@ -245,15 +245,24 @@ interface DecoItem {
   color: string;
 }
 
-export function SurvivalArena() {
-  const survivalState = useGameStore(s => s.survivalState);
-  const theme = useGameStore(s => s.theme);
+// Isolated list components — prevent SurvivalArena re-render when items change
+function HealthBoxList() {
   const healthBoxes = useGameStore(s => s.healthBoxes);
+  return <>{healthBoxes.map(h => <HealthBox key={h.id} state={h} />)}</>;
+}
+function AmmoBoxList() {
   const ammoBoxes = useGameStore(s => s.ammoBoxes);
+  return <>{ammoBoxes.map(a => <AmmoBox key={a.id} state={a} />)}</>;
+}
+function BarrelList() {
   const barrels = useGameStore(s => s.barrels);
-  const wave = survivalState?.wave || 0;
+  return <>{barrels.map(b => <Barrel key={b.id} state={b} />)}</>;
+}
 
-  const arenaSize = survivalState?.arenaSize || 30;
+export function SurvivalArena() {
+  const wave = useGameStore(s => s.survivalState?.wave || 0);
+  const arenaSize = useGameStore(s => s.survivalState?.arenaSize || 30);
+  const theme = useGameStore(s => s.theme);
   const colors = THEME_COLORS[theme] || THEME_COLORS.industrial;
 
   // Generate decorations procedurally based on wave
@@ -408,14 +417,9 @@ export function SurvivalArena() {
         }
       })}
 
-      {/* Health boxes */}
-      {healthBoxes.map(h => <HealthBox key={h.id} state={h} />)}
-
-      {/* Ammo boxes */}
-      {ammoBoxes.map(a => <AmmoBox key={a.id} state={a} />)}
-
-      {/* Barrels */}
-      {barrels.map(b => <Barrel key={b.id} state={b} />)}
+      <HealthBoxList />
+      <AmmoBoxList />
+      <BarrelList />
 
       {/* Fog/atmosphere - dark outer ring */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[arenaSize / 2, -0.05, arenaSize / 2]}>

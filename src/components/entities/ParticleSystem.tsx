@@ -5,7 +5,6 @@ const bloodGeo = new THREE.CircleGeometry(0.3, 16);
 const bloodMat = new THREE.MeshBasicMaterial({ color: "#7f1d1d", transparent: true, opacity: 0.6, depthWrite: false });
 
 const particleGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-
 export function ParticleSystem() {
   const particles = useGameStore(s => s.particles);
   const bloodDecals = useGameStore(s => s.bloodDecals);

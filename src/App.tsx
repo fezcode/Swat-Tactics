@@ -151,6 +151,8 @@ function App() {
   const crtEnabled = useGameStore(s => s.crtEnabled);
   const showWireframe = useGameStore(s => s.showWireframe);
   const isSlashZooming = useGameStore(s => s.isSlashZooming);
+  const renderQuality = useGameStore(s => s.renderQuality);
+  const dpr = renderQuality === 'low' ? 0.5 : renderQuality === 'medium' ? 1 : window.devicePixelRatio;
   const isDodging = useGameStore(s => s.isDodging);
 
   const containerBg = useMemo(() => {
@@ -188,7 +190,7 @@ function App() {
 
   return (
     <div className={`w-full h-screen relative overflow-hidden cursor-none ${isSlashZooming ? 'glitch-effect' : ''}`} style={{ backgroundColor: containerBg }}>
-      <Canvas shadows>
+      <Canvas shadows dpr={dpr}>
         <CameraRig />
         <Physics gravity={[0, 0, 0]} paused={phase === 'paused'} debug={showWireframe}>
           <GameScene />

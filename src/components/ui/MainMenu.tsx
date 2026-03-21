@@ -16,6 +16,8 @@ export function MainMenu() {
   const resetStats = useGameStore(s => s.resetStats);
   const musicVolume = useGameStore(s => s.musicVolume);
   const setMusicVolume = useGameStore(s => s.setMusicVolume);
+  const renderQuality = useGameStore(s => s.renderQuality);
+  const setRenderQuality = useGameStore(s => s.setRenderQuality);
   const [view, setView] = useState<MenuState>('main');
   const [hovered, setHovered] = useState<string | number | null>(null);
 
@@ -121,8 +123,12 @@ export function MainMenu() {
             <input type="range" min="0" max="100" value={Math.round(musicVolume * 100)} onChange={e => setMusicVolume(Number(e.target.value) / 100)} className="w-full h-2 bg-zinc-700 rounded-full appearance-none cursor-pointer accent-purple-500" />
           </div>
           <div className="flex justify-between items-center bg-zinc-900 p-4 border-l-4 border-pink-500">
-            <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs">Graphics</span>
-            <span className="text-white font-black">ULTRA</span>
+            <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs">Resolution</span>
+            <div className="flex gap-2">
+              {(['low', 'medium', 'high'] as const).map(q => (
+                <button key={q} onClick={() => { handleClick(() => setRenderQuality(q)); }} onMouseEnter={() => handleHover(q)} onMouseLeave={() => setHovered(null)} className={`px-3 py-1 text-xs font-black uppercase cursor-pointer transition-colors ${renderQuality === q ? 'bg-pink-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700'}`}>{q}</button>
+              ))}
+            </div>
           </div>
           <button onClick={() => setCrtEnabled(!crtEnabled)} onMouseEnter={() => handleHover('crt')} onMouseLeave={() => setHovered(null)} className="flex justify-between items-center bg-zinc-900 p-4 border-l-4 border-yellow-500 cursor-pointer hover:bg-zinc-800 transition-colors">
             <span className="font-bold text-zinc-400 uppercase tracking-widest text-xs text-left">CRT Filter</span>
