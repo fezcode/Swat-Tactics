@@ -637,7 +637,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     set(state => {
       const merged = [...state.particles, ...newParticles];
-      if (merged.length > 100) merged.splice(0, merged.length - 100);
+      if (merged.length > 50) merged.splice(0, merged.length - 50);
       return { particles: merged };
     });
   },
@@ -649,9 +649,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         rot: Math.random() * Math.PI * 2,
         scale: 0.5 + Math.random() * 1.5
       };
-      // Keep max 60 blood decals to ensure high performance on all devices
+      // Keep max 30 blood decals to ensure high performance on all devices
       const newDecals = [...state.bloodDecals, newDecal];
-      if (newDecals.length > 60) newDecals.shift();
+      if (newDecals.length > 30) newDecals.shift();
       return { bloodDecals: newDecals };
     });
   },

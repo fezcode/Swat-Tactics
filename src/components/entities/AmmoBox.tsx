@@ -26,14 +26,18 @@ export function AmmoBox({ state }: { state: AmmoBoxState }) {
       <CuboidCollider args={[0.4, 0.3, 0.4]} />
       <mesh castShadow receiveShadow>
         <boxGeometry args={[0.6, 0.4, 0.6]} />
-        <meshStandardMaterial color="#fbbf24" roughness={0.3} metalness={0.8} />
+        <meshStandardMaterial color="#fbbf24" roughness={0.3} metalness={0.8} emissive="#fbbf24" emissiveIntensity={2} />
       </mesh>
       {/* Ammo icon / line on top */}
       <mesh position={[0, 0.21, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[0.4, 0.2]} />
         <meshBasicMaterial color="black" />
       </mesh>
-      <pointLight color="#fbbf24" intensity={5} distance={2} />
+      {/* Glow indicator via emissive mesh instead of expensive pointLight */}
+      <mesh position={[0, 0, 0]}>
+        <sphereGeometry args={[0.5, 8, 8]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.08} />
+      </mesh>
     </RigidBody>
   );
 }

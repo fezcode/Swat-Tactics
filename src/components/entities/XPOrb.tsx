@@ -6,16 +6,12 @@ import { useGameStore } from '../../game/store';
 
 export function XPOrb({ state }: { state: XPOrbState }) {
   const ref = useRef<THREE.Mesh>(null);
-  const lightRef = useRef<THREE.PointLight>(null);
 
   useFrame(({ clock }) => {
     if (ref.current) {
       ref.current.position.y = 0.4 + Math.sin(clock.getElapsedTime() * 4 + state.spawnTime * 0.001) * 0.15;
       ref.current.rotation.y = clock.getElapsedTime() * 3;
       ref.current.rotation.x = clock.getElapsedTime() * 2;
-    }
-    if (lightRef.current) {
-      lightRef.current.intensity = 3 + Math.sin(clock.getElapsedTime() * 5) * 1;
     }
   });
 
@@ -33,7 +29,6 @@ export function XPOrb({ state }: { state: XPOrbState }) {
           opacity={0.9}
         />
       </mesh>
-      <pointLight ref={lightRef} color="#06b6d4" intensity={3} distance={2} position={[0, 0.4, 0]} />
     </group>
   );
 }

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { useGameStore } from '../../game/store';
@@ -17,7 +17,6 @@ const THEME_COLORS: Record<string, { floor: string; floor2: string; grid: string
 
 function Obelisk({ position, color, glowColor }: { position: [number, number, number]; color: string; glowColor: string }) {
   const ref = useRef<THREE.Mesh>(null);
-  const lightRef = useRef<THREE.PointLight>(null);
   const ringRef = useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
@@ -25,9 +24,6 @@ function Obelisk({ position, color, glowColor }: { position: [number, number, nu
     if (ref.current) {
       ref.current.rotation.y = t * 0.5;
       ref.current.position.y = 2.0 + Math.sin(t * 2) * 0.3;
-    }
-    if (lightRef.current) {
-      lightRef.current.intensity = 15 + Math.sin(t * 3) * 5;
     }
     if (ringRef.current) {
       ringRef.current.rotation.z = t * 1.5;
@@ -58,7 +54,6 @@ function Obelisk({ position, color, glowColor }: { position: [number, number, nu
         <torusGeometry args={[0.7, 0.03, 8, 32]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={8} transparent opacity={0.7} /> 
       </mesh>
-      <pointLight ref={lightRef} color={glowColor} intensity={15} distance={10} position={[0, 2.0, 0]} />       
     </RigidBody>
   );}
 
@@ -98,7 +93,6 @@ function LampPost({ position, color }: { position: [number, number, number]; col
         <boxGeometry args={[0.3, 0.15, 0.3]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={4} />
       </mesh>
-      <pointLight color={color} intensity={8} distance={6} position={[0, 2.3, 0]} />
     </RigidBody>
   );
 }
@@ -341,33 +335,52 @@ export function SurvivalArena() {
     return decos;
   }, [wave, arenaSize, colors.glow, colors.accent]);
 
-  // Checkerboard floor tiles
-  const floorTiles = useMemo(() => {
-    const tiles: { pos: [number, number, number]; color: string; size: number }[] = [];
-    const tileSize = 2;
-    const count = Math.ceil(arenaSize / tileSize);
-    for (let x = 0; x < count; x++) {
-      for (let z = 0; z < count; z++) {
-        const isAlt = (x + z) % 2 === 0;
-        tiles.push({
-          pos: [x * tileSize + tileSize / 2, -0.01, z * tileSize + tileSize / 2],
-          color: isAlt ? colors.floor : colors.floor2,
-          size: tileSize,
-        });
+  // Checkerboard floor tiles - use two InstancedMeshes (one per color) instead of hundreds of individual meshes
+  const floorTileSize = 2;
+  const floorCount = Math.ceil(arenaSize / floorTileSize);
+  const floorData = useMemo(() => {
+    const tilesA: [number, number, number][] = [];
+    const tilesB: [number, number, number][] = [];
+    for (let x = 0; x < floorCount; x++) {
+      for (let z = 0; z < floorCount; z++) {
+        const pos: [number, number, number] = [x * floorTileSize + floorTileSize / 2, -0.01, z * floorTileSize + floorTileSize / 2];
+        if ((x + z) % 2 === 0) tilesA.push(pos);
+        else tilesB.push(pos);
       }
     }
-    return tiles;
-  }, [arenaSize, colors.floor, colors.floor2]);
+    return { tilesA, tilesB };
+  }, [floorCount]);
+  const floorInstancedA = useRef<THREE.InstancedMesh>(null);
+  const floorInstancedB = useRef<THREE.InstancedMesh>(null);
+  const floorGeo = useMemo(() => new THREE.PlaneGeometry(floorTileSize - 0.02, floorTileSize - 0.02), []);
+  const floorMatA = useMemo(() => new THREE.MeshStandardMaterial({ color: colors.floor, roughness: 0.85, metalness: 0.15 }), [colors.floor]);
+  const floorMatB = useMemo(() => new THREE.MeshStandardMaterial({ color: colors.floor2, roughness: 0.85, metalness: 0.15 }), [colors.floor2]);
+  useEffect(() => {
+    const mat = new THREE.Matrix4();
+    const rot = new THREE.Euler(-Math.PI / 2, 0, 0);
+    const quat = new THREE.Quaternion().setFromEuler(rot);
+    const scale = new THREE.Vector3(1, 1, 1);
+    if (floorInstancedA.current) {
+      floorData.tilesA.forEach((pos, i) => {
+        mat.compose(new THREE.Vector3(...pos), quat, scale);
+        floorInstancedA.current!.setMatrixAt(i, mat);
+      });
+      floorInstancedA.current.instanceMatrix.needsUpdate = true;
+    }
+    if (floorInstancedB.current) {
+      floorData.tilesB.forEach((pos, i) => {
+        mat.compose(new THREE.Vector3(...pos), quat, scale);
+        floorInstancedB.current!.setMatrixAt(i, mat);
+      });
+      floorInstancedB.current.instanceMatrix.needsUpdate = true;
+    }
+  }, [floorData]);
 
   return (
     <>
-      {/* Tiled floor */}
-      {floorTiles.map((tile, i) => (
-        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={tile.pos}>
-          <planeGeometry args={[tile.size - 0.02, tile.size - 0.02]} />
-          <meshStandardMaterial color={tile.color} roughness={0.85} metalness={0.15} />
-        </mesh>
-      ))}
+      {/* Tiled floor - instanced for performance */}
+      <instancedMesh ref={floorInstancedA} args={[floorGeo, floorMatA, floorData.tilesA.length]} receiveShadow />
+      <instancedMesh ref={floorInstancedB} args={[floorGeo, floorMatB, floorData.tilesB.length]} receiveShadow />
 
       {/* Grid overlay - subtle */}
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[arenaSize / 2, 0.005, arenaSize / 2]}>

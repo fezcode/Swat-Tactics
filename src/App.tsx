@@ -78,7 +78,7 @@ function GameScene() {
     <>
       <color attach="background" args={[bgColor]} />
       <ambientLight intensity={ambientIntensity} />
-      <directionalLight position={[20, 30, 20]} intensity={isSurvival ? 2.0 : 2.5} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} shadow-camera-near={0.5} shadow-camera-far={100} />
+      <directionalLight position={[20, 30, 20]} intensity={isSurvival ? 2.0 : 2.5} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} shadow-camera-near={0.5} shadow-camera-far={100} />
       {isSurvival && <pointLight position={[arenaHalf, 8, arenaHalf]} intensity={5} distance={40} color="#6366f1" />}
       {isSurvival ? <SurvivalArena /> : <GridMap />}
       {player && <Player state={player} />}
@@ -102,14 +102,18 @@ function CameraRig() {
   const trainActive = useGameStore(s => s.trainActive);
   const isSlashZooming = useGameStore(s => s.isSlashZooming);
   const isDodging = useGameStore(s => s.isDodging);
+  const playerObjRef = useRef<THREE.Object3D | null>(null);
+  const posVec = useMemo(() => new THREE.Vector3(), []);
 
   useFrame((_, delta) => {
-    let playerObj: THREE.Object3D | undefined;
-    scene.traverse(child => { if (child.name === 'player') playerObj = child; });
+    if (!playerObjRef.current || !playerObjRef.current.parent) {
+      playerObjRef.current = scene.getObjectByName('player') || null;
+    }
+    const playerObj = playerObjRef.current;
 
     if (playerObj) {
-      const pos = new THREE.Vector3();
-      playerObj.getWorldPosition(pos);
+      playerObj.getWorldPosition(posVec);
+      const pos = posVec;
 
       let offsetX = 0;
       let offsetZ = 0;

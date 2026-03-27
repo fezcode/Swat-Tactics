@@ -26,7 +26,7 @@ export function HealthBox({ state }: { state: HealthBoxState }) {
       <CuboidCollider args={[0.4, 0.3, 0.4]} />
       <mesh castShadow receiveShadow>
         <boxGeometry args={[0.6, 0.4, 0.6]} />
-        <meshStandardMaterial color="#22c55e" roughness={0.3} metalness={0.8} />
+        <meshStandardMaterial color="#22c55e" roughness={0.3} metalness={0.8} emissive="#22c55e" emissiveIntensity={2} />
       </mesh>
       {/* White cross on top */}
       <mesh position={[0, 0.21, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -37,7 +37,11 @@ export function HealthBox({ state }: { state: HealthBoxState }) {
         <planeGeometry args={[0.4, 0.1]} />
         <meshBasicMaterial color="white" />
       </mesh>
-      <pointLight color="#22c55e" intensity={5} distance={2} />
+      {/* Glow indicator via emissive mesh instead of expensive pointLight */}
+      <mesh position={[0, 0, 0]}>
+        <sphereGeometry args={[0.5, 8, 8]} />
+        <meshBasicMaterial color="#22c55e" transparent opacity={0.08} />
+      </mesh>
     </RigidBody>
   );
 }
