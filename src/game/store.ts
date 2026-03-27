@@ -1132,12 +1132,10 @@ export const useGameStore = create<GameState>((set, get) => ({
             secondaryWeapon: updatedPlayer.secondaryWeapon ? { ...updatedPlayer.secondaryWeapon, ammo: Math.min(updatedPlayer.secondaryWeapon.maxAmmo, updatedPlayer.secondaryWeapon.ammo + 1) } : null,
           };
         }
-        // Combat regen - only update when HP crosses an integer to avoid new object every frame
+        // Combat regen
         if (regenPerSec > 0) {
           const newHp = Math.min(updatedPlayer.maxHp, updatedPlayer.hp + regenPerSec * effectiveDt);
-          if (Math.floor(newHp) !== Math.floor(updatedPlayer.hp) || newHp >= updatedPlayer.maxHp) {
-            updatedPlayer = { ...updatedPlayer, hp: newHp };
-          }
+          updatedPlayer = { ...updatedPlayer, hp: newHp };
         }
       }
 
