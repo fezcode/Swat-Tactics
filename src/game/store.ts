@@ -77,6 +77,7 @@ export interface SurvivalState {
   cloneLastFireTime: number;
   timeWarpTimer: number;
   waveStartTime: number;
+  regenAccumulator: number;
 }
 
 interface GameState {
@@ -756,6 +757,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         cloneLastFireTime: 0,
         timeWarpTimer: 0,
         waveStartTime: Date.now(),
+        regenAccumulator: 0,
       }
     });
     SFX.levelStart();
@@ -963,9 +965,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       ammoRegen = true;
     }
 
-    // --- Combat regen ---
+    // --- Combat regen (accumulate fractional HP, flush whole units to avoid per-frame player updates) ---
     const regenStacks = newSv.perkStacks['combat_regen'] || 0;
     const regenPerSec = regenStacks > 0 && state.player.hp > 0 && state.player.hp < state.player.maxHp ? regenStacks * 2 : 0;
+    let regenToApply = 0;
+    if (regenPerSec > 0) {
+      newSv.regenAccumulator += regenPerSec * effectiveDt;
+      if (newSv.regenAccumulator >= 1) {
+        regenToApply = Math.floor(newSv.regenAccumulator);
+        newSv.regenAccumulator -= regenToApply;
+      }
+    } else {
+      newSv.regenAccumulator = 0;
+    }
 
     // --- Combo decay ---
     if (newSv.comboTimer > 0) {
@@ -1132,9 +1144,9 @@ export const useGameStore = create<GameState>((set, get) => ({
             secondaryWeapon: updatedPlayer.secondaryWeapon ? { ...updatedPlayer.secondaryWeapon, ammo: Math.min(updatedPlayer.secondaryWeapon.maxAmmo, updatedPlayer.secondaryWeapon.ammo + 1) } : null,
           };
         }
-        // Combat regen
-        if (regenPerSec > 0) {
-          const newHp = Math.min(updatedPlayer.maxHp, updatedPlayer.hp + regenPerSec * effectiveDt);
+        // Combat regen - only apply whole HP units (accumulated above)
+        if (regenToApply > 0) {
+          const newHp = Math.min(updatedPlayer.maxHp, updatedPlayer.hp + regenToApply);
           updatedPlayer = { ...updatedPlayer, hp: newHp };
         }
       }
