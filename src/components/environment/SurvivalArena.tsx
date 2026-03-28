@@ -1108,10 +1108,554 @@ export function SurvivalArena() {
       <AmmoBoxList />
       <BarrelList />
 
+      {/* Ambient floating dust particles (static, generated per wave) */}
+      <AmbientDust arenaSize={arenaSize} color={colors.glow} wave={wave} />
+
+      {/* Animated sweeping spotlights */}
+      <SpotlightSweep arenaSize={arenaSize} color={colors.glow} />
+
+      {/* Wave event lighting */}
+      <WaveEventLighting arenaSize={arenaSize} />
+
+      {/* Extended ground beyond arena */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[arenaSize / 2, -0.05, arenaSize / 2]}>
-        <planeGeometry args={[arenaSize + 40, arenaSize + 40]} />
-        <meshBasicMaterial color={colors.fog} />
+        <planeGeometry args={[arenaSize + 80, arenaSize + 80]} />
+        <meshStandardMaterial color={colors.fog} roughness={1} metalness={0} />
       </mesh>
+
+      {/* Visible boundary walls — low-profile themed walls around arena perimeter */}
+      <ArenaWalls arenaSize={arenaSize} color={colors.accent} glowColor={colors.glow} />
+
+      {/* Beyond-boundary scenery — distant structures/terrain visible outside arena */}
+      <BeyondScenery arenaSize={arenaSize} theme={theme} colors={colors} />
+
+      {/* Floor ground markings — hazard lines, center marker, lane lines */}
+      <FloorMarkings arenaSize={arenaSize} glowColor={colors.glow} accentColor={colors.accent} />
+
+      {/* Fog volume pillars around edges for depth */}
+      {[0, 1, 2, 3].map(side => {
+        const cx = arenaSize / 2;
+        const positions: [number, number, number][] = side === 0
+          ? [[-8, 0.5, cx], [-12, 1, cx * 0.5], [-10, 0.8, cx * 1.5]]
+          : side === 1
+          ? [[arenaSize + 8, 0.5, cx], [arenaSize + 12, 1, cx * 0.5], [arenaSize + 10, 0.8, cx * 1.5]]
+          : side === 2
+          ? [[cx, 0.5, -8], [cx * 0.5, 1, -12], [cx * 1.5, 0.8, -10]]
+          : [[cx, 0.5, arenaSize + 8], [cx * 0.5, 1, arenaSize + 12], [cx * 1.5, 0.8, arenaSize + 10]];
+        return positions.map((p, j) => (
+          <mesh key={`fog-${side}-${j}`} position={p}>
+            <cylinderGeometry args={[2, 3, 4, 6]} />
+            <meshBasicMaterial color={colors.fog} transparent opacity={0.15} />
+          </mesh>
+        ));
+      })}
     </>
+  );
+}
+
+// Visible boundary walls — detailed with panels, warning stripes, and mounted lights
+function ArenaWalls({ arenaSize, color, glowColor }: { arenaSize: number; color: string; glowColor: string }) {
+  const half = arenaSize / 2;
+  const wallH = 1.8;
+  const wallThick = 0.35;
+
+  // Generate wall panel segments for visual detail
+  const panelCount = Math.floor(arenaSize / 3);
+
+  return (
+    <group>
+      {/* Four wall segments */}
+      {[
+        { pos: [half, wallH / 2, -wallThick / 2] as [number, number, number], args: [arenaSize + 1, wallH, wallThick] as [number, number, number], axis: 'x' as const },
+        { pos: [half, wallH / 2, arenaSize + wallThick / 2] as [number, number, number], args: [arenaSize + 1, wallH, wallThick] as [number, number, number], axis: 'x' as const },
+        { pos: [-wallThick / 2, wallH / 2, half] as [number, number, number], args: [wallThick, wallH, arenaSize + 1] as [number, number, number], axis: 'z' as const },
+        { pos: [arenaSize + wallThick / 2, wallH / 2, half] as [number, number, number], args: [wallThick, wallH, arenaSize + 1] as [number, number, number], axis: 'z' as const },
+      ].map((w, i) => (
+        <group key={`wall-${i}`}>
+          {/* Base wall */}
+          <mesh position={w.pos}>
+            <boxGeometry args={w.args} />
+            <meshStandardMaterial color={color} roughness={0.8} metalness={0.3} />
+          </mesh>
+          {/* Bottom warning stripe */}
+          <mesh position={[w.pos[0], 0.06, w.pos[2]]}>
+            <boxGeometry args={[w.args[0] + 0.02, 0.12, w.args[2] + 0.02]} />
+            <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={0.8} />
+          </mesh>
+          {/* Top cap */}
+          <mesh position={[w.pos[0], wallH + 0.04, w.pos[2]]}>
+            <boxGeometry args={[w.args[0] + 0.06, 0.08, w.args[2] + 0.06]} />
+            <meshStandardMaterial color={color} roughness={0.5} metalness={0.6} />
+          </mesh>
+          {/* Panel seam lines along wall */}
+          {Array.from({ length: panelCount }, (_, j) => {
+            const t = (j + 0.5) * (arenaSize / panelCount);
+            const seamPos: [number, number, number] = w.axis === 'x'
+              ? [t, wallH / 2, w.pos[2] + (i === 0 ? 0.18 : -0.18)]
+              : [w.pos[0] + (i === 2 ? 0.18 : -0.18), wallH / 2, t];
+            return (
+              <mesh key={`seam-${j}`} position={seamPos}>
+                <boxGeometry args={w.axis === 'x' ? [0.03, wallH * 0.85, 0.01] : [0.01, wallH * 0.85, 0.03]} />
+                <meshStandardMaterial color="#000000" transparent opacity={0.3} />
+              </mesh>
+            );
+          })}
+        </group>
+      ))}
+      {/* Corner pillars with lights */}
+      {[
+        [0, 0], [arenaSize, 0], [0, arenaSize], [arenaSize, arenaSize]
+      ].map(([x, z], i) => (
+        <group key={`corner-${i}`}>
+          <mesh position={[x, wallH * 0.55, z]}>
+            <boxGeometry args={[0.7, wallH * 1.1, 0.7]} />
+            <meshStandardMaterial color={color} roughness={0.5} metalness={0.5} />
+          </mesh>
+          {/* Pillar cap */}
+          <mesh position={[x, wallH * 1.15, z]}>
+            <boxGeometry args={[0.8, 0.1, 0.8]} />
+            <meshStandardMaterial color={color} roughness={0.4} metalness={0.6} />
+          </mesh>
+          {/* Corner light */}
+          <mesh position={[x, wallH * 1.25, z]}>
+            <sphereGeometry args={[0.15, 6, 6]} />
+            <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={4} />
+          </mesh>
+          <pointLight position={[x, wallH * 1.3, z]} color={glowColor} intensity={3} distance={8} />
+        </group>
+      ))}
+      {/* Wall-mounted lights along each wall */}
+      {[0, 1, 2, 3].map(side =>
+        Array.from({ length: 3 }, (_, j) => {
+          const t = arenaSize * (0.2 + j * 0.3);
+          let lp: [number, number, number];
+          if (side === 0) lp = [t, wallH * 0.7, 0.2];
+          else if (side === 1) lp = [t, wallH * 0.7, arenaSize - 0.2];
+          else if (side === 2) lp = [0.2, wallH * 0.7, t];
+          else lp = [arenaSize - 0.2, wallH * 0.7, t];
+          return (
+            <group key={`wl-${side}-${j}`}>
+              <mesh position={lp}>
+                <boxGeometry args={[0.2, 0.1, 0.2]} />
+                <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={2} />
+              </mesh>
+              <pointLight position={[lp[0], lp[1] - 0.3, lp[2]]} color={glowColor} intensity={1.5} distance={5} />
+            </group>
+          );
+        })
+      )}
+    </group>
+  );
+}
+
+// Distant scenery beyond the arena boundaries — creates a rich skyline/backdrop
+function BeyondScenery({ arenaSize, theme, colors }: { arenaSize: number; theme: string; colors: typeof THEME_COLORS[string] }) {
+  const scenery = useMemo(() => {
+    const items: { type: string; pos: [number, number, number]; scale: number; w: number; d: number; color: string }[] = [];
+    let seed = 42424.2;
+    const rand = () => { const x = Math.sin(seed++) * 10000; return x - Math.floor(x); };
+
+    // Near ring — detailed structures close to arena (5-15 units out)
+    for (let i = 0; i < 24; i++) {
+      const side = i % 4;
+      const dist = 5 + rand() * 12;
+      const along = -5 + rand() * (arenaSize + 10);
+      let x = 0, z = 0;
+      if (side === 0) { x = along; z = -dist; }
+      else if (side === 1) { x = along; z = arenaSize + dist; }
+      else if (side === 2) { x = -dist; z = along; }
+      else { x = arenaSize + dist; z = along; }
+
+      const height = 2 + rand() * 8;
+      const itemType = theme === 'desert' || theme === 'beach' ? 'terrain'
+        : theme === 'cemetery' ? 'ruin'
+        : theme === 'garden' ? 'nature'
+        : 'structure';
+      items.push({ type: itemType, pos: [x, 0, z], scale: height, w: 1.5 + rand() * 3, d: 1.5 + rand() * 2, color: colors.accent });
+    }
+
+    // Far ring — tall skyline silhouettes (20-40 units out)
+    for (let i = 0; i < 20; i++) {
+      const angle = (i / 20) * Math.PI * 2 + rand() * 0.3;
+      const dist = 25 + rand() * 20;
+      const cx = arenaSize / 2 + Math.cos(angle) * dist;
+      const cz = arenaSize / 2 + Math.sin(angle) * dist;
+      const height = 8 + rand() * 25;
+      const itemType = theme === 'desert' || theme === 'beach' ? 'terrain'
+        : theme === 'cemetery' ? 'ruin'
+        : theme === 'garden' ? 'nature'
+        : 'skyline';
+      items.push({ type: itemType, pos: [cx, 0, cz], scale: height, w: 2 + rand() * 5, d: 2 + rand() * 4, color: colors.accent });
+    }
+
+    // Extra props near walls — debris, vehicles, equipment
+    for (let i = 0; i < 12; i++) {
+      const side = i % 4;
+      const dist = 2 + rand() * 4;
+      const along = rand() * arenaSize;
+      let x = 0, z = 0;
+      if (side === 0) { x = along; z = -dist; }
+      else if (side === 1) { x = along; z = arenaSize + dist; }
+      else if (side === 2) { x = -dist; z = along; }
+      else { x = arenaSize + dist; z = along; }
+      items.push({ type: 'prop', pos: [x, 0, z], scale: 0.5 + rand() * 1.5, w: 1, d: 1, color: colors.accent });
+    }
+
+    return items;
+  }, [arenaSize, theme, colors.accent]);
+
+  return (
+    <group>
+      {scenery.map((s, i) => {
+        if (s.type === 'structure') {
+          return (
+            <group key={`sc-${i}`} position={s.pos}>
+              <mesh position={[0, s.scale / 2, 0]}>
+                <boxGeometry args={[s.w, s.scale, s.d]} />
+                <meshStandardMaterial color={s.color} roughness={0.8} metalness={0.3} />
+              </mesh>
+              {/* Window grid */}
+              {Array.from({ length: Math.min(Math.floor(s.scale / 2), 6) }, (_, j) => (
+                <mesh key={j} position={[0, 1.2 + j * 2, s.d / 2 + 0.01]}>
+                  <planeGeometry args={[s.w * 0.7, 1.2]} />
+                  <meshStandardMaterial color="#000" emissive={colors.glow} emissiveIntensity={0.15} transparent opacity={0.4} />
+                </mesh>
+              ))}
+              {/* Roof detail */}
+              <mesh position={[0, s.scale + 0.1, 0]}>
+                <boxGeometry args={[s.w * 0.6, 0.2, s.d * 0.6]} />
+                <meshStandardMaterial color={s.color} roughness={0.6} metalness={0.5} />
+              </mesh>
+            </group>
+          );
+        }
+        if (s.type === 'skyline') {
+          // Tall distant buildings — simpler geometry, darker silhouette
+          return (
+            <group key={`sc-${i}`} position={s.pos}>
+              <mesh position={[0, s.scale / 2, 0]}>
+                <boxGeometry args={[s.w, s.scale, s.d]} />
+                <meshStandardMaterial color={colors.fog} roughness={0.9} metalness={0.2} />
+              </mesh>
+              {/* Scattered lit windows */}
+              {Array.from({ length: Math.min(Math.floor(s.scale / 3), 8) }, (_, j) => {
+                const wx = (Math.sin(i * 17 + j * 73) * 0.5 + 0.5) * s.w * 0.6 - s.w * 0.3;
+                return (
+                  <mesh key={j} position={[wx, 1.5 + j * 3, s.d / 2 + 0.01]}>
+                    <planeGeometry args={[0.5, 0.8]} />
+                    <meshStandardMaterial color={colors.glow} emissive={colors.glow} emissiveIntensity={0.5} transparent opacity={0.3} />
+                  </mesh>
+                );
+              })}
+              {/* Antenna/spire on top */}
+              {s.scale > 15 && (
+                <mesh position={[0, s.scale + 1, 0]}>
+                  <cylinderGeometry args={[0.05, 0.05, 2, 4]} />
+                  <meshStandardMaterial color={colors.accent} metalness={0.8} roughness={0.2} />
+                </mesh>
+              )}
+              {/* Red warning light on tall buildings */}
+              {s.scale > 18 && (
+                <mesh position={[0, s.scale + 2.1, 0]}>
+                  <sphereGeometry args={[0.1, 4, 4]} />
+                  <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={3} />
+                </mesh>
+              )}
+            </group>
+          );
+        }
+        if (s.type === 'terrain') {
+          return (
+            <group key={`sc-${i}`} position={s.pos}>
+              <mesh position={[0, s.scale * 0.15, 0]} scale={[s.w, s.scale * 0.3, s.d]}>
+                <sphereGeometry args={[1, 5, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
+                <meshStandardMaterial color={s.color} roughness={1} />
+              </mesh>
+              {/* Secondary mound */}
+              <mesh position={[s.w * 0.6, s.scale * 0.08, s.d * 0.3]} scale={[s.w * 0.5, s.scale * 0.15, s.d * 0.6]}>
+                <sphereGeometry args={[1, 4, 3, 0, Math.PI * 2, 0, Math.PI / 2]} />
+                <meshStandardMaterial color={s.color} roughness={1} />
+              </mesh>
+            </group>
+          );
+        }
+        if (s.type === 'ruin') {
+          const h = s.scale * 0.6;
+          return (
+            <group key={`sc-${i}`} position={s.pos}>
+              <mesh position={[0, h / 2, 0]}>
+                <boxGeometry args={[s.w || 1.5, h, s.d || 1]} />
+                <meshStandardMaterial color="#3f3f46" roughness={0.9} />
+              </mesh>
+              {/* Broken top section */}
+              <mesh position={[s.w * 0.2, h * 0.9, 0]}>
+                <boxGeometry args={[s.w * 0.4, h * 0.3, (s.d || 1) * 1.05]} />
+                <meshStandardMaterial color="#27272a" roughness={0.95} />
+              </mesh>
+              {/* Rubble at base */}
+              <mesh position={[s.w * -0.3, 0.15, s.d * 0.3]}>
+                <dodecahedronGeometry args={[0.3]} />
+                <meshStandardMaterial color="#52525b" roughness={0.95} />
+              </mesh>
+            </group>
+          );
+        }
+        if (s.type === 'nature') {
+          return (
+            <group key={`sc-${i}`} position={s.pos}>
+              <mesh position={[0, s.scale * 0.3, 0]}>
+                <cylinderGeometry args={[0.12, 0.2, s.scale * 0.6, 5]} />
+                <meshStandardMaterial color="#3e2723" roughness={0.9} />
+              </mesh>
+              <mesh position={[0, s.scale * 0.65, 0]}>
+                <sphereGeometry args={[s.scale * 0.22, 5, 5]} />
+                <meshStandardMaterial color="#1b5e20" roughness={0.9} />
+              </mesh>
+              <mesh position={[s.scale * 0.15, s.scale * 0.55, s.scale * 0.1]}>
+                <sphereGeometry args={[s.scale * 0.15, 4, 4]} />
+                <meshStandardMaterial color="#2e7d32" roughness={0.9} />
+              </mesh>
+            </group>
+          );
+        }
+        if (s.type === 'prop') {
+          // Near-wall props — crates, barrels, debris
+          const variant = i % 3;
+          if (variant === 0) {
+            return (
+              <group key={`sc-${i}`} position={s.pos}>
+                <mesh position={[0, 0.3 * s.scale, 0]}>
+                  <boxGeometry args={[0.6 * s.scale, 0.6 * s.scale, 0.6 * s.scale]} />
+                  <meshStandardMaterial color="#4a3728" roughness={0.9} />
+                </mesh>
+                <mesh position={[0.4 * s.scale, 0.25 * s.scale, 0.1]}>
+                  <boxGeometry args={[0.4 * s.scale, 0.5 * s.scale, 0.5 * s.scale]} />
+                  <meshStandardMaterial color="#5c4033" roughness={0.9} />
+                </mesh>
+              </group>
+            );
+          }
+          if (variant === 1) {
+            return (
+              <mesh key={`sc-${i}`} position={[s.pos[0], 0.35 * s.scale, s.pos[2]]}>
+                <cylinderGeometry args={[0.25 * s.scale, 0.25 * s.scale, 0.7 * s.scale, 8]} />
+                <meshStandardMaterial color="#6b7280" metalness={0.6} roughness={0.4} />
+              </mesh>
+            );
+          }
+          return (
+            <mesh key={`sc-${i}`} position={[s.pos[0], 0.15 * s.scale, s.pos[2]]}>
+              <dodecahedronGeometry args={[0.35 * s.scale]} />
+              <meshStandardMaterial color="#57534e" roughness={0.95} />
+            </mesh>
+          );
+        }
+        return null;
+      })}
+    </group>
+  );
+}
+
+// Floor ground markings — center marker, lane/hazard lines
+function FloorMarkings({ arenaSize, glowColor, accentColor }: { arenaSize: number; glowColor: string; accentColor: string }) {
+  const half = arenaSize / 2;
+  return (
+    <group>
+      {/* Center circle marker */}
+      <mesh position={[half, 0.008, half]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[2.5, 2.7, 32]} />
+        <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={1} transparent opacity={0.25} />
+      </mesh>
+      <mesh position={[half, 0.008, half]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.3, 0.5, 16]} />
+        <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={2} transparent opacity={0.3} />
+      </mesh>
+      {/* Cross lines through center */}
+      <mesh position={[half, 0.007, half]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[arenaSize * 0.8, 0.05]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.5} transparent opacity={0.15} />
+      </mesh>
+      <mesh position={[half, 0.007, half]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
+        <planeGeometry args={[arenaSize * 0.8, 0.05]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.5} transparent opacity={0.15} />
+      </mesh>
+      {/* Corner warning triangles */}
+      {[
+        [3, 3], [arenaSize - 3, 3], [3, arenaSize - 3], [arenaSize - 3, arenaSize - 3]
+      ].map(([x, z], i) => (
+        <mesh key={`warn-${i}`} position={[x, 0.008, z]} rotation={[-Math.PI / 2, 0, (Math.PI / 2) * i]}>
+          <ringGeometry args={[1.2, 1.4, 3]} />
+          <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={0.8} transparent opacity={0.2} />
+        </mesh>
+      ))}
+      {/* Hazard stripes near edges — subtle dashes */}
+      {[0, 1, 2, 3].map(side => {
+        const dashes = [];
+        const count = Math.floor(arenaSize / 4);
+        for (let j = 0; j < count; j++) {
+          const t = 2 + j * ((arenaSize - 4) / count);
+          let pos: [number, number, number], rot: number;
+          if (side === 0) { pos = [t, 0.007, 1.2]; rot = 0; }
+          else if (side === 1) { pos = [t, 0.007, arenaSize - 1.2]; rot = 0; }
+          else if (side === 2) { pos = [1.2, 0.007, t]; rot = Math.PI / 2; }
+          else { pos = [arenaSize - 1.2, 0.007, t]; rot = Math.PI / 2; }
+          dashes.push(
+            <mesh key={`dash-${side}-${j}`} position={pos} rotation={[-Math.PI / 2, 0, rot]}>
+              <planeGeometry args={[1.5, 0.08]} />
+              <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={0.6} transparent opacity={0.15} />
+            </mesh>
+          );
+        }
+        return dashes;
+      })}
+    </group>
+  );
+}
+
+// Ambient floating dust motes
+function AmbientDust({ arenaSize, color, wave }: { arenaSize: number; color: string; wave: number }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const particles = useMemo(() => {
+    const arr: { x: number; y: number; z: number; speed: number; phase: number }[] = [];
+    let seed = wave * 31337;
+    const rand = () => { const x = Math.sin(seed++) * 10000; return x - Math.floor(x); };
+    const count = Math.min(30, 10 + wave);
+    for (let i = 0; i < count; i++) {
+      arr.push({
+        x: rand() * arenaSize,
+        y: 0.5 + rand() * 3,
+        z: rand() * arenaSize,
+        speed: 0.3 + rand() * 0.8,
+        phase: rand() * Math.PI * 2,
+      });
+    }
+    return arr;
+  }, [arenaSize, wave]);
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    const t = clock.getElapsedTime();
+    groupRef.current.children.forEach((child, i) => {
+      const p = particles[i];
+      if (!p) return;
+      child.position.y = p.y + Math.sin(t * p.speed + p.phase) * 0.5;
+      child.position.x = p.x + Math.sin(t * 0.2 + p.phase) * 0.3;
+    });
+  });
+
+  return (
+    <group ref={groupRef}>
+      {particles.map((p, i) => (
+        <mesh key={i} position={[p.x, p.y, p.z]}>
+          <sphereGeometry args={[0.03, 4, 4]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} transparent opacity={0.4} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// Animated spotlights that sweep around the arena
+function SpotlightSweep({ arenaSize, color }: { arenaSize: number; color: string }) {
+  const half = arenaSize / 2;
+  const spot0 = useRef<THREE.SpotLight>(null);
+  const spot1 = useRef<THREE.SpotLight>(null);
+  const spot2 = useRef<THREE.SpotLight>(null);
+  const target0 = useRef<THREE.Object3D>(null);
+  const target1 = useRef<THREE.Object3D>(null);
+  const target2 = useRef<THREE.Object3D>(null);
+
+  const configs = useMemo(() => [
+    { radius: arenaSize * 0.35, speed: 0.4, phase: 0, yOffset: 6 },
+    { radius: arenaSize * 0.25, speed: -0.3, phase: Math.PI * 0.66, yOffset: 7 },
+    { radius: arenaSize * 0.3, speed: 0.25, phase: Math.PI * 1.33, yOffset: 5.5 },
+  ], [arenaSize]);
+
+  // Link targets to spotlights on mount
+  useEffect(() => {
+    if (spot0.current && target0.current) spot0.current.target = target0.current;
+    if (spot1.current && target1.current) spot1.current.target = target1.current;
+    if (spot2.current && target2.current) spot2.current.target = target2.current;
+  }, []);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    const targets = [target0.current, target1.current, target2.current];
+    for (let i = 0; i < 3; i++) {
+      const tgt = targets[i];
+      const c = configs[i];
+      if (!tgt) continue;
+      const angle = t * c.speed + c.phase;
+      tgt.position.x = half + Math.cos(angle) * c.radius + Math.sin(t * 0.15 + i) * 3;
+      tgt.position.z = half + Math.sin(angle) * c.radius + Math.cos(t * 0.12 + i * 2) * 3;
+    }
+  });
+
+  return (
+    <group>
+      <object3D ref={target0} position={[half, 0, half]} />
+      <object3D ref={target1} position={[half, 0, half]} />
+      <object3D ref={target2} position={[half, 0, half]} />
+      <spotLight
+        ref={spot0}
+        position={[half - 5, configs[0].yOffset, half - 5]}
+        color={color}
+        intensity={8}
+        distance={arenaSize * 0.8}
+        angle={0.5}
+        penumbra={0.8}
+        decay={1.5}
+      />
+      <spotLight
+        ref={spot1}
+        position={[half + 5, configs[1].yOffset, half - 3]}
+        color={color}
+        intensity={6}
+        distance={arenaSize * 0.8}
+        angle={0.45}
+        penumbra={0.9}
+        decay={1.5}
+      />
+      <spotLight
+        ref={spot2}
+        position={[half, configs[2].yOffset, half + 5]}
+        color={color}
+        intensity={7}
+        distance={arenaSize * 0.7}
+        angle={0.55}
+        penumbra={0.85}
+        decay={1.5}
+      />
+    </group>
+  );
+}
+
+// Dynamic lighting based on wave events
+function WaveEventLighting({ arenaSize }: { arenaSize: number }) {
+  const waveEvent = useGameStore(s => s.survivalState?.waveEvent);
+  const cx = arenaSize / 2;
+
+  if (!waveEvent) return null;
+
+  const eventLights: Record<string, { color: string; intensity: number }> = {
+    golden_wave: { color: '#fbbf24', intensity: 3 },
+    cursed_wave: { color: '#7c3aed', intensity: 4 },
+    frenzy: { color: '#ef4444', intensity: 2 },
+    blood_moon: { color: '#dc2626', intensity: 5 },
+    treasure_rain: { color: '#22c55e', intensity: 2 },
+  };
+
+  const light = eventLights[waveEvent];
+  if (!light) return null;
+
+  return (
+    <group>
+      <pointLight color={light.color} intensity={light.intensity} distance={arenaSize * 0.8} position={[cx, 8, cx]} />
+      {/* Ground accent glow */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0.03, cx]}>
+        <circleGeometry args={[arenaSize * 0.3, 32]} />
+        <meshBasicMaterial color={light.color} transparent opacity={0.04} />
+      </mesh>
+    </group>
   );
 }

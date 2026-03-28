@@ -51,6 +51,14 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
       return;
     }
 
+    // Frozen enemies can't move or shoot
+    if (state.frozenUntil && Date.now() < state.frozenUntil) {
+      rb.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      const myPos = rb.current.translation();
+      positionCache.set(state.id, { x: myPos.x, z: myPos.z });
+      return;
+    }
+
     const myPos = rb.current.translation();
 
     // Write position to non-reactive cache (zero cost, every frame)
@@ -227,8 +235,11 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
   const enemyScale = (state as any).scale as number || 1.0;
   const isGhost = (state as any).transparent as boolean || false;
   const isElite = state.isElite || false;
-  const isBoss = state.isBoss || false;
   const hasShield = (state.shieldHp || 0) > 0;
+  const survivalType = (state as any).survivalType as string || 'grunt';
+  const isFrozen = state.frozenUntil && Date.now() < state.frozenUntil;
+  const isAllyShielded = state.allyShielded || false;
+  const isBoss = state.isBoss || false;
 
   return (
     <RigidBody
@@ -247,7 +258,7 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
     >
       <BallCollider args={[0.3 * enemyScale]} />
 
-      <Billboard position={[0, 1.2, 0]}>
+      <Billboard position={[0, 1.2 * enemyScale, 0]}>
         <mesh>
           <planeGeometry args={[barWidth, 0.12]} />
           <meshBasicMaterial color="#111" />
@@ -256,7 +267,6 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
           <planeGeometry args={[barWidth * (state.hp / state.maxHp), 0.08]} />
           <meshBasicMaterial color={state.hp > (state.maxHp * 0.3) ? state.color : "#ff0000"} />
         </mesh>
-        {/* Shield bar for bosses */}
         {hasShield && state.shieldMaxHp && (
           <>
             <mesh position={[0, -0.12, 0]}>
@@ -269,9 +279,17 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
             </mesh>
           </>
         )}
+        {/* Boss name tag */}
+        {isBoss && state.bossName && (
+          <mesh position={[0, 0.18, 0]}>
+            <planeGeometry args={[barWidth * 1.5, 0.12]} />
+            <meshBasicMaterial color={state.color} transparent opacity={0.6} />
+          </mesh>
+        )}
       </Billboard>
 
       <group ref={meshRef} scale={[enemyScale, enemyScale, enemyScale]}>
+        {/* Ground shadow/ring */}
         <mesh position={[0, -0.45, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.4, 0.5, 32]} />
           <meshBasicMaterial color={isElite ? '#fbbf24' : state.color} transparent opacity={isElite ? 0.6 : 0.3} />
@@ -290,15 +308,266 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
             <meshBasicMaterial color="#60a5fa" transparent opacity={0.15} wireframe />
           </mesh>
         )}
+        {/* Ally shield bubble from Shielder */}
+        {isAllyShielded && (
+          <mesh>
+            <sphereGeometry args={[0.55, 12, 12]} />
+            <meshBasicMaterial color="#2dd4bf" transparent opacity={0.12} wireframe />
+          </mesh>
+        )}
+        {/* Frozen ice crystal overlay */}
+        {isFrozen && (
+          <>
+            <mesh>
+              <icosahedronGeometry args={[0.5, 0]} />
+              <meshStandardMaterial color="#67e8f9" transparent opacity={0.3} metalness={1} roughness={0} />
+            </mesh>
+            <mesh position={[0, 0.3, 0]}>
+              <octahedronGeometry args={[0.2, 0]} />
+              <meshStandardMaterial color="#a5f3fc" emissive="#67e8f9" emissiveIntensity={3} transparent opacity={0.6} />
+            </mesh>
+          </>
+        )}
 
-        <mesh castShadow receiveShadow>
-          <capsuleGeometry args={[0.3, 0.4, 4, 16]} />
-          <meshStandardMaterial color={state.color} roughness={0.5} transparent={isGhost} opacity={isGhost ? 0.4 : 1.0} emissive={isGhost ? state.color : '#000000'} emissiveIntensity={isGhost ? 2 : 0} />
-        </mesh>
-        <mesh castShadow receiveShadow position={[0, 0.5, 0]}>
-          <sphereGeometry args={[0.25, 16, 16]} />
-          <meshStandardMaterial color={isGhost ? state.color : '#fca5a5'} roughness={0.4} transparent={isGhost} opacity={isGhost ? 0.5 : 1.0} />
-        </mesh>
+        {/* ====== TYPE-SPECIFIC BODY ====== */}
+
+        {/* TANK: armored body with shoulder plates */}
+        {survivalType === 'tank' && (
+          <>
+            <mesh castShadow receiveShadow>
+              <capsuleGeometry args={[0.35, 0.5, 4, 16]} />
+              <meshStandardMaterial color={state.color} roughness={0.3} metalness={0.7} />
+            </mesh>
+            {/* Shoulder armor plates */}
+            <mesh position={[-0.35, 0.2, 0]} rotation={[0, 0, 0.3]}>
+              <boxGeometry args={[0.15, 0.35, 0.3]} />
+              <meshStandardMaterial color="#4a4a4a" metalness={0.9} roughness={0.2} />
+            </mesh>
+            <mesh position={[0.35, 0.2, 0]} rotation={[0, 0, -0.3]}>
+              <boxGeometry args={[0.15, 0.35, 0.3]} />
+              <meshStandardMaterial color="#4a4a4a" metalness={0.9} roughness={0.2} />
+            </mesh>
+            {/* Helmet */}
+            <mesh castShadow position={[0, 0.55, 0]}>
+              <sphereGeometry args={[0.28, 16, 16]} />
+              <meshStandardMaterial color="#4a4a4a" metalness={0.8} roughness={0.2} />
+            </mesh>
+            {/* Visor slit */}
+            <mesh position={[0, 0.55, 0.25]}>
+              <boxGeometry args={[0.25, 0.06, 0.05]} />
+              <meshStandardMaterial color={state.color} emissive={state.color} emissiveIntensity={3} />
+            </mesh>
+          </>
+        )}
+
+        {/* GHOST: ethereal floating form with trailing wisps */}
+        {survivalType === 'ghost' && (
+          <>
+            <mesh castShadow receiveShadow>
+              <capsuleGeometry args={[0.3, 0.4, 4, 16]} />
+              <meshStandardMaterial color={state.color} transparent opacity={0.35} emissive={state.color} emissiveIntensity={2} />
+            </mesh>
+            {/* Ghost face */}
+            <mesh position={[0, 0.45, 0]}>
+              <sphereGeometry args={[0.28, 16, 16]} />
+              <meshStandardMaterial color={state.color} transparent opacity={0.5} emissive={state.color} emissiveIntensity={3} />
+            </mesh>
+            {/* Wisp trails */}
+            {[-0.2, 0.2].map((x, i) => (
+              <mesh key={i} position={[x, -0.3, 0]}>
+                <coneGeometry args={[0.12, 0.4, 4]} />
+                <meshStandardMaterial color={state.color} transparent opacity={0.2} emissive={state.color} emissiveIntensity={2} />
+              </mesh>
+            ))}
+            {/* Spectral eyes */}
+            <mesh position={[-0.1, 0.5, 0.22]}>
+              <sphereGeometry args={[0.05, 6, 6]} />
+              <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={8} />
+            </mesh>
+            <mesh position={[0.1, 0.5, 0.22]}>
+              <sphereGeometry args={[0.05, 6, 6]} />
+              <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={8} />
+            </mesh>
+          </>
+        )}
+
+        {/* BOMBER: glowing core, danger stripes */}
+        {survivalType === 'bomber' && (
+          <>
+            <mesh castShadow receiveShadow>
+              <capsuleGeometry args={[0.3, 0.35, 4, 16]} />
+              <meshStandardMaterial color={state.color} roughness={0.5} />
+            </mesh>
+            {/* Danger stripes */}
+            <mesh position={[0, 0, 0.31]}>
+              <planeGeometry args={[0.4, 0.5]} />
+              <meshBasicMaterial color="#000000" transparent opacity={0.4} />
+            </mesh>
+            {/* Glowing core */}
+            <mesh position={[0, 0.1, 0]}>
+              <sphereGeometry args={[0.18, 8, 8]} />
+              <meshStandardMaterial color="#ff4400" emissive="#ff4400" emissiveIntensity={6} />
+            </mesh>
+            {/* Head with fuse */}
+            <mesh position={[0, 0.5, 0]}>
+              <sphereGeometry args={[0.22, 16, 16]} />
+              <meshStandardMaterial color={state.color} roughness={0.4} />
+            </mesh>
+            <mesh position={[0, 0.72, 0]}>
+              <cylinderGeometry args={[0.02, 0.02, 0.15, 4]} />
+              <meshStandardMaterial color="#fbbf24" emissive="#ff6600" emissiveIntensity={4} />
+            </mesh>
+          </>
+        )}
+
+        {/* NECROMANCER: staff, robes, glowing eyes */}
+        {survivalType === 'necromancer' && (
+          <>
+            {/* Robed body */}
+            <mesh castShadow receiveShadow>
+              <coneGeometry args={[0.35, 0.9, 6]} />
+              <meshStandardMaterial color="#2d1b4e" roughness={0.8} />
+            </mesh>
+            {/* Head/hood */}
+            <mesh position={[0, 0.55, 0]}>
+              <sphereGeometry args={[0.22, 16, 16]} />
+              <meshStandardMaterial color="#1a0f2e" roughness={0.9} />
+            </mesh>
+            {/* Glowing eyes */}
+            <mesh position={[-0.08, 0.58, 0.18]}>
+              <sphereGeometry args={[0.04, 6, 6]} />
+              <meshStandardMaterial color="#c026d3" emissive="#c026d3" emissiveIntensity={10} />
+            </mesh>
+            <mesh position={[0.08, 0.58, 0.18]}>
+              <sphereGeometry args={[0.04, 6, 6]} />
+              <meshStandardMaterial color="#c026d3" emissive="#c026d3" emissiveIntensity={10} />
+            </mesh>
+            {/* Staff */}
+            <mesh position={[0.35, 0.3, 0]}>
+              <cylinderGeometry args={[0.03, 0.03, 1.2, 4]} />
+              <meshStandardMaterial color="#4a3728" roughness={0.8} />
+            </mesh>
+            {/* Staff orb */}
+            <mesh position={[0.35, 0.95, 0]}>
+              <sphereGeometry args={[0.1, 8, 8]} />
+              <meshStandardMaterial color="#c026d3" emissive="#c026d3" emissiveIntensity={8} metalness={1} roughness={0} />
+            </mesh>
+            {/* Dark aura ring */}
+            <mesh position={[0, -0.42, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.6, 0.8, 16]} />
+              <meshBasicMaterial color="#c026d3" transparent opacity={0.2} />
+            </mesh>
+          </>
+        )}
+
+        {/* SHIELDER: bubble projector, tech armor */}
+        {survivalType === 'shielder' && (
+          <>
+            <mesh castShadow receiveShadow>
+              <capsuleGeometry args={[0.3, 0.4, 4, 16]} />
+              <meshStandardMaterial color={state.color} roughness={0.3} metalness={0.6} />
+            </mesh>
+            {/* Shield generator backpack */}
+            <mesh position={[0, 0.2, -0.3]}>
+              <boxGeometry args={[0.25, 0.35, 0.2]} />
+              <meshStandardMaterial color="#0f766e" metalness={0.8} roughness={0.2} />
+            </mesh>
+            {/* Generator glow */}
+            <mesh position={[0, 0.3, -0.41]}>
+              <sphereGeometry args={[0.06, 6, 6]} />
+              <meshStandardMaterial color="#2dd4bf" emissive="#2dd4bf" emissiveIntensity={6} />
+            </mesh>
+            {/* Head */}
+            <mesh position={[0, 0.5, 0]}>
+              <sphereGeometry args={[0.25, 16, 16]} />
+              <meshStandardMaterial color="#134e4a" roughness={0.4} metalness={0.5} />
+            </mesh>
+            {/* Shield projection ring */}
+            <mesh position={[0, -0.42, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.5, 0.7, 16]} />
+              <meshBasicMaterial color="#2dd4bf" transparent opacity={0.25} />
+            </mesh>
+          </>
+        )}
+
+        {/* SPLITTER: segmented body */}
+        {survivalType === 'splitter' && (
+          <>
+            <mesh castShadow receiveShadow>
+              <capsuleGeometry args={[0.25, 0.3, 4, 16]} />
+              <meshStandardMaterial color={state.color} roughness={0.5} />
+            </mesh>
+            {/* Segment lines */}
+            <mesh position={[0, 0.1, 0]}>
+              <torusGeometry args={[0.26, 0.02, 4, 12]} />
+              <meshStandardMaterial color="#ffffff" transparent opacity={0.4} />
+            </mesh>
+            <mesh position={[0, -0.1, 0]}>
+              <torusGeometry args={[0.26, 0.02, 4, 12]} />
+              <meshStandardMaterial color="#ffffff" transparent opacity={0.4} />
+            </mesh>
+            <mesh position={[0, 0.45, 0]}>
+              <sphereGeometry args={[0.2, 16, 16]} />
+              <meshStandardMaterial color="#6ee7b7" roughness={0.4} />
+            </mesh>
+          </>
+        )}
+
+        {/* RUSHER: sleek, streamlined */}
+        {survivalType === 'rusher' && (
+          <>
+            <mesh castShadow receiveShadow>
+              <capsuleGeometry args={[0.25, 0.35, 4, 16]} />
+              <meshStandardMaterial color={state.color} roughness={0.4} />
+            </mesh>
+            {/* Speed lines / fins */}
+            <mesh position={[-0.25, 0.1, 0.15]} rotation={[0, 0.3, 0]}>
+              <boxGeometry args={[0.05, 0.3, 0.15]} />
+              <meshStandardMaterial color={state.color} emissive={state.color} emissiveIntensity={1} />
+            </mesh>
+            <mesh position={[0.25, 0.1, 0.15]} rotation={[0, -0.3, 0]}>
+              <boxGeometry args={[0.05, 0.3, 0.15]} />
+              <meshStandardMaterial color={state.color} emissive={state.color} emissiveIntensity={1} />
+            </mesh>
+            <mesh position={[0, 0.47, 0]}>
+              <sphereGeometry args={[0.22, 16, 16]} />
+              <meshStandardMaterial color="#fca5a5" roughness={0.4} />
+            </mesh>
+          </>
+        )}
+
+        {/* SNIPER: scope, longer body */}
+        {survivalType === 'sniper' && (
+          <>
+            <mesh castShadow receiveShadow>
+              <capsuleGeometry args={[0.28, 0.45, 4, 16]} />
+              <meshStandardMaterial color={state.color} roughness={0.5} />
+            </mesh>
+            <mesh position={[0, 0.52, 0]}>
+              <sphereGeometry args={[0.23, 16, 16]} />
+              <meshStandardMaterial color="#fca5a5" roughness={0.4} />
+            </mesh>
+            {/* Scope/visor */}
+            <mesh position={[0, 0.55, 0.22]}>
+              <cylinderGeometry args={[0.04, 0.03, 0.1, 6]} />
+              <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={5} />
+            </mesh>
+          </>
+        )}
+
+        {/* DEFAULT: grunt + any unmatched type */}
+        {!['tank', 'ghost', 'bomber', 'necromancer', 'shielder', 'splitter', 'rusher', 'sniper'].includes(survivalType) && (
+          <>
+            <mesh castShadow receiveShadow>
+              <capsuleGeometry args={[0.3, 0.4, 4, 16]} />
+              <meshStandardMaterial color={state.color} roughness={0.5} />
+            </mesh>
+            <mesh castShadow receiveShadow position={[0, 0.5, 0]}>
+              <sphereGeometry args={[0.25, 16, 16]} />
+              <meshStandardMaterial color="#fca5a5" roughness={0.4} />
+            </mesh>
+          </>
+        )}
 
         {theme === 'beach' && (
           <group position={[0, 0.65, 0]}>
@@ -312,12 +581,24 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
             </mesh>
           </group>
         )}
-        <group position={[0.2, 0.1, -0.4]}>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[0.1, 0.1, 0.6]} />
-            <meshStandardMaterial color={new THREE.Color(state.color).multiplyScalar(0.5).getHex()} />
+
+        {/* Weapon (gun) — only for types that shoot */}
+        {!['necromancer'].includes(survivalType) && (
+          <group position={[0.2, 0.1, -0.4]}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[0.1, 0.1, 0.6]} />
+              <meshStandardMaterial color={new THREE.Color(state.color).multiplyScalar(0.5).getHex()} />
+            </mesh>
+          </group>
+        )}
+
+        {/* Boss pulsing aura */}
+        {isBoss && (
+          <mesh position={[0, -0.43, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.7, 1.0, 32]} />
+            <meshBasicMaterial color={state.color} transparent opacity={0.3} />
           </mesh>
-        </group>
+        )}
       </group>
     </RigidBody>
   );

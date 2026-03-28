@@ -146,8 +146,13 @@ function ProjectileItem({ p }: { p: ProjectileState }) {
     } else {
       // Player bullet → check enemies
       const allPositions = positionCache.getAll();
+      const enemies = state.enemies;
       for (const [id, ePos] of allPositions) {
         if (id === 'player') continue;
+
+        // Skip dead enemies — their position cache entry persists but they shouldn't block bullets
+        const enemy = enemies.find(e => e.id === id);
+        if (enemy && enemy.hp <= 0) continue;
 
         // Pierce: skip already-hit enemies
         if (p.pierce && p.hitIds?.includes(id)) continue;

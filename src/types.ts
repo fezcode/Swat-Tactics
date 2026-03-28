@@ -34,6 +34,8 @@ export interface EnemyState extends EntityState {
   bossMechanic?: string;
   shieldHp?: number;
   shieldMaxHp?: number;
+  frozenUntil?: number;      // Frost nova: frozen timestamp
+  allyShielded?: boolean;    // Shielder buff: damage reduction
 }
 
 export interface TurretState extends EntityState {

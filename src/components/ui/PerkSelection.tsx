@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useGameStore } from '../../game/store';
-import { PERKS, getTierLabel, getTierBorderColor, getEvolution } from '../../game/survivalPerks';
+import { PERKS, getTierLabel, getTierBorderColor, getEvolution, WEAPON_EVOLUTIONS } from '../../game/survivalPerks';
 import type { PerkId } from '../../game/survivalPerks';
 import { SFX } from '../../game/sounds';
 
 export function PerkSelection() {
   const survivalState = useGameStore(s => s.survivalState);
   const selectPerk = useGameStore(s => s.selectPerk);
+  const rerollPerks = useGameStore(s => s.rerollPerks);
   const [hoveredPerk, setHoveredPerk] = useState<PerkId | null>(null);
   const [selectedPerk, setSelectedPerk] = useState<PerkId | null>(null);
 
@@ -151,8 +152,37 @@ export function PerkSelection() {
           })}
         </div>
 
+        {/* Reroll button */}
+        {survivalState.rerollsLeft > 0 && !selectedPerk && (
+          <button
+            onClick={() => rerollPerks()}
+            className="mt-6 px-6 py-2 border-2 border-zinc-600 text-zinc-300 font-black tracking-widest uppercase
+              hover:border-yellow-400 hover:text-yellow-400 transition-all duration-200 hover:scale-105"
+            style={{ background: 'rgba(0,0,0,0.6)' }}
+            onMouseEnter={() => SFX.buttonHover()}
+          >
+            REROLL ({survivalState.rerollsLeft} left)
+          </button>
+        )}
+
+        {/* Weapon evolutions display */}
+        {survivalState.weaponEvolutions.length > 0 && (
+          <div className="mt-4 flex gap-3">
+            {survivalState.weaponEvolutions.map(weId => {
+              const we = WEAPON_EVOLUTIONS.find(w => w.id === weId);
+              if (!we) return null;
+              return (
+                <div key={weId} className="px-3 py-1 text-[10px] font-black tracking-widest uppercase"
+                  style={{ background: `${we.color}30`, border: `1px solid ${we.color}`, color: we.color }}>
+                  {we.name}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Score display */}
-        <div className="mt-8 transform -skew-x-12 flex gap-8">
+        <div className="mt-6 transform -skew-x-12 flex gap-8">
           <div className="text-center">
             <div className="text-sm font-bold text-zinc-500 tracking-widest uppercase">Score</div>
             <div className="text-3xl font-black italic text-white">{survivalState.score.toLocaleString()}</div>

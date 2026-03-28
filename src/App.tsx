@@ -11,9 +11,8 @@ import { Enemy } from './components/entities/Enemy';
 import { Barrel } from './components/entities/Barrel';
 import { HUD } from './components/ui/HUD';
 import { PauseHandler } from './components/ui/PauseHandler';
-import { ParticleSystem } from './components/entities/ParticleSystem';
+import { ParticleSystem, ExplosionEffects, TreasureChests } from './components/entities/ParticleSystem';
 import { Projectiles } from './components/entities/Projectile';
-import { ExplosionEffects } from './components/entities/Explosion';
 import { XPOrbs } from './components/entities/XPOrb';
 import { ShadowClone } from './components/entities/ShadowClone';
 import { Music } from './game/sounds';
@@ -89,6 +88,7 @@ function GameScene() {
       <ExplosionEffects />
       {isSurvival && <XPOrbs />}
       {isSurvival && <ShadowClone />}
+      {isSurvival && <TreasureChests />}
       <ParticleSystem />
       <GameLoop />
     </>

@@ -38,9 +38,9 @@ function getPlayerPos(state: { player: PlayerState | null }): Position {
   if (!state.player) return { x: 0, z: 0 };
   return positionCache.get('player') || state.player.pos;
 }
-import { pickRandomPerks, getEvolution, PERKS } from './survivalPerks';
-import type { WaveMutation, SurvivalEnemyDef } from './survivalWaves';
-import { generateWave, getSpawnPosition, getMutationsForWave } from './survivalWaves';
+import { pickRandomPerks, getEvolution, PERKS, getUnlockedWeaponEvolutions } from './survivalPerks';
+import type { WaveMutation, SurvivalEnemyDef, WaveEvent } from './survivalWaves';
+import { generateWave, getSpawnPosition, getMutationsForWave, rollWaveEvent, getWaveEventDef } from './survivalWaves';
 
 interface ExplosionEffect { id: string; pos: Position; radius: number; life: number; }
 interface GameStats { kills: number; deaths: number; runs: number; }
@@ -128,6 +128,18 @@ export interface SurvivalState {
   perkFanfare: { color: string; name: string; time: number } | null;
   bossActive: { name: string; id: string } | null;
   evolvedPerks: string[];
+  // New mechanics
+  waveEvent: WaveEvent | null;
+  waveEventTimer: number;
+  blackHoleTimer: number;
+  meteorTimer: number;
+  frostNovaKillCount: number;
+  chainLightningQueue: { pos: Position; damage: number; jumpsLeft: number }[];
+  treasureChests: { id: string; pos: Position; type: 'perk' | 'score' | 'heal' }[];
+  rerollsLeft: number;
+  weaponEvolutions: string[];
+  screenFlash: { color: string; time: number } | null;
+  killsSinceLastFrostNova: number;
 }
 
 interface GameState {
@@ -207,6 +219,8 @@ interface GameState {
   addXPOrb: (pos: Position, value: number) => void;
   addFloatingText: (text: string, pos: Position, color: string) => void;
   startSurvivalWithModifiers: (modifiers: RunModifier[]) => void;
+  rerollPerks: () => void;
+  collectChest: (id: string) => void;
 }
 
 const defaultWeapon: Weapon = { name: 'Pistol', ammo: 24, maxAmmo: 24, damage: 10 };
@@ -405,6 +419,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (theme === 'metro') { for (let i = 0; i < 20; i++) { let x = nextRandom() * (level.gridSize.width + 30) - 15; let z = nextRandom() * (level.gridSize.height + 30) - 15; if (x >= -1 && x <= level.gridSize.width + 1 && z >= -1 && z <= level.gridSize.height + 1) continue; const rand = nextRandom(); let type: DecorationState['type'] = 'bench'; if (rand > 0.7) type = 'metro_sign'; else if (rand > 0.4) type = 'pipe'; decorations.push({ id: `metro-prop-${i}`, type, pos: { x, z }, scale: 1 + nextRandom() * 0.5, rotation: nextRandom() * Math.PI * 2 }); } }
     else if (theme === 'garden') { for (let i = 0; i < 40; i++) { const side = Math.floor(nextRandom() * 4); let x = 0, z = 0; const margin = 5; if (side === 0) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = -margin - nextRandom() * 10; } else if (side === 1) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + nextRandom() * 10; } else if (side === 2) { x = -margin - nextRandom() * 10; z = nextRandom() * (level.gridSize.height + margin*2) - margin; } else { x = level.gridSize.width + margin + nextRandom() * 10; z = nextRandom() * (level.gridSize.height + margin*2) - margin; } decorations.push({ id: `garden-${i}`, type: nextRandom() > 0.3 ? 'tree' : 'rock', pos: { x, z }, scale: 0.8 + nextRandom() * 1.5, rotation: nextRandom() * Math.PI * 2 }); } }
     else if (theme === 'skyscraper') { for (let i = 0; i < 30; i++) { const side = Math.floor(nextRandom() * 4); let x = 0, z = 0; const margin = 10; if (side === 0) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = -margin - nextRandom() * 20; } else if (side === 1) { x = nextRandom() * (level.gridSize.width + margin*2) - margin; z = level.gridSize.height + margin + nextRandom() * 20; } else if (side === 2) { x = -margin - nextRandom() * 20; z = nextRandom() * (level.gridSize.height + margin*2) - margin; } else { x = level.gridSize.width + margin + nextRandom() * 20; z = nextRandom() * (level.gridSize.height + margin*2) - margin; } decorations.push({ id: `sky-${i}`, type: 'building', pos: { x, z }, scale: 1, rotation: 0, w: 2 + nextRandom() * 4, h: 5 + nextRandom() * 30, d: 2 + nextRandom() * 4, color: nextRandom() > 0.5 ? "#1a202c" : "#2d3748" }); } }
+    else if (theme === 'industrial') { const spawnOutside = (i: number) => { const side = Math.floor(nextRandom() * 4); let x = 0, z = 0; const m = 5; if (side === 0) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = -m - nextRandom() * 12; } else if (side === 1) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = level.gridSize.height + m + nextRandom() * 12; } else if (side === 2) { x = -m - nextRandom() * 12; z = nextRandom() * (level.gridSize.height + m*2) - m; } else { x = level.gridSize.width + m + nextRandom() * 12; z = nextRandom() * (level.gridSize.height + m*2) - m; } return { x, z }; }; for (let i = 0; i < 25; i++) { const p = spawnOutside(i); const r = nextRandom(); let type: DecorationState['type'] = 'pipe'; if (r > 0.7) type = 'cold_storage'; else if (r > 0.4) type = 'panel'; decorations.push({ id: `ind-${i}`, type, pos: p, scale: 0.8 + nextRandom() * 0.8, rotation: nextRandom() * Math.PI * 2 }); } }
+    else if (theme === 'desert') { const spawnOutside = (i: number) => { const side = Math.floor(nextRandom() * 4); let x = 0, z = 0; const m = 5; if (side === 0) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = -m - nextRandom() * 15; } else if (side === 1) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = level.gridSize.height + m + nextRandom() * 15; } else if (side === 2) { x = -m - nextRandom() * 15; z = nextRandom() * (level.gridSize.height + m*2) - m; } else { x = level.gridSize.width + m + nextRandom() * 15; z = nextRandom() * (level.gridSize.height + m*2) - m; } return { x, z }; }; for (let i = 0; i < 30; i++) { const p = spawnOutside(i); const r = nextRandom(); let type: DecorationState['type'] = 'cactus'; if (r > 0.7) type = 'rock'; else if (r > 0.4) type = 'sand'; decorations.push({ id: `des-${i}`, type, pos: p, scale: 0.7 + nextRandom() * 1.2, rotation: nextRandom() * Math.PI * 2 }); } }
+    else if (theme === 'space_station') { const spawnOutside = (i: number) => { const side = Math.floor(nextRandom() * 4); let x = 0, z = 0; const m = 5; if (side === 0) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = -m - nextRandom() * 12; } else if (side === 1) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = level.gridSize.height + m + nextRandom() * 12; } else if (side === 2) { x = -m - nextRandom() * 12; z = nextRandom() * (level.gridSize.height + m*2) - m; } else { x = level.gridSize.width + m + nextRandom() * 12; z = nextRandom() * (level.gridSize.height + m*2) - m; } return { x, z }; }; for (let i = 0; i < 20; i++) { const p = spawnOutside(i); const r = nextRandom(); let type: DecorationState['type'] = 'panel'; if (r > 0.7) type = 'satellite'; else if (r > 0.4) type = 'cold_storage'; decorations.push({ id: `spa-${i}`, type, pos: p, scale: 0.8 + nextRandom() * 0.6, rotation: nextRandom() * Math.PI * 2 }); } }
+    else if (theme === 'beach') { const spawnOutside = (i: number) => { const side = Math.floor(nextRandom() * 4); let x = 0, z = 0; const m = 5; if (side === 0) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = -m - nextRandom() * 12; } else if (side === 1) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = level.gridSize.height + m + nextRandom() * 12; } else if (side === 2) { x = -m - nextRandom() * 12; z = nextRandom() * (level.gridSize.height + m*2) - m; } else { x = level.gridSize.width + m + nextRandom() * 12; z = nextRandom() * (level.gridSize.height + m*2) - m; } return { x, z }; }; for (let i = 0; i < 30; i++) { const p = spawnOutside(i); const r = nextRandom(); let type: DecorationState['type'] = 'palm_tree'; if (r > 0.7) type = 'umbrella'; else if (r > 0.5) type = 'rock'; else if (r > 0.35) type = 'beach_ball'; decorations.push({ id: `bch-${i}`, type, pos: p, scale: 0.8 + nextRandom() * 1.0, rotation: nextRandom() * Math.PI * 2 }); } }
+    else if (theme === 'cemetery') { const spawnOutside = (i: number) => { const side = Math.floor(nextRandom() * 4); let x = 0, z = 0; const m = 5; if (side === 0) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = -m - nextRandom() * 12; } else if (side === 1) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = level.gridSize.height + m + nextRandom() * 12; } else if (side === 2) { x = -m - nextRandom() * 12; z = nextRandom() * (level.gridSize.height + m*2) - m; } else { x = level.gridSize.width + m + nextRandom() * 12; z = nextRandom() * (level.gridSize.height + m*2) - m; } return { x, z }; }; for (let i = 0; i < 35; i++) { const p = spawnOutside(i); const r = nextRandom(); let type: DecorationState['type'] = 'tombstone'; if (r > 0.8) type = 'crypt'; else if (r > 0.6) type = 'dead_tree'; else if (r > 0.45) type = 'rock'; decorations.push({ id: `cem-${i}`, type, pos: p, scale: 0.7 + nextRandom() * 1.0, rotation: nextRandom() * Math.PI * 2 }); } }
+    else if (theme === 'airport') { const spawnOutside = (i: number) => { const side = Math.floor(nextRandom() * 4); let x = 0, z = 0; const m = 5; if (side === 0) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = -m - nextRandom() * 15; } else if (side === 1) { x = nextRandom() * (level.gridSize.width + m*2) - m; z = level.gridSize.height + m + nextRandom() * 15; } else if (side === 2) { x = -m - nextRandom() * 15; z = nextRandom() * (level.gridSize.height + m*2) - m; } else { x = level.gridSize.width + m + nextRandom() * 15; z = nextRandom() * (level.gridSize.height + m*2) - m; } return { x, z }; }; for (let i = 0; i < 25; i++) { const p = spawnOutside(i); const r = nextRandom(); let type: DecorationState['type'] = 'luggage_cart'; if (r > 0.8) type = 'airplane'; else if (r > 0.6) type = 'terminal_sign'; else if (r > 0.45) type = 'security_gate'; else if (r > 0.3) type = 'flight_board'; decorations.push({ id: `air-${i}`, type, pos: p, scale: 0.8 + nextRandom() * 0.8, rotation: nextRandom() * Math.PI * 2 }); } }
     set({ phase: 'level_intro', levelIndex: index, theme, hasTrain: level.hasTrain || false, trainActive: false, timeLeft: level.timeLimit || null, player: newPlayer, enemies: level.enemies.map(e => { const dx = level.playerSpawn.x - e.pos.x; const dz = level.playerSpawn.z - e.pos.z; const rotation = Math.atan2(dx, dz); const color = e.color && e.color !== '#ff0000' && e.color !== '#3b82f6' ? e.color : getThreatColor(e.hp); return { type: 'enemy', id: e.id, pos: e.pos, rotation, hp: e.hp, maxHp: e.hp, weapon: { ...e.weapon }, color, unkillable: e.unkillable }; }), turrets: (level.turrets || []).map(t => ({ type: 'turret', id: t.id, pos: t.pos, rotation: 0, hp: t.hp, maxHp: t.hp, damage: t.damage, fireRate: t.fireRate, lastFireTime: 0, color: t.color || '#ef4444', disabled: false })), buttons: (level.buttons || []).map(b => ({ type: 'button', id: `button-${b.targetId}`, pos: b.pos, rotation: 0, hp: 1, maxHp: 1, targetId: b.targetId, active: false })), barrels: (level.barrels || []).map(b => ({ type: 'barrel', id: b.id, pos: b.pos, rotation: 0, hp: 1, maxHp: 1 })), healthBoxes: (level.healthBoxes || []).map(h => ({ type: 'health_box', id: h.id, pos: h.pos, rotation: 0, hp: 1, maxHp: 1 })), ammoBoxes: (level.ammoBoxes || []).map(a => ({ type: 'ammo_box', id: a.id, pos: a.pos, rotation: 0, hp: 1, maxHp: 1 })), portal: level.portal ? { ...level.portal, used: false } : null, walls: level.walls, decorations, gridSize: level.gridSize, exitPos: level.exit, particles: [], projectiles: [], explosions: [], bloodDecals: [], countdown: 4, lastDamageTime: 0, lastShakeTime: 0, isSlashZooming: false, timeScale: 1.0 });
     SFX.levelStart();
   },
@@ -488,8 +508,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     // --- Enemy damage ---
     let hit = false; let killed = false; const killedRef: { enemy: EnemyState | null } = { enemy: null };
     const newBloodDecals: BloodDecal[] = [];
-    // Check for shield (Colossus boss)
-    let shieldBlocked = false;
     let enemies = state.enemies.map(e => {
       if (e.id === id && e.hp > 0) {
         hit = true;
@@ -506,10 +524,14 @@ export const useGameStore = create<GameState>((set, get) => ({
           state.survivalState.floatingTexts.push({ id: Math.random().toString(36).substr(2, 9), text: dmgText, pos: { x: pos.x + (Math.random() - 0.5) * 0.5, z: pos.z - 0.3 }, color: dmgColor, life: 0.8 });
         }
         if (e.unkillable) return { ...e, lastHitTime: Date.now() };
+        // Shielder ally protection: 40% damage reduction
+        if (e.allyShielded) {
+          amount = Math.floor(amount * 0.6);
+          if (pos) mkParticle([pos.x, 0.8, pos.z], '#2dd4bf');
+        }
         // Shield phase for boss
         if (e.shieldHp && e.shieldHp > 0) {
           const newShield = Math.max(0, e.shieldHp - amount);
-          shieldBlocked = true;
           if (pos) mkParticle([pos.x, 0.8, pos.z], '#60a5fa');
           return { ...e, shieldHp: newShield, lastHitTime: Date.now() };
         }
@@ -543,6 +565,25 @@ export const useGameStore = create<GameState>((set, get) => ({
             mkParticle([ePos.x + (Math.random() - 0.5) * 0.5, 0.3 + Math.random() * 0.8, ePos.z + (Math.random() - 0.5) * 0.5], killedEnemy.color);
           }
 
+          // Lucky drops: +20% drop chance per stack. Jackpot evolution: enemies always drop
+          const luckyStacks = updatedSv.perkStacks['lucky_drops'] || 0;
+          const isJackpot = updatedSv.evolvedPerks.includes('lucky_drops');
+          const luckyDropChance = isJackpot ? 1.0 : luckyStacks * 0.2;
+          if (luckyStacks > 0 && Math.random() < luckyDropChance && !killedEnemy.isElite) {
+            const dropType = Math.random() > 0.5 ? 'health' : 'ammo';
+            if (dropType === 'health') {
+              set(s => ({ healthBoxes: [...s.healthBoxes, { type: 'health_box', id: `lucky_h_${Date.now()}`, pos: { x: ePos.x, z: ePos.z }, rotation: 0, hp: 1, maxHp: 1 }] }));
+            } else {
+              set(s => ({ ammoBoxes: [...s.ammoBoxes, { type: 'ammo_box', id: `lucky_a_${Date.now()}`, pos: { x: ePos.x, z: ePos.z }, rotation: 0, hp: 1, maxHp: 1 }] }));
+            }
+            if (isJackpot) for (let i = 0; i < 5; i++) mkParticle([ePos.x, 0.8, ePos.z], '#a3e635');
+          }
+
+          // Blood moon wave event: enemies always drop health
+          if (updatedSv.waveEvent === 'blood_moon') {
+            set(s => ({ healthBoxes: [...s.healthBoxes, { type: 'health_box', id: `blood_h_${Date.now()}`, pos: { x: ePos.x + (Math.random() - 0.5), z: ePos.z + (Math.random() - 0.5) }, rotation: 0, hp: 1, maxHp: 1 }] }));
+          }
+
           // Hoarder evolution: all enemies have 30% drop chance; Elites always drop
           const hasHoarder = updatedSv.evolvedPerks.includes('scavenger');
           if (killedEnemy.isElite || (hasHoarder && Math.random() < 0.3)) {
@@ -563,9 +604,10 @@ export const useGameStore = create<GameState>((set, get) => ({
             updatedSv = { ...updatedSv, bossActive: null, timeline: [...updatedSv.timeline, { wave: updatedSv.wave, event: 'Boss Killed', detail: killedEnemy.bossName || 'Boss', color: '#fbbf24', timestamp: Date.now() }] };
           }
 
-          // XP orb
+          // XP orb (golden wave: 3x value)
           const orbId = Math.random().toString(36).substr(2, 9);
-          const xpOrbs = [...updatedSv.xpOrbs, { id: orbId, pos: { ...ePos }, value: 10 + updatedSv.wave * 2, spawnTime: Date.now() }];
+          const orbMultiplier = updatedSv.waveEvent === 'golden_wave' ? 3 : 1;
+          const xpOrbs = [...updatedSv.xpOrbs, { id: orbId, pos: { ...ePos }, value: (10 + updatedSv.wave * 2) * orbMultiplier, spawnTime: Date.now() }];
 
           // Combo
           const newCombo = updatedSv.killCombo + 1;
@@ -597,6 +639,40 @@ export const useGameStore = create<GameState>((set, get) => ({
               if (Math.sqrt(dx2 * dx2 + dz2 * dz2) <= 3) {
                 setTimeout(() => get().damageEntity('player', 30, pPos), 0);
               }
+            }
+          }
+
+          // Chain lightning: arc to nearby enemies on kill
+          const chainStacks = updatedSv.perkStacks['chain_lightning'] || 0;
+          if (chainStacks > 0) {
+            const isThunderCannon = updatedSv.weaponEvolutions.includes('thunder_cannon');
+            const jumps = isThunderCannon ? 3 + chainStacks : 1 + chainStacks;
+            const chainDmg = isThunderCannon ? Math.floor(amount * 0.6) : Math.floor(amount * 0.4);
+            updatedSv = { ...updatedSv, chainLightningQueue: [...updatedSv.chainLightningQueue, { pos: { ...ePos }, damage: chainDmg, jumpsLeft: jumps }] };
+            for (let i = 0; i < 3; i++) mkParticle([ePos.x, 0.8, ePos.z], '#38bdf8');
+          }
+
+          // Frost nova: freeze nearby enemies on kill
+          if (updatedSv.activePerks.includes('frost_nova')) {
+            const isFrozenDeath = updatedSv.weaponEvolutions.includes('frozen_death');
+            const frostKillThreshold = isFrozenDeath ? 5 : 1; // frozen_death triggers every 5th kill
+            updatedSv.killsSinceLastFrostNova = (updatedSv.killsSinceLastFrostNova || 0) + 1;
+            if (!isFrozenDeath || updatedSv.killsSinceLastFrostNova >= frostKillThreshold) {
+              updatedSv.killsSinceLastFrostNova = 0;
+              const freezeRadius = isFrozenDeath ? 5 : 3;
+              const freezeDuration = isFrozenDeath ? 3000 : 2000;
+              enemies = enemies.map(e2 => {
+                if (e2.hp > 0 && e2.id !== id) {
+                  const e2Pos = getEnemyPos(e2);
+                  const dx2 = e2Pos.x - ePos.x;
+                  const dz2 = e2Pos.z - ePos.z;
+                  if (Math.sqrt(dx2 * dx2 + dz2 * dz2) <= freezeRadius) {
+                    return { ...e2, frozenUntil: Date.now() + freezeDuration };
+                  }
+                }
+                return e2;
+              });
+              for (let i = 0; i < 6; i++) mkParticle([ePos.x + (Math.random() - 0.5) * 2, 0.5, ePos.z + (Math.random() - 0.5) * 2], '#67e8f9');
             }
           }
 
@@ -772,7 +848,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
   usePortal: () => { const state = get(); if (state.portal && !state.portal.used && state.player) { const ps: Particle[] = []; for (let i = 0; i < 10; i++) { ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posA.x, 0.5, state.portal.posA.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posB.x, 0.5, state.portal.posB.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); } set({ portal: { ...state.portal, used: true }, particles: [...state.particles, ...ps] }); SFX.teleport(); } },
   toggleButton: (id, active) => { const state = get(); const button = state.buttons.find(b => b.id === id); if (!button) return; set(s => ({ buttons: s.buttons.map(b => b.id === id ? { ...b, active } : b), turrets: s.turrets.map(t => t.id === button.targetId ? { ...t, disabled: active } : t) })); },
-  playerShoot: (spawnPos, direction) => { const state = get(); const isSurvival = state.gameMode === 'survival'; const validPhase = isSurvival ? state.phase === 'survival_playing' : state.phase === 'playing'; if (!validPhase || !state.player || state.player.hp <= 0 || (state.countdown !== null && state.countdown > 0.5)) return; const activeWeapon = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? state.player.secondaryWeapon : state.player.weapon; const hasBottomlessMag = isSurvival && state.survivalState?.evolvedPerks.includes('extended_mag'); if (!hasBottomlessMag && activeWeapon.ammo <= 0) { SFX.gunEmpty(); return; } if (!hasBottomlessMag) { const updatedWeapon = { ...activeWeapon, ammo: activeWeapon.ammo - 1 }; const newPlayer = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? { ...state.player, secondaryWeapon: updatedWeapon } : { ...state.player, weapon: updatedWeapon }; set({ player: newPlayer }); } const isSmg = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon; const hollowStacks = isSurvival ? (state.survivalState?.perkStacks['hollow_points'] || 0) : 0; const glassCannonMult = (isSurvival && state.survivalState?.runModifiers.includes('glass_cannon')) ? 2.0 : 1.0; const dmgMult = (1 + hollowStacks * 0.25) * glassCannonMult; const hasBulletHell = isSurvival && state.survivalState?.activePerks.includes('bullet_hell'); const hasExplosiveRounds = isSurvival && state.survivalState?.activePerks.includes('explosive_rounds'); const bulletDamage = Math.floor(activeWeapon.damage * dmgMult); const bulletColor = hasExplosiveRounds ? '#ff6600' : isSmg ? '#22ff44' : undefined; const hasArmorPiercing = isSurvival && state.survivalState?.evolvedPerks.includes('hollow_points'); if (hasBulletHell) { const angles = [-0.15, 0, 0.15]; angles.forEach(a => { const cos = Math.cos(a); const sin = Math.sin(a); const dx = direction.x * cos - direction.z * sin; const dz = direction.x * sin + direction.z * cos; get().addProjectile({ pos: { ...spawnPos }, velocity: { x: dx * 60, z: dz * 60 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor, pierce: hasArmorPiercing || false, hitIds: [] }); }); } else { get().addProjectile({ pos: spawnPos, velocity: { x: direction.x * 60, z: direction.z * 60 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor, pierce: hasArmorPiercing || false, hitIds: [] }); } },
+  playerShoot: (spawnPos, direction) => { const state = get(); const isSurvival = state.gameMode === 'survival'; const validPhase = isSurvival ? state.phase === 'survival_playing' : state.phase === 'playing'; if (!validPhase || !state.player || state.player.hp <= 0 || (state.countdown !== null && state.countdown > 0.5)) return; const activeWeapon = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? state.player.secondaryWeapon : state.player.weapon; const hasBottomlessMag = isSurvival && state.survivalState?.evolvedPerks.includes('extended_mag'); if (!hasBottomlessMag && activeWeapon.ammo <= 0) { SFX.gunEmpty(); return; } if (!hasBottomlessMag) { const updatedWeapon = { ...activeWeapon, ammo: activeWeapon.ammo - 1 }; const newPlayer = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? { ...state.player, secondaryWeapon: updatedWeapon } : { ...state.player, weapon: updatedWeapon }; set({ player: newPlayer }); } const isSmg = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon; const hollowStacks = isSurvival ? (state.survivalState?.perkStacks['hollow_points'] || 0) : 0; const glassCannonMult = (isSurvival && state.survivalState?.runModifiers.includes('glass_cannon')) ? 2.0 : 1.0; const critStacks = isSurvival ? (state.survivalState?.perkStacks['critical_strike'] || 0) : 0; const isAssassin = isSurvival && state.survivalState?.evolvedPerks.includes('critical_strike'); const critChance = isAssassin ? 0.30 : critStacks * 0.15; const critMult = isAssassin ? 5.0 : 3.0; const isCrit = critStacks > 0 && Math.random() < critChance; const critDmgMult = isCrit ? critMult : 1.0; const isLuckyHellfire = isCrit && isSurvival && state.survivalState?.weaponEvolutions.includes('lucky_hellfire'); const dmgMult = (1 + hollowStacks * 0.25) * glassCannonMult * critDmgMult; const hasBulletHell = isSurvival && state.survivalState?.activePerks.includes('bullet_hell'); const hasExplosiveRounds = isSurvival && state.survivalState?.activePerks.includes('explosive_rounds'); const bulletDamage = Math.floor(activeWeapon.damage * dmgMult); const bulletColor = isLuckyHellfire ? '#ff3300' : isCrit ? '#f43f5e' : hasExplosiveRounds ? '#ff6600' : isSmg ? '#22ff44' : undefined; const hasArmorPiercing = isSurvival && state.survivalState?.evolvedPerks.includes('hollow_points'); if (hasBulletHell) { const angles = [-0.15, 0, 0.15]; angles.forEach(a => { const cos = Math.cos(a); const sin = Math.sin(a); const dx = direction.x * cos - direction.z * sin; const dz = direction.x * sin + direction.z * cos; get().addProjectile({ pos: { ...spawnPos }, velocity: { x: dx * 60, z: dz * 60 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor, pierce: hasArmorPiercing || false, hitIds: [] }); }); } else { get().addProjectile({ pos: spawnPos, velocity: { x: direction.x * 60, z: direction.z * 60 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor, pierce: hasArmorPiercing || false, hitIds: [] }); } },
   enemyShoot: (spawnPos, direction, damage) => { get().addProjectile({ pos: spawnPos, velocity: { x: direction.x * 40, z: direction.z * 40 }, damage, life: 2.0, isEnemy: true }); },
   addProjectile: (proj) => { const id = Math.random().toString(36).substr(2, 9); set(state => ({ projectiles: [...state.projectiles, { ...proj, id }] })); },
   removeProjectile: (id) => set(state => ({ projectiles: state.projectiles.filter(p => p.id !== id) })),
@@ -790,7 +866,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     set(state => {
       const merged = [...state.particles, ...newParticles];
-      if (merged.length > 50) merged.splice(0, merged.length - 50);
+      if (merged.length > 120) merged.splice(0, merged.length - 120);
       return { particles: merged };
     });
   },
@@ -834,6 +910,55 @@ export const useGameStore = create<GameState>((set, get) => ({
         floatingTexts: [...s.survivalState.floatingTexts, { id, text, pos: { ...pos }, color, life: 1.0 }]
       } : null
     }));
+  },
+
+  rerollPerks: () => {
+    const state = get();
+    const sv = state.survivalState;
+    if (!sv || sv.rerollsLeft <= 0) return;
+    const offered = pickRandomPerks(sv.wave, sv.activePerks, sv.perkStacks, 3);
+    set({
+      survivalState: {
+        ...sv,
+        offeredPerks: offered.map(p => p.id),
+        rerollsLeft: sv.rerollsLeft - 1,
+      }
+    });
+    SFX.buttonClick();
+  },
+
+  collectChest: (id: string) => {
+    const state = get();
+    const sv = state.survivalState;
+    if (!sv) return;
+    const chest = sv.treasureChests.find(c => c.id === id);
+    if (!chest) return;
+    const newChests = sv.treasureChests.filter(c => c.id !== id);
+    let newPlayer = state.player ? { ...state.player } : null;
+
+    switch (chest.type) {
+      case 'score':
+        set({ survivalState: { ...sv, treasureChests: newChests, score: sv.score + 500 } });
+        get().addFloatingText('+500 TREASURE!', chest.pos, '#fbbf24');
+        break;
+      case 'heal':
+        if (newPlayer) {
+          newPlayer.hp = Math.min(newPlayer.maxHp, newPlayer.hp + 50);
+          set({ player: newPlayer, survivalState: { ...sv, treasureChests: newChests } });
+          get().addFloatingText('+50 HP!', chest.pos, '#22c55e');
+        }
+        break;
+      case 'perk':
+        // Give +1 reroll
+        set({ survivalState: { ...sv, treasureChests: newChests, rerollsLeft: sv.rerollsLeft + 1 } });
+        get().addFloatingText('+1 REROLL!', chest.pos, '#a855f7');
+        break;
+    }
+    // Chest collect particles
+    for (let i = 0; i < 15; i++) {
+      get().addParticle([chest.pos.x, 0.5, chest.pos.z], '#fbbf24');
+    }
+    SFX.buttonClick();
   },
 
   startSurvival: () => {
@@ -917,6 +1042,17 @@ export const useGameStore = create<GameState>((set, get) => ({
         perkFanfare: null,
         bossActive: null,
         evolvedPerks: [],
+        waveEvent: null,
+        waveEventTimer: 0,
+        blackHoleTimer: 20,
+        meteorTimer: 15,
+        frostNovaKillCount: 0,
+        chainLightningQueue: [],
+        treasureChests: [],
+        rerollsLeft: 1,
+        weaponEvolutions: [],
+        screenFlash: null,
+        killsSinceLastFrostNova: 0,
       }
     });
     SFX.levelStart();
@@ -1019,9 +1155,27 @@ export const useGameStore = create<GameState>((set, get) => ({
       bossData = { name: waveConfig.boss.name, id: waveConfig.boss.id, mechanic: waveConfig.boss.mechanic };
     }
 
+    // Roll wave event
+    const waveEvent = rollWaveEvent(newWave);
+    const eventDef = waveEvent ? getWaveEventDef(waveEvent) : null;
+
+    // Blood moon: +50% HP to all enemies in spawn queue
+    if (waveEvent === 'blood_moon') {
+      spawnQueue.forEach(item => {
+        item.def = { ...item.def, hp: Math.floor(item.def.hp * 1.5) };
+      });
+    }
+    // Frenzy: halve spawn delay
+    const finalSpawnDelay = waveEvent === 'frenzy' ? waveConfig.spawnDelay * 0.5 : waveConfig.spawnDelay;
+
     // Cycle themes every 5 waves
     const themes: LevelTheme[] = ['industrial', 'desert', 'space_station', 'cemetery', 'metro', 'garden', 'beach', 'airport'];
     const themeIndex = Math.floor((newWave - 1) / 5) % themes.length;
+
+    const timelineEntries = [...sv.timeline, { wave: newWave, event: bossData ? `Boss: ${bossData.name}` : `Wave ${newWave}`, detail: `${totalEnemies} enemies`, color: bossData ? '#ef4444' : '#6366f1', timestamp: Date.now() }];
+    if (eventDef) {
+      timelineEntries.push({ wave: newWave, event: eventDef.name, detail: eventDef.description, color: eventDef.color, timestamp: Date.now() });
+    }
 
     set({
       phase: 'survival_wave_intro',
@@ -1034,11 +1188,17 @@ export const useGameStore = create<GameState>((set, get) => ({
         waveEnemiesTotal: totalEnemies,
         spawnQueue,
         spawnTimer: 0,
-        spawnDelay: waveConfig.spawnDelay,
+        spawnDelay: finalSpawnDelay,
         waveIntroTimer: bossData ? 3.5 : 2.5,
         waveStartTime: Date.now(),
         bossActive: bossData ? { name: bossData.name, id: bossData.id } : null,
-        timeline: [...sv.timeline, { wave: newWave, event: bossData ? `Boss: ${bossData.name}` : `Wave ${newWave}`, detail: `${totalEnemies} enemies`, color: bossData ? '#ef4444' : '#6366f1', timestamp: Date.now() }],
+        waveEvent,
+        waveEventTimer: 0,
+        treasureChests: [],
+        rerollsLeft: Math.max(1, sv.rerollsLeft),
+        killsSinceLastFrostNova: 0,
+        chainLightningQueue: [],
+        timeline: timelineEntries,
       }
     });
 
@@ -1101,6 +1261,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         break;
       case 'phoenix':
         break; // Handled in survivalState
+      case 'critical_strike':
+      case 'lucky_drops':
+      case 'chain_lightning':
+      case 'frost_nova':
+      case 'black_hole':
+      case 'meteor_shower':
+        break; // Effects handled in survivalTick / damageEntity
     }
 
     // Add perk activation particles
@@ -1122,6 +1289,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       timeline.push({ wave: sv.wave, event: 'EVOLUTION', detail: `${evo.name}: ${evo.description}`, color: '#fbbf24', timestamp: Date.now() });
     }
 
+    // Check weapon evolutions
+    const newWeaponEvolutions = [...sv.weaponEvolutions];
+    const unlocked = getUnlockedWeaponEvolutions(newPerks);
+    for (const we of unlocked) {
+      if (!newWeaponEvolutions.includes(we.id)) {
+        newWeaponEvolutions.push(we.id);
+        timeline.push({ wave: sv.wave, event: 'WEAPON EVOLUTION', detail: `${we.name}: ${we.description}`, color: we.color, timestamp: Date.now() });
+      }
+    }
+
     set({
       player: newPlayer,
       survivalState: {
@@ -1131,6 +1308,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         hasPhoenix: newPerks.includes('phoenix'),
         perkFanfare: { color: perkDef?.color || '#fbbf24', name: evo ? `EVOLVED: ${evo.name}` : perkDef?.name || '', time: Date.now() },
         evolvedPerks,
+        weaponEvolutions: newWeaponEvolutions,
         timeline,
       }
     });
@@ -1317,6 +1495,208 @@ export const useGameStore = create<GameState>((set, get) => ({
           get().addFloatingText('ORBITAL STRIKE!', tPos, '#fbbf24');
         }
       }
+    }
+
+    // --- Black hole ---
+    if (newSv.activePerks.includes('black_hole')) {
+      newSv.blackHoleTimer -= effectiveDt;
+      if (newSv.blackHoleTimer <= 0) {
+        newSv.blackHoleTimer = 20;
+        const aliveEnemies = state.enemies.filter(e => e.hp > 0);
+        if (aliveEnemies.length > 2) {
+          // Pick a spot near the densest cluster
+          const target = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+          const tPos = getEnemyPos(target);
+          // Weapon evolution: void_reaper — pulls then detonates harder
+          const isVoidReaper = newSv.weaponEvolutions.includes('void_reaper');
+          const pullRadius = isVoidReaper ? 10 : 7;
+          const explodeDamage = isVoidReaper ? 120 : 60;
+          // Pull all enemies toward the point
+          const updatedEnemies = get().enemies.map(e => {
+            if (e.hp > 0) {
+              const ep = getEnemyPos(e);
+              const dx = tPos.x - ep.x;
+              const dz = tPos.z - ep.z;
+              const dist = Math.sqrt(dx * dx + dz * dz);
+              if (dist <= pullRadius && dist > 0.5) {
+                const pullStrength = 3;
+                positionCache.set(e.id, { x: ep.x + (dx / dist) * pullStrength, z: ep.z + (dz / dist) * pullStrength });
+              }
+            }
+            return e;
+          });
+          set({ enemies: updatedEnemies });
+          // Delayed explosion
+          setTimeout(() => {
+            const s2 = get();
+            const enemies2 = s2.enemies.map(e => {
+              if (e.hp > 0) {
+                const ep = getEnemyPos(e);
+                const dx = ep.x - tPos.x;
+                const dz = ep.z - tPos.z;
+                if (Math.sqrt(dx * dx + dz * dz) <= pullRadius * 0.7) {
+                  return { ...e, hp: Math.max(0, e.hp - explodeDamage) };
+                }
+              }
+              return e;
+            });
+            set({ enemies: enemies2, explosions: [...s2.explosions, { id: Math.random().toString(36).substr(2, 9), pos: tPos, radius: pullRadius * 0.7, life: 1.0 }] });
+            get().triggerShake();
+            get().addFloatingText('BLACK HOLE!', tPos, '#7c3aed');
+          }, 800);
+          // Visual: dark particles
+          for (let i = 0; i < 20; i++) {
+            get().addParticle([tPos.x + (Math.random() - 0.5) * 4, 1, tPos.z + (Math.random() - 0.5) * 4], '#7c3aed');
+          }
+        }
+      }
+    }
+
+    // --- Meteor shower ---
+    if (newSv.activePerks.includes('meteor_shower')) {
+      newSv.meteorTimer -= effectiveDt;
+      if (newSv.meteorTimer <= 0) {
+        // Weapon evolution: galaxy_brain — 6 meteors instead of 3, stronger
+        const isGalaxy = newSv.weaponEvolutions.includes('galaxy_brain');
+        newSv.meteorTimer = isGalaxy ? 10 : 15;
+        const meteorCount = isGalaxy ? 6 : 3;
+        const meteorDamage = isGalaxy ? 100 : 60;
+        const aliveEnemies = state.enemies.filter(e => e.hp > 0);
+        for (let m = 0; m < meteorCount && aliveEnemies.length > 0; m++) {
+          const target = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+          const tPos = getEnemyPos(target);
+          const updatedEnemies = get().enemies.map(e => {
+            if (e.hp > 0) {
+              const ep = getEnemyPos(e);
+              const dx = ep.x - tPos.x;
+              const dz = ep.z - tPos.z;
+              if (Math.sqrt(dx * dx + dz * dz) <= 3) {
+                return { ...e, hp: Math.max(0, e.hp - meteorDamage) };
+              }
+            }
+            return e;
+          });
+          set({ enemies: updatedEnemies });
+          get().addParticle([tPos.x, 2, tPos.z], '#fb923c');
+          for (let i = 0; i < 8; i++) get().addParticle([tPos.x + (Math.random() - 0.5) * 2, 0.5, tPos.z + (Math.random() - 0.5) * 2], '#ef4444');
+          set(s => ({ explosions: [...s.explosions, { id: Math.random().toString(36).substr(2, 9), pos: { ...tPos }, radius: 3, life: 1.0 }] }));
+        }
+        if (meteorCount > 0) {
+          get().triggerShake();
+          get().addFloatingText('METEOR SHOWER!', pPos, '#fb923c');
+        }
+      }
+    }
+
+    // --- Process chain lightning queue ---
+    if (newSv.chainLightningQueue.length > 0) {
+      const queue = [...newSv.chainLightningQueue];
+      newSv.chainLightningQueue = [];
+      for (const bolt of queue) {
+        if (bolt.jumpsLeft <= 0) continue;
+        // Find nearest alive enemy to bolt position
+        let nearest: EnemyState | null = null;
+        let nearestDist = 5; // max chain range
+        state.enemies.forEach(e => {
+          if (e.hp > 0) {
+            const ep = getEnemyPos(e);
+            const dx = ep.x - bolt.pos.x;
+            const dz = ep.z - bolt.pos.z;
+            const d = Math.sqrt(dx * dx + dz * dz);
+            if (d < nearestDist && d > 0.5) { nearestDist = d; nearest = e; }
+          }
+        });
+        if (nearest) {
+          const nep = getEnemyPos(nearest);
+          get().damageEntity((nearest as EnemyState).id, bolt.damage, nep);
+          get().addParticle([nep.x, 0.8, nep.z], '#38bdf8');
+          get().addParticle([nep.x, 0.5, nep.z], '#60a5fa');
+          // Chain to next
+          newSv.chainLightningQueue.push({ pos: { ...nep }, damage: Math.floor(bolt.damage * 0.7), jumpsLeft: bolt.jumpsLeft - 1 });
+        }
+      }
+    }
+
+    // --- Wave event: cursed wave (3 DPS to player) ---
+    if (newSv.waveEvent === 'cursed_wave' && state.player.hp > 0) {
+      newSv.waveEventTimer += effectiveDt;
+      if (newSv.waveEventTimer >= 1.0) {
+        newSv.waveEventTimer -= 1.0;
+        const newHp = Math.max(1, state.player.hp - 3);
+        set({ player: { ...state.player, hp: newHp } });
+      }
+    }
+
+    // --- Wave event: treasure rain (spawn chests periodically) ---
+    if (newSv.waveEvent === 'treasure_rain') {
+      newSv.waveEventTimer += effectiveDt;
+      if (newSv.waveEventTimer >= 8.0 && newSv.treasureChests.length < 5) {
+        newSv.waveEventTimer = 0;
+        const chestTypes: ('score' | 'heal' | 'perk')[] = ['score', 'heal', 'perk'];
+        const ct = chestTypes[Math.floor(Math.random() * chestTypes.length)];
+        const cx = 3 + Math.random() * (newSv.arenaSize - 6);
+        const cz = 3 + Math.random() * (newSv.arenaSize - 6);
+        newSv.treasureChests = [...newSv.treasureChests, { id: `chest_${Date.now()}`, pos: { x: cx, z: cz }, type: ct }];
+      }
+    }
+
+    // --- Necromancer resurrection logic ---
+    // Find alive necromancers and check if they can resurrect nearby dead enemies
+    const aliveNecros = state.enemies.filter(e => e.hp > 0 && (e as any).resurrects);
+    if (aliveNecros.length > 0) {
+      newSv.waveEventTimer += effectiveDt; // reuse timer
+      // Necros resurrect one dead enemy every 8 seconds
+      const deadEnemies = state.enemies.filter(e => e.hp <= 0 && !(e as any).resurrects && !(e as any).wasResurrected);
+      if (deadEnemies.length > 0 && Math.random() < effectiveDt * 0.125) { // ~1 per 8 sec
+        const necro = aliveNecros[Math.floor(Math.random() * aliveNecros.length)];
+        const necroPos = getEnemyPos(necro);
+        // Find nearest dead enemy
+        let nearDead: EnemyState | null = null;
+        let nearDeadDist = 8;
+        deadEnemies.forEach(de => {
+          const dp = getEnemyPos(de);
+          const d = Math.sqrt((dp.x - necroPos.x) ** 2 + (dp.z - necroPos.z) ** 2);
+          if (d < nearDeadDist) { nearDeadDist = d; nearDead = de; }
+        });
+        if (nearDead) {
+          const dePos = getEnemyPos(nearDead);
+          const resId = `res_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+          const resEnemy: EnemyState = {
+            type: 'enemy', id: resId, pos: { ...dePos }, rotation: 0,
+            hp: Math.floor((nearDead as EnemyState).maxHp * 0.5), maxHp: Math.floor((nearDead as EnemyState).maxHp * 0.5),
+            weapon: { ...(nearDead as EnemyState).weapon }, color: '#e879f9',
+          };
+          (resEnemy as any).survivalType = 'grunt';
+          (resEnemy as any).survivalSpeed = 4.0;
+          (resEnemy as any).scale = 0.9;
+          (resEnemy as any).wasResurrected = true;
+          spawnedEnemies.push(resEnemy);
+          newSv.waveEnemiesRemaining++;
+          get().addFloatingText('RESURRECTED!', dePos, '#c026d3');
+          for (let i = 0; i < 8; i++) get().addParticle([dePos.x, 0.5, dePos.z], '#c026d3');
+        }
+      }
+    }
+
+    // --- Shielder aura logic ---
+    const aliveShielders = state.enemies.filter(e => e.hp > 0 && (e as any).shieldsAllies);
+    if (aliveShielders.length > 0) {
+      const shieldRadius = 4;
+      const updatedEnemies = state.enemies.map(e => {
+        if (e.hp <= 0 || (e as any).shieldsAllies) return e;
+        const ep = getEnemyPos(e);
+        let shielded = false;
+        for (const sh of aliveShielders) {
+          const sp = getEnemyPos(sh);
+          const d = Math.sqrt((ep.x - sp.x) ** 2 + (ep.z - sp.z) ** 2);
+          if (d <= shieldRadius) { shielded = true; break; }
+        }
+        if (shielded !== (e.allyShielded || false)) {
+          return { ...e, allyShielded: shielded };
+        }
+        return e;
+      });
+      set({ enemies: updatedEnemies });
     }
 
     // --- Shadow clone AI ---

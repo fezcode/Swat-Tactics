@@ -1,6 +1,6 @@
 import type { Weapon } from '../types';
 
-export type SurvivalEnemyType = 'grunt' | 'rusher' | 'sniper' | 'tank' | 'bomber' | 'ghost' | 'splitter';
+export type SurvivalEnemyType = 'grunt' | 'rusher' | 'sniper' | 'tank' | 'bomber' | 'ghost' | 'splitter' | 'necromancer' | 'shielder';
 export type SpawnPattern = 'surround' | 'north_rush' | 'pincer' | 'corners' | 'spiral' | 'rain';
 export type WaveMutation = 'fast_forward' | 'armored' | 'vengeful' | 'darkness' | 'berserker';
 
@@ -15,6 +15,8 @@ export interface SurvivalEnemyDef {
   transparent?: boolean;
   explodesOnDeath?: boolean;
   splitsOnDeath?: boolean;
+  resurrects?: boolean;     // Necromancer: resurrects nearby dead enemies
+  shieldsAllies?: boolean;  // Shielder: projects shield bubble onto nearby allies
 }
 
 export interface BossConfig {
@@ -43,6 +45,8 @@ const ENEMY_COLORS: Record<SurvivalEnemyType, string> = {
   bomber: '#f59e0b',
   ghost: '#94a3b8',
   splitter: '#10b981',
+  necromancer: '#c026d3',
+  shielder: '#2dd4bf',
 };
 
 const SPAWN_PATTERNS: SpawnPattern[] = ['surround', 'north_rush', 'pincer', 'corners', 'spiral', 'rain'];
@@ -57,6 +61,8 @@ function makeWeapon(type: SurvivalEnemyType, wave: number): Weapon {
     case 'bomber': return { name: 'Bomb', ammo: 999, maxAmmo: 999, damage: baseDamage };
     case 'ghost': return { name: 'Pistol', ammo: 999, maxAmmo: 999, damage: baseDamage + 2 };
     case 'splitter': return { name: 'Pistol', ammo: 999, maxAmmo: 999, damage: Math.floor(baseDamage * 0.6) };
+    case 'necromancer': return { name: 'Staff', ammo: 999, maxAmmo: 999, damage: baseDamage + 3 };
+    case 'shielder': return { name: 'Pistol', ammo: 999, maxAmmo: 999, damage: baseDamage - 2 };
   }
 }
 
@@ -67,7 +73,9 @@ function getUnlockedTypes(wave: number): SurvivalEnemyType[] {
   if (wave >= 7) types.push('tank');
   if (wave >= 10) types.push('bomber');
   if (wave >= 15) types.push('ghost');
+  if (wave >= 18) types.push('shielder');
   if (wave >= 20) types.push('splitter');
+  if (wave >= 25) types.push('necromancer');
   return types;
 }
 
@@ -108,6 +116,8 @@ export function generateWave(wave: number, mutations: WaveMutation[]): WaveConfi
       case 'bomber': hp = baseHp * 0.6; speed = 6.5; break;
       case 'ghost': hp = baseHp * 0.8; speed = 6.0; break;
       case 'splitter': hp = baseHp * 0.4; speed = 5.0; scale = 0.8; break;
+      case 'necromancer': hp = baseHp * 1.2; speed = 3.0; scale = 1.2; break;
+      case 'shielder': hp = baseHp * 0.9; speed = 4.0; scale = 1.1; break;
     }
     return {
       type,
@@ -120,6 +130,8 @@ export function generateWave(wave: number, mutations: WaveMutation[]): WaveConfi
       transparent: type === 'ghost',
       explodesOnDeath: type === 'bomber',
       splitsOnDeath: type === 'splitter',
+      resurrects: type === 'necromancer',
+      shieldsAllies: type === 'shielder',
     };
   };
 
@@ -193,6 +205,37 @@ export function getMutationsForWave(wave: number): WaveMutation[] {
   if (wave >= 40) mutations.push('darkness');
   if (wave >= 50) mutations.push('berserker');
   return mutations;
+}
+
+// Wave events — random mid-wave modifiers for excitement
+export type WaveEvent = 'golden_wave' | 'cursed_wave' | 'frenzy' | 'treasure_rain' | 'blood_moon';
+
+export interface WaveEventDef {
+  id: WaveEvent;
+  name: string;
+  description: string;
+  color: string;
+  scoreMultiplier: number;
+}
+
+export const WAVE_EVENTS: WaveEventDef[] = [
+  { id: 'golden_wave', name: 'GOLDEN WAVE', description: 'All enemies drop 3x XP!', color: '#fbbf24', scoreMultiplier: 2.0 },
+  { id: 'cursed_wave', name: 'CURSED WAVE', description: 'Player takes 3 DPS, but 2x score', color: '#7c3aed', scoreMultiplier: 2.0 },
+  { id: 'frenzy', name: 'FRENZY', description: 'Enemies spawn 2x faster!', color: '#ef4444', scoreMultiplier: 1.5 },
+  { id: 'treasure_rain', name: 'TREASURE RAIN', description: 'Chests spawn throughout the wave', color: '#22c55e', scoreMultiplier: 1.0 },
+  { id: 'blood_moon', name: 'BLOOD MOON', description: 'Enemies have 50% more HP but drop health', color: '#dc2626', scoreMultiplier: 1.3 },
+];
+
+export function rollWaveEvent(wave: number): WaveEvent | null {
+  if (wave < 5) return null;
+  // 25% chance per wave starting at wave 5
+  if (Math.random() > 0.25) return null;
+  const available = WAVE_EVENTS;
+  return available[Math.floor(Math.random() * available.length)].id;
+}
+
+export function getWaveEventDef(id: WaveEvent): WaveEventDef {
+  return WAVE_EVENTS.find(e => e.id === id)!;
 }
 
 export function getMutationLabel(m: WaveMutation): string {

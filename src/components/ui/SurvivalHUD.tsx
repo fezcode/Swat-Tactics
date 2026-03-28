@@ -2,8 +2,8 @@ import { useGameStore } from '../../game/store';
 import { positionCache } from '../../game/positionCache';
 import { SFX } from '../../game/sounds';
 import { PerkSelection } from './PerkSelection';
-import { PERKS, getActiveEvolutions } from '../../game/survivalPerks';
-import { getMutationLabel, getMutationColor } from '../../game/survivalWaves';
+import { PERKS, getActiveEvolutions, WEAPON_EVOLUTIONS } from '../../game/survivalPerks';
+import { getMutationLabel, getMutationColor, getWaveEventDef } from '../../game/survivalWaves';
 import { useState, useEffect, useRef } from 'react';
 import type { RunTimelineEntry } from '../../game/store';
 
@@ -253,9 +253,6 @@ export function SurvivalHUD() {
 
   if (!survivalState) return null;
 
-  const handleClick = (action: () => void) => { SFX.buttonClick(); action(); };
-  const handleHover = () => { SFX.buttonHover(); };
-
   if (phase === 'survival_perk_select') {
     return <PerkSelection />;
   }
@@ -339,6 +336,26 @@ export function SurvivalHUD() {
               ))}
             </div>
           )}
+          {/* Wave event display */}
+          {survivalState.waveEvent && (() => {
+            const eventDef = getWaveEventDef(survivalState.waveEvent!);
+            return (
+              <div className="mt-4 animate-pulse">
+                <div className="px-6 py-2 text-center" style={{
+                  background: `${eventDef.color}20`,
+                  border: `2px solid ${eventDef.color}`,
+                  boxShadow: `0 0 20px ${eventDef.color}40`,
+                }}>
+                  <div className="text-lg font-black italic tracking-tighter" style={{ color: eventDef.color }}>
+                    {eventDef.name}
+                  </div>
+                  <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: `${eventDef.color}cc` }}>
+                    {eventDef.description}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
           {/* Run modifiers display */}
           {survivalState.runModifiers.length > 0 && survivalState.wave <= 1 && (
             <div className="mt-4 flex gap-2">
@@ -466,6 +483,31 @@ export function SurvivalHUD() {
                   {getMutationLabel(m as any)}
                 </div>
               ))}
+            </div>
+          )}
+          {/* Active wave event */}
+          {survivalState.waveEvent && phase === 'survival_playing' && (() => {
+            const eventDef = getWaveEventDef(survivalState.waveEvent!);
+            return (
+              <div className="px-2 py-0.5 text-[9px] font-black tracking-widest uppercase animate-pulse"
+                style={{ background: `${eventDef.color}20`, color: eventDef.color, border: `1px solid ${eventDef.color}60` }}>
+                {eventDef.name}
+              </div>
+            );
+          })()}
+          {/* Weapon evolutions */}
+          {survivalState.weaponEvolutions.length > 0 && (
+            <div className="flex gap-1">
+              {survivalState.weaponEvolutions.map((weId: string) => {
+                const we = WEAPON_EVOLUTIONS.find(w => w.id === weId);
+                if (!we) return null;
+                return (
+                  <div key={weId} className="px-2 py-0.5 text-[8px] font-black tracking-widest uppercase"
+                    style={{ background: `${we.color}20`, color: we.color, border: `1px solid ${we.color}40` }}>
+                    {we.name}
+                  </div>
+                );
+              })}
             </div>
           )}
           {/* Run modifiers */}
