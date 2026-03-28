@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { useGameStore } from '../../game/store';
 import { Wall } from './Wall';
@@ -6,6 +7,7 @@ import { AmmoBox } from '../entities/AmmoBox';
 import { Portal } from '../entities/Portal';
 import { Turret } from '../entities/Turret';
 import { Button } from '../entities/Button';
+import { obstacleCache } from '../../game/positionCache';
 
 export function GridMap() {
   const walls = useGameStore(s => s.walls);
@@ -19,6 +21,14 @@ export function GridMap() {
   const portal = useGameStore(s => s.portal);
   const theme = useGameStore(s => s.theme);
   const decorations = useGameStore(s => s.decorations);
+
+  // Register wall AABBs for bullet collision (runs synchronously during render)
+  useMemo(() => {
+    obstacleCache.clear();
+    for (const w of walls) {
+      obstacleCache.add({ minX: w.x - 0.5, maxX: w.x + 0.5, minZ: w.z - 0.5, maxZ: w.z + 0.5 });
+    }
+  }, [walls]);
   const allDead = (enemies.length > 0 || turrets.length > 0) && 
     enemies.filter(e => !e.unkillable).every(e => e.hp <= 0) && 
     turrets.every(t => t.hp <= 0 || t.disabled);

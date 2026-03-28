@@ -3,6 +3,7 @@ import type { PlayerState, EnemyState, BarrelState, GamePhase, GameMode, Positio
 import { LEVELS } from './levels';
 import { SFX, Music } from './sounds';
 import type { PerkId } from './survivalPerks';
+import { obstacleCache } from './positionCache';
 import { positionCache } from './positionCache';
 
 // --- LocalStorage persistence for settings ---
@@ -358,6 +359,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
   loadLevel: (index) => {
     if (index >= LEVELS.length) { get().setPhase('victory'); return; }
+    obstacleCache.clear();
     const level = LEVELS[index];
     const player = get().player;
     const hasDualWeapon = index >= 50;
@@ -803,6 +805,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   startSurvival: () => {
+    obstacleCache.clear();
     const arenaSize = 30;
     const cx = arenaSize / 2;
     const cz = arenaSize / 2;

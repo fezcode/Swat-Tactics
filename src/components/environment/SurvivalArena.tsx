@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { HealthBox } from '../entities/HealthBox';
 import { AmmoBox } from '../entities/AmmoBox';
 import { Barrel } from '../entities/Barrel';
+import { obstacleCache } from '../../game/positionCache';
 
 const THEME_COLORS: Record<string, { floor: string; floor2: string; grid: string; obelisk: string; glow: string; fog: string; accent: string }> = {
   industrial: { floor: '#1a1e2e', floor2: '#161a28', grid: '#2dd4bf', obelisk: '#3b82f6', glow: '#3b82f6', fog: '#0a0e1a', accent: '#64748b' },
@@ -344,6 +345,312 @@ function LuggageCart({ position, rotation }: { position: [number, number, number
   );
 }
 
+// --- Defensive structures (with physics — players can enter/hide) ---
+
+function Bunker({ position, rotation, color }: { position: [number, number, number]; rotation: number; color: string }) {
+  // Half-open castle: 3 walls + roof, open on one side for entry
+  return (
+    <RigidBody type="fixed" position={position} rotation={[0, rotation, 0]} colliders={false} userData={{ type: 'wall' }}>
+      {/* Back wall */}
+      <CuboidCollider args={[2.0, 1.0, 0.15]} position={[0, 1.0, -1.5]} />
+      <mesh position={[0, 1.0, -1.5]}>
+        <boxGeometry args={[4.0, 2.0, 0.3]} />
+        <meshStandardMaterial color={color} roughness={0.85} metalness={0.2} />
+      </mesh>
+      {/* Left wall */}
+      <CuboidCollider args={[0.15, 1.0, 1.5]} position={[-1.85, 1.0, 0]} />
+      <mesh position={[-1.85, 1.0, 0]}>
+        <boxGeometry args={[0.3, 2.0, 3.0]} />
+        <meshStandardMaterial color={color} roughness={0.85} metalness={0.2} />
+      </mesh>
+      {/* Right wall */}
+      <CuboidCollider args={[0.15, 1.0, 1.5]} position={[1.85, 1.0, 0]} />
+      <mesh position={[1.85, 1.0, 0]}>
+        <boxGeometry args={[0.3, 2.0, 3.0]} />
+        <meshStandardMaterial color={color} roughness={0.85} metalness={0.2} />
+      </mesh>
+      {/* Roof slab */}
+      <mesh position={[0, 2.05, -0.25]}>
+        <boxGeometry args={[4.0, 0.15, 2.5]} />
+        <meshStandardMaterial color={color} roughness={0.9} metalness={0.15} />
+      </mesh>
+      {/* Battlements on back wall */}
+      {[-1.4, -0.5, 0.5, 1.4].map((x, i) => (
+        <mesh key={i} position={[x, 2.35, -1.5]}>
+          <boxGeometry args={[0.5, 0.5, 0.35]} />
+          <meshStandardMaterial color={color} roughness={0.9} metalness={0.15} />
+        </mesh>
+      ))}
+      {/* Side battlements */}
+      {[-0.8, 0.8].map((z, i) => (
+        <group key={`s${i}`}>
+          <mesh position={[-1.85, 2.35, z]}>
+            <boxGeometry args={[0.35, 0.5, 0.5]} />
+            <meshStandardMaterial color={color} roughness={0.9} metalness={0.15} />
+          </mesh>
+          <mesh position={[1.85, 2.35, z]}>
+            <boxGeometry args={[0.35, 0.5, 0.5]} />
+            <meshStandardMaterial color={color} roughness={0.9} metalness={0.15} />
+          </mesh>
+        </group>
+      ))}
+    </RigidBody>
+  );
+}
+
+function SandbagWall({ position, rotation }: { position: [number, number, number]; rotation: number }) {
+  // L-shaped sandbag cover
+  return (
+    <RigidBody type="fixed" position={position} rotation={[0, rotation, 0]} colliders={false} userData={{ type: 'wall' }}>
+      {/* Long side */}
+      <CuboidCollider args={[1.2, 0.35, 0.25]} position={[0, 0.35, 0]} />
+      <mesh position={[0, 0.35, 0]}>
+        <boxGeometry args={[2.4, 0.7, 0.5]} />
+        <meshStandardMaterial color="#8B7355" roughness={0.95} />
+      </mesh>
+      {/* Short side (L bend) */}
+      <CuboidCollider args={[0.25, 0.35, 0.6]} position={[-1.15, 0.35, -0.85]} />
+      <mesh position={[-1.15, 0.35, -0.85]}>
+        <boxGeometry args={[0.5, 0.7, 1.2]} />
+        <meshStandardMaterial color="#8B7355" roughness={0.95} />
+      </mesh>
+      {/* Sandbag texture bumps */}
+      {[[-0.6, 0.6, 0.2], [0.3, 0.55, 0.2], [-0.1, 0.75, 0.15]].map(([x, y, z], i) => (
+        <mesh key={i} position={[x, y, z]}>
+          <sphereGeometry args={[0.15, 5, 4]} />
+          <meshStandardMaterial color="#9B8565" roughness={0.98} />
+        </mesh>
+      ))}
+    </RigidBody>
+  );
+}
+
+function WatchTower({ position, color }: { position: [number, number, number]; color: string }) {
+  // Small raised platform with half-walls — provides elevated cover
+  return (
+    <RigidBody type="fixed" position={position} colliders={false} userData={{ type: 'wall' }}>
+      {/* 4 legs */}
+      {[[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]].map(([x, z], i) => (
+        <mesh key={`leg${i}`} position={[x, 0.75, z]}>
+          <cylinderGeometry args={[0.06, 0.08, 1.5, 5]} />
+          <meshStandardMaterial color="#4a3728" roughness={0.9} />
+        </mesh>
+      ))}
+      {/* Platform */}
+      <CuboidCollider args={[1.0, 0.06, 1.0]} position={[0, 1.5, 0]} />
+      <mesh position={[0, 1.5, 0]}>
+        <boxGeometry args={[2.0, 0.12, 2.0]} />
+        <meshStandardMaterial color="#5c4033" roughness={0.85} />
+      </mesh>
+      {/* Half-walls (2 sides only, leaving 2 sides open) */}
+      <CuboidCollider args={[1.0, 0.3, 0.06]} position={[0, 1.86, -0.94]} />
+      <mesh position={[0, 1.86, -0.94]}>
+        <boxGeometry args={[2.0, 0.6, 0.12]} />
+        <meshStandardMaterial color={color} roughness={0.85} metalness={0.2} />
+      </mesh>
+      <CuboidCollider args={[0.06, 0.3, 1.0]} position={[-0.94, 1.86, 0]} />
+      <mesh position={[-0.94, 1.86, 0]}>
+        <boxGeometry args={[0.12, 0.6, 2.0]} />
+        <meshStandardMaterial color={color} roughness={0.85} metalness={0.2} />
+      </mesh>
+    </RigidBody>
+  );
+}
+
+function Crate({ position, scale = 1, color }: { position: [number, number, number]; scale?: number; color: string }) {
+  return (
+    <group position={position} scale={[scale, scale, scale]}>
+      <mesh position={[0, 0.3, 0]}>
+        <boxGeometry args={[0.6, 0.6, 0.6]} />
+        <meshStandardMaterial color={color} roughness={0.85} />
+      </mesh>
+      {/* Cross slats */}
+      <mesh position={[0, 0.3, 0.31]}>
+        <boxGeometry args={[0.5, 0.05, 0.01]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.3, 0.31]} rotation={[0, 0, Math.PI / 2]}>
+        <boxGeometry args={[0.5, 0.05, 0.01]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+function Pipe({ position, rotation, length = 3 }: { position: [number, number, number]; rotation: number; length?: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh position={[0, 0.15, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.12, 0.12, length, 8]} />
+        <meshStandardMaterial color="#78716c" metalness={0.9} roughness={0.2} />
+      </mesh>
+    </group>
+  );
+}
+
+function ServerRack({ position, color }: { position: [number, number, number]; color: string }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.8, 0]}>
+        <boxGeometry args={[0.6, 1.6, 0.4]} />
+        <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.1} />
+      </mesh>
+      {[0.3, 0.6, 0.9, 1.2].map((y, i) => (
+        <mesh key={i} position={[0, y, 0.21]}>
+          <boxGeometry args={[0.4, 0.08, 0.01]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Crypt({ position, rotation, color }: { position: [number, number, number]; rotation: number; color: string }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh position={[0, 0.5, 0]}>
+        <boxGeometry args={[1.4, 1.0, 1.0]} />
+        <meshStandardMaterial color="#4a4a50" roughness={0.9} />
+      </mesh>
+      {/* Roof */}
+      <mesh position={[0, 1.15, 0]} scale={[1.5, 0.35, 1.1]}>
+        <coneGeometry args={[0.6, 1, 4]} />
+        <meshStandardMaterial color="#3a3a40" roughness={0.9} />
+      </mesh>
+      {/* Door opening (dark) */}
+      <mesh position={[0, 0.35, 0.51]}>
+        <boxGeometry args={[0.4, 0.7, 0.02]} />
+        <meshBasicMaterial color="#000000" />
+      </mesh>
+      {/* Glow accent */}
+      <mesh position={[0, 0.9, 0.51]}>
+        <boxGeometry args={[0.3, 0.05, 0.01]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} />
+      </mesh>
+    </group>
+  );
+}
+
+function Gazebo({ position, color }: { position: [number, number, number]; color: string }) {
+  return (
+    <group position={position}>
+      {/* 4 pillars */}
+      {[[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]].map(([x, z], i) => (
+        <mesh key={i} position={[x, 1.0, z]}>
+          <cylinderGeometry args={[0.06, 0.06, 2.0, 6]} />
+          <meshStandardMaterial color="#f5f5f4" roughness={0.5} />
+        </mesh>
+      ))}
+      {/* Roof */}
+      <mesh position={[0, 2.2, 0]}>
+        <coneGeometry args={[1.4, 0.6, 4]} />
+        <meshStandardMaterial color={color} roughness={0.7} />
+      </mesh>
+      {/* Base circle */}
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[1.2, 8]} />
+        <meshStandardMaterial color="#d6d3d1" roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
+function LifeguardTower({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* Legs */}
+      {[[-0.5, -0.5], [0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]].map(([x, z], i) => (
+        <mesh key={i} position={[x, 1.0, z]}>
+          <cylinderGeometry args={[0.05, 0.07, 2.0, 5]} />
+          <meshStandardMaterial color="#d4a373" roughness={0.8} />
+        </mesh>
+      ))}
+      {/* Platform */}
+      <mesh position={[0, 2.05, 0]}>
+        <boxGeometry args={[1.3, 0.1, 1.3]} />
+        <meshStandardMaterial color="#d4a373" roughness={0.8} />
+      </mesh>
+      {/* Cabin */}
+      <mesh position={[0, 2.5, 0]}>
+        <boxGeometry args={[1.1, 0.8, 1.1]} />
+        <meshStandardMaterial color="#ef4444" roughness={0.6} />
+      </mesh>
+      {/* Roof */}
+      <mesh position={[0, 3.05, 0]}>
+        <boxGeometry args={[1.3, 0.08, 1.3]} />
+        <meshStandardMaterial color="#dc2626" roughness={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
+function ControlTower({ position, color }: { position: [number, number, number]; color: string }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 1.2, 0]}>
+        <boxGeometry args={[0.8, 2.4, 0.8]} />
+        <meshStandardMaterial color="#374151" metalness={0.7} roughness={0.3} />
+      </mesh>
+      {/* Windows */}
+      <mesh position={[0, 2.1, 0.41]}>
+        <boxGeometry args={[0.6, 0.4, 0.01]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} transparent opacity={0.7} />
+      </mesh>
+      {/* Antenna */}
+      <mesh position={[0, 2.8, 0]}>
+        <cylinderGeometry args={[0.02, 0.02, 1.2, 4]} />
+        <meshStandardMaterial color="#6b7280" metalness={0.9} roughness={0.2} />
+      </mesh>
+      <mesh position={[0, 3.4, 0]}>
+        <sphereGeometry args={[0.05, 4, 4]} />
+        <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={3} />
+      </mesh>
+    </group>
+  );
+}
+
+function Windsock({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 1.5, 0]}>
+        <cylinderGeometry args={[0.03, 0.03, 3.0, 4]} />
+        <meshStandardMaterial color="#d4d4d8" metalness={0.7} roughness={0.3} />
+      </mesh>
+      <mesh position={[0.3, 2.9, 0]} rotation={[0, 0, -0.4]}>
+        <coneGeometry args={[0.12, 0.6, 4]} />
+        <meshStandardMaterial color="#f97316" roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
+function IronFence({ position, rotation, length = 3 }: { position: [number, number, number]; rotation: number; length?: number }) {
+  const count = Math.floor(length / 0.3);
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      {/* Horizontal rail */}
+      <mesh position={[0, 0.9, 0]}>
+        <boxGeometry args={[length, 0.04, 0.04]} />
+        <meshStandardMaterial color="#1f2937" metalness={0.9} roughness={0.2} />
+      </mesh>
+      <mesh position={[0, 0.05, 0]}>
+        <boxGeometry args={[length, 0.04, 0.04]} />
+        <meshStandardMaterial color="#1f2937" metalness={0.9} roughness={0.2} />
+      </mesh>
+      {/* Vertical bars */}
+      {Array.from({ length: count }, (_, i) => {
+        const x = -length / 2 + i * (length / count) + length / count / 2;
+        return (
+          <mesh key={i} position={[x, 0.47, 0]}>
+            <cylinderGeometry args={[0.015, 0.015, 0.85, 4]} />
+            <meshStandardMaterial color="#1f2937" metalness={0.9} roughness={0.2} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
 // Track rail - static, no physics
 function TrackRail({ position, length, rotation }: { position: [number, number, number]; length: number; rotation: number }) {
   return (
@@ -418,116 +725,175 @@ export function SurvivalArena() {
       }
     }
 
-    // Barriers (physics, 2-3)
-    for (let i = 0; i < 3; i++) {
+    // Barriers (physics, 3-4)
+    for (let i = 0; i < 4; i++) {
       const p = randPos(4);
       if (p) decos.push({ type: 'barrier', pos: p, rot: rand() * Math.PI, scale: 1, color: '' });
     }
 
-    // Rubble (visual, 4-6)
-    for (let i = 0; i < 5; i++) {
+    // Sandbag walls (physics, 2)
+    for (let i = 0; i < 2; i++) {
+      const p = randPos(5);
+      if (p) decos.push({ type: 'sandbag', pos: p, rot: rand() * Math.PI, scale: 1, color: '' });
+    }
+
+    // Bunker/fort — 1 per arena, always present
+    {
+      const bunkerPos = randPos(6);
+      const bunkerColors: Record<string, string> = {
+        industrial: '#4a5568', desert: '#92775a', space_station: '#1e293b', cemetery: '#3a3a40',
+        metro: '#44403c', garden: '#5c7a50', beach: '#c4a882', airport: '#475569',
+      };
+      if (bunkerPos) decos.push({ type: 'bunker', pos: bunkerPos, rot: rand() * Math.PI * 2, scale: 1, color: bunkerColors[theme] || '#4a5568' });
+    }
+
+    // Rubble (visual, 6-8)
+    for (let i = 0; i < 7; i++) {
       decos.push({ type: 'rubble', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 0.6 + rand() * 1.0, color: '' });
+    }
+
+    // Crates (visual, 3-5)
+    for (let i = 0; i < 4; i++) {
+      const crateColors = ['#5c4033', '#6b4423', '#78593a', '#4a3728'];
+      decos.push({ type: 'crate', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 0.7 + rand() * 0.6, color: crateColors[Math.floor(rand() * crateColors.length)] });
     }
 
     switch (theme) {
       case 'industrial':
       case 'metro': {
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 5; i++) {
           const q = i;
           const qx = q < 2 ? margin + rand() * (sz * 0.25) : sz * 0.75 + rand() * (sz * 0.25 - margin);
           const qz = q % 2 === 0 ? margin + rand() * (sz * 0.25) : sz * 0.75 + rand() * (sz * 0.25 - margin);
           decos.push({ type: 'tree', pos: [qx, 0, qz], rot: rand() * Math.PI * 2, scale: 0.8 + rand() * 0.6, color: '' });
         }
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 3; i++) {
           const p = randPos(5);
           if (p) decos.push({ type: 'container', pos: p, rot: rand() * Math.PI, scale: 1, color: ['#991b1b', '#1e3a5f', '#374151'][Math.floor(rand() * 3)] });
         }
         decos.push({ type: 'billboard', pos: [sz * 0.25, 0, margin + 1], rot: 0, scale: 1, color: colors.glow });
+        decos.push({ type: 'billboard', pos: [sz * 0.7, 0, sz - margin - 1], rot: Math.PI, scale: 1, color: colors.glow });
         decos.push({ type: 'track', pos: [sz / 2, 0, sz * 0.2], rot: 0, scale: sz * 0.5, color: '' });
         if (wave > 3) decos.push({ type: 'train', pos: [sz * 0.35, 0, sz * 0.15 + rand() * 3], rot: rand() * 0.2, scale: 1, color: '' });
+        // Pipes and watchtower for industrial feel
+        for (let i = 0; i < 3; i++) {
+          decos.push({ type: 'pipe', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: rand() * Math.PI, scale: 2 + rand() * 3, color: '' });
+        }
+        { const p = randPos(6); if (p) decos.push({ type: 'watchtower', pos: p, rot: 0, scale: 1, color: colors.accent }); }
         break;
       }
       case 'desert': {
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 8; i++) {
           const p = randPos(3);
           if (p) decos.push({ type: 'cactus', pos: p, rot: 0, scale: 0.7 + rand() * 0.8, color: '' });
         }
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 6; i++) {
           decos.push({ type: 'sand_dune', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 1 + rand() * 2, color: '' });
         }
-        const p = randPos(5);
-        if (p) decos.push({ type: 'container', pos: p, rot: rand() * Math.PI, scale: 1, color: '#78350f' });
+        for (let i = 0; i < 2; i++) {
+          const p = randPos(5);
+          if (p) decos.push({ type: 'container', pos: p, rot: rand() * Math.PI, scale: 1, color: '#78350f' });
+        }
+        { const p = randPos(6); if (p) decos.push({ type: 'watchtower', pos: p, rot: 0, scale: 1, color: '#92400e' }); }
         break;
       }
       case 'space_station': {
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 6; i++) {
           const p = randPos(4);
           if (p) decos.push({ type: 'tech_pillar', pos: p, rot: 0, scale: 1, color: colors.glow });
         }
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
           decos.push({ type: 'holo_ring', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 1, color: colors.glow });
         }
+        for (let i = 0; i < 3; i++) {
+          const p = randPos(3);
+          if (p) decos.push({ type: 'server_rack', pos: p, rot: 0, scale: 1, color: colors.glow });
+        }
         decos.push({ type: 'billboard', pos: [sz * 0.3, 0, margin + 1], rot: 0, scale: 1, color: colors.glow });
+        decos.push({ type: 'billboard', pos: [sz * 0.65, 0, sz - margin - 1], rot: Math.PI, scale: 1, color: colors.glow });
         break;
       }
       case 'cemetery': {
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 12; i++) {
           const p = randPos(3);
           if (p) decos.push({ type: 'tombstone', pos: p, rot: rand() * 0.3 - 0.15, scale: 0.7 + rand() * 0.5, color: '' });
         }
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 5; i++) {
           const q = i;
           const qx = q < 2 ? margin + rand() * (sz * 0.3) : sz * 0.7 + rand() * (sz * 0.3 - margin);
           const qz = q % 2 === 0 ? margin + rand() * (sz * 0.3) : sz * 0.7 + rand() * (sz * 0.3 - margin);
           decos.push({ type: 'tree', pos: [qx, 0, qz], rot: rand() * Math.PI * 2, scale: 0.9 + rand() * 0.5, color: '' });
         }
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
           decos.push({ type: 'fog_pillar', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 1, color: '#6366f1' });
+        }
+        // Crypts
+        for (let i = 0; i < 2; i++) {
+          const p = randPos(5);
+          if (p) decos.push({ type: 'crypt', pos: p, rot: rand() * Math.PI, scale: 1, color: '#6366f1' });
+        }
+        // Iron fences
+        for (let i = 0; i < 3; i++) {
+          decos.push({ type: 'iron_fence', pos: [margin + 2 + rand() * (sz - margin * 2 - 4), 0, margin + 2 + rand() * (sz - margin * 2 - 4)], rot: rand() * Math.PI, scale: 2 + rand() * 2, color: '' });
         }
         break;
       }
       case 'garden': {
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 8; i++) {
           const p = randPos(3);
           if (p) decos.push({ type: 'garden_bush', pos: p, rot: 0, scale: 0.6 + rand() * 0.8, color: '' });
         }
-        for (let i = 0; i < 6; i++) {
-          const fc = ['#ec4899', '#f59e0b', '#a855f7', '#ef4444'];
+        for (let i = 0; i < 10; i++) {
+          const fc = ['#ec4899', '#f59e0b', '#a855f7', '#ef4444', '#14b8a6'];
           decos.push({ type: 'flower', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 1, color: fc[Math.floor(rand() * fc.length)] });
+        }
+        // Gazebo
+        { const p = randPos(6); if (p) decos.push({ type: 'gazebo', pos: p, rot: 0, scale: 1, color: '#22c55e' }); }
+        // Iron fences
+        for (let i = 0; i < 2; i++) {
+          decos.push({ type: 'iron_fence', pos: [margin + 2 + rand() * (sz - margin * 2 - 4), 0, margin + 2 + rand() * (sz - margin * 2 - 4)], rot: rand() * Math.PI, scale: 2 + rand() * 2, color: '' });
         }
         break;
       }
       case 'beach': {
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 7; i++) {
           const p = randPos(3);
           if (p) decos.push({ type: 'palm_tree', pos: p, rot: 0, scale: 0.8 + rand() * 0.5, color: '' });
         }
         const uc = ['#ef4444', '#3b82f6', '#fbbf24', '#22c55e'];
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
           const p = randPos(4);
           if (p) decos.push({ type: 'umbrella', pos: p, rot: 0, scale: 1, color: uc[Math.floor(rand() * uc.length)] });
         }
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
           decos.push({ type: 'sand_dune', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 0.8 + rand() * 1.5, color: '' });
         }
+        // Lifeguard tower
+        { const p = randPos(6); if (p) decos.push({ type: 'lifeguard', pos: p, rot: 0, scale: 1, color: '' }); }
         break;
       }
       case 'airport': {
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 4; i++) {
           const p = randPos(4);
           if (p) decos.push({ type: 'luggage_cart', pos: p, rot: rand() * Math.PI, scale: 1, color: '' });
         }
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 3; i++) {
           const p = randPos(5);
           if (p) decos.push({ type: 'security_gate', pos: p, rot: rand() * Math.PI, scale: 1, color: '' });
         }
-        // A few runway lights (static, just meshes)
-        for (let i = 0; i < 6; i++) {
-          decos.push({ type: 'runway_light', pos: [sz * 0.2 + i * (sz * 0.1), 0.02, sz * 0.25], rot: 0, scale: 1, color: '' });
+        // Runway lights — two rows
+        for (let i = 0; i < 8; i++) {
+          decos.push({ type: 'runway_light', pos: [sz * 0.15 + i * (sz * 0.09), 0.02, sz * 0.25], rot: 0, scale: 1, color: '' });
+          decos.push({ type: 'runway_light', pos: [sz * 0.15 + i * (sz * 0.09), 0.02, sz * 0.75], rot: 0, scale: 1, color: '' });
         }
         decos.push({ type: 'billboard', pos: [sz * 0.3, 0, margin + 1], rot: 0, scale: 1, color: colors.glow });
-        const p = randPos(5);
-        if (p) decos.push({ type: 'container', pos: p, rot: rand() * Math.PI, scale: 1, color: '#1e40af' });
+        for (let i = 0; i < 2; i++) {
+          const p = randPos(5);
+          if (p) decos.push({ type: 'container', pos: p, rot: rand() * Math.PI, scale: 1, color: '#1e40af' });
+        }
+        // Control tower + windsock
+        { const p = randPos(6); if (p) decos.push({ type: 'control_tower', pos: p, rot: 0, scale: 1, color: colors.glow }); }
+        { const p = randPos(4); if (p) decos.push({ type: 'windsock', pos: p, rot: 0, scale: 1, color: '' }); }
         break;
       }
       default: {
@@ -538,6 +904,82 @@ export function SurvivalArena() {
         break;
       }
     }
+    // --- Compute obstacle AABBs synchronously from deco data ---
+    // This runs inside useMemo so it's guaranteed to be done before any frame renders.
+    obstacleCache.clear();
+
+    // Helper to compute rotated AABB
+    const addAABB = (cx: number, cz: number, halfX: number, halfZ: number, rot: number = 0) => {
+      const cosR = Math.abs(Math.cos(rot));
+      const sinR = Math.abs(Math.sin(rot));
+      const rHx = halfX * cosR + halfZ * sinR;
+      const rHz = halfX * sinR + halfZ * cosR;
+      obstacleCache.add({ minX: cx - rHx, maxX: cx + rHx, minZ: cz - rHz, maxZ: cz + rHz });
+    };
+
+    // Obelisks (corner pillars, always present)
+    addAABB(2.5, 2.5, 0.6, 0.6);
+    addAABB(sz - 2.5, 2.5, 0.6, 0.6);
+    addAABB(2.5, sz - 2.5, 0.6, 0.6);
+    addAABB(sz - 2.5, sz - 2.5, 0.6, 0.6);
+
+    for (const d of decos) {
+      const cx = d.pos[0], cz = d.pos[2];
+      switch (d.type) {
+        case 'container':
+          addAABB(cx, cz, 1.2, 0.5, d.rot);
+          break;
+        case 'barrier':
+          addAABB(cx, cz, 0.8, 0.25, d.rot);
+          break;
+        case 'train':
+          addAABB(cx, cz, 2, 0.6, d.rot);
+          break;
+        case 'billboard':
+          addAABB(cx, cz, 0.8, 0.1);
+          break;
+        case 'security_gate':
+          addAABB(cx, cz, 0.6, 0.1, d.rot);
+          break;
+        case 'luggage_cart':
+          addAABB(cx, cz, 0.5, 0.3, d.rot);
+          break;
+        case 'sandbag': {
+          // Long side
+          addAABB(cx, cz, 1.2, 0.25, d.rot);
+          // Short side (L-bend) offset by [-1.15, -0.85] rotated
+          const cos = Math.cos(d.rot), sin = Math.sin(d.rot);
+          const sx = cx + (-1.15) * cos - (-0.85) * sin;
+          const sz2 = cz + (-1.15) * sin + (-0.85) * cos;
+          obstacleCache.add({ minX: sx - 0.4, maxX: sx + 0.4, minZ: sz2 - 0.7, maxZ: sz2 + 0.7 });
+          break;
+        }
+        case 'bunker': {
+          // 3 walls: back, left, right
+          const cos = Math.cos(d.rot), sin = Math.sin(d.rot);
+          // Back wall at offset [0, -1.5]
+          const bx = cx + 1.5 * sin;
+          const bz = cz + (-1.5) * cos;
+          obstacleCache.add({ minX: bx - 2.0, maxX: bx + 2.0, minZ: bz - 0.3, maxZ: bz + 0.3 });
+          // Left wall at offset [-1.85, 0]
+          const lx = cx + (-1.85) * cos;
+          const lz = cz + (-1.85) * sin;
+          obstacleCache.add({ minX: lx - 0.3, maxX: lx + 0.3, minZ: lz - 1.5, maxZ: lz + 1.5 });
+          // Right wall at offset [1.85, 0]
+          const rx = cx + 1.85 * cos;
+          const rz = cz + 1.85 * sin;
+          obstacleCache.add({ minX: rx - 0.3, maxX: rx + 0.3, minZ: rz - 1.5, maxZ: rz + 1.5 });
+          break;
+        }
+        case 'watchtower': {
+          // Back half-wall and left half-wall
+          obstacleCache.add({ minX: cx - 1.0, maxX: cx + 1.0, minZ: cz - 1.05, maxZ: cz - 0.83 });
+          obstacleCache.add({ minX: cx - 1.05, maxX: cx - 0.83, minZ: cz - 1.0, maxZ: cz + 1.0 });
+          break;
+        }
+      }
+    }
+
     return decos;
   }, [wave, arenaSize, theme, colors.glow, colors.accent]);
 
@@ -640,6 +1082,18 @@ export function SurvivalArena() {
           case 'runway_light': return <RunwayLight key={`rl${i}`} position={d.pos} />;
           case 'luggage_cart': return <LuggageCart key={`lc${i}`} position={d.pos} rotation={d.rot} />;
           case 'security_gate': return <SecurityGate key={`sg${i}`} position={d.pos} rotation={d.rot} />;
+          case 'bunker': return <Bunker key={`bk${i}`} position={d.pos} rotation={d.rot} color={d.color} />;
+          case 'sandbag': return <SandbagWall key={`sb${i}`} position={d.pos} rotation={d.rot} />;
+          case 'watchtower': return <WatchTower key={`wt${i}`} position={d.pos} color={d.color} />;
+          case 'crate': return <Crate key={`cr${i}`} position={d.pos} scale={d.scale} color={d.color} />;
+          case 'pipe': return <Pipe key={`pp${i}`} position={d.pos} rotation={d.rot} length={d.scale} />;
+          case 'server_rack': return <ServerRack key={`sr${i}`} position={d.pos} color={d.color} />;
+          case 'crypt': return <Crypt key={`cy${i}`} position={d.pos} rotation={d.rot} color={d.color} />;
+          case 'gazebo': return <Gazebo key={`gz${i}`} position={d.pos} color={d.color} />;
+          case 'lifeguard': return <LifeguardTower key={`lg${i}`} position={d.pos} />;
+          case 'control_tower': return <ControlTower key={`ct${i}`} position={d.pos} color={d.color} />;
+          case 'windsock': return <Windsock key={`ws${i}`} position={d.pos} />;
+          case 'iron_fence': return <IronFence key={`if${i}`} position={d.pos} rotation={d.rot} length={d.scale} />;
           default: return null;
         }
       })}

@@ -12,3 +12,18 @@ export const positionCache = {
   getAll(): Map<string, Position> { return cache; },
   clear() { cache.clear(); },
 };
+
+// Obstacle AABB cache for bullet collision.
+// Static obstacles register once; cleared on wave/level change.
+export interface ObstacleAABB {
+  minX: number; maxX: number;
+  minZ: number; maxZ: number;
+}
+
+const obstacles: ObstacleAABB[] = [];
+
+export const obstacleCache = {
+  add(aabb: ObstacleAABB) { obstacles.push(aabb); },
+  getAll(): ObstacleAABB[] { return obstacles; },
+  clear() { obstacles.length = 0; },
+};
