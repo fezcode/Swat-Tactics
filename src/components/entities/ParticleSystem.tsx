@@ -1,5 +1,5 @@
 import { useGameStore } from '../../game/store';
-import { useRef, useMemo } from 'react';
+import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -7,7 +7,7 @@ const bloodGeo = new THREE.CircleGeometry(0.3, 16);
 const bloodMat = new THREE.MeshBasicMaterial({ color: "#7f1d1d", transparent: true, opacity: 0.6, depthWrite: false });
 
 const particleGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-const trailGeo = new THREE.PlaneGeometry(0.3, 0.06);
+const _trailGeo = new THREE.PlaneGeometry(0.3, 0.06);
 
 // Cache materials by color to avoid creating new ones every frame
 const materialCache = new Map<string, THREE.MeshBasicMaterial>();
@@ -22,7 +22,7 @@ function getParticleMaterial(color: string): THREE.MeshBasicMaterial {
 
 // Emissive material cache for glowing particles
 const emissiveCache = new Map<string, THREE.MeshStandardMaterial>();
-function getEmissiveMaterial(color: string): THREE.MeshStandardMaterial {
+function _getEmissiveMaterial(color: string): THREE.MeshStandardMaterial {
   let mat = emissiveCache.get(color);
   if (!mat) {
     mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 4, transparent: true, depthWrite: false });
@@ -125,9 +125,7 @@ export function FloatingTexts() {
 
   return (
     <group>
-      {floatingTexts.map(t => {
-        const yOffset = (1 - t.life) * 2;
-        const scale = t.text.includes('COMBO') ? 0.015 : t.text.includes('!') ? 0.012 : 0.008;
+      {floatingTexts.map(_t => {
         return null; // Floating texts are rendered in SurvivalHUD as HTML overlay
       })}
     </group>

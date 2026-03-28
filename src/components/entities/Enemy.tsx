@@ -233,7 +233,7 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
 
   const barWidth = 0.8 * Math.pow(state.maxHp / 40, 0.5);
   const enemyScale = (state as any).scale as number || 1.0;
-  const isGhost = (state as any).transparent as boolean || false;
+  const _isGhost = (state as any).transparent as boolean || false;
   const isElite = state.isElite || false;
   const hasShield = (state.shieldHp || 0) > 0;
   const survivalType = (state as any).survivalType as string || 'grunt';
