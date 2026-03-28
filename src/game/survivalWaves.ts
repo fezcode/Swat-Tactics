@@ -72,10 +72,10 @@ function getUnlockedTypes(wave: number): SurvivalEnemyType[] {
 }
 
 const BOSSES: BossConfig[] = [
-  { id: 'boss_warden', name: 'THE WARDEN', hp: 500, damage: 20, color: '#991b1b', speed: 2.5, weapon: { name: 'Chaingun', ammo: 999, maxAmmo: 999, damage: 8 }, mechanic: 'warden' },
-  { id: 'boss_phantom', name: 'PHANTOM BLADE', hp: 350, damage: 35, color: '#4c1d95', speed: 5.0, weapon: { name: 'Sword', ammo: 999, maxAmmo: 999, damage: 25 }, mechanic: 'phantom' },
-  { id: 'boss_hive', name: 'THE HIVE', hp: 800, damage: 10, color: '#064e3b', speed: 1.5, weapon: { name: 'Pistol', ammo: 999, maxAmmo: 999, damage: 10 }, mechanic: 'hive' },
-  { id: 'boss_colossus', name: 'IRON COLOSSUS', hp: 1200, damage: 15, color: '#44403c', speed: 1.0, weapon: { name: 'Cannon', ammo: 999, maxAmmo: 999, damage: 30 }, mechanic: 'colossus' },
+  { id: 'boss_warden', name: 'THE WARDEN', hp: 500, damage: 20, color: '#991b1b', speed: 4.5, weapon: { name: 'Chaingun', ammo: 999, maxAmmo: 999, damage: 8 }, mechanic: 'warden' },
+  { id: 'boss_phantom', name: 'PHANTOM BLADE', hp: 350, damage: 35, color: '#4c1d95', speed: 7.0, weapon: { name: 'Sword', ammo: 999, maxAmmo: 999, damage: 25 }, mechanic: 'phantom' },
+  { id: 'boss_hive', name: 'THE HIVE', hp: 800, damage: 10, color: '#064e3b', speed: 3.0, weapon: { name: 'Pistol', ammo: 999, maxAmmo: 999, damage: 10 }, mechanic: 'hive' },
+  { id: 'boss_colossus', name: 'IRON COLOSSUS', hp: 1200, damage: 15, color: '#44403c', speed: 2.5, weapon: { name: 'Cannon', ammo: 999, maxAmmo: 999, damage: 30 }, mechanic: 'colossus' },
 ];
 
 export function generateWave(wave: number, mutations: WaveMutation[]): WaveConfig {
@@ -99,15 +99,15 @@ export function generateWave(wave: number, mutations: WaveMutation[]): WaveConfi
 
   const makeDef = (type: SurvivalEnemyType): SurvivalEnemyDef => {
     let hp = baseHp;
-    let speed = 3.0;
+    let speed = 5.0;
     let scale = 1.0;
     switch (type) {
-      case 'rusher': hp = baseHp * 0.5; speed = 5.5; break;
-      case 'sniper': hp = baseHp * 0.7; speed = 1.5; break;
-      case 'tank': hp = baseHp * 3; speed = 1.8; scale = 1.4; break;
-      case 'bomber': hp = baseHp * 0.6; speed = 4.0; break;
-      case 'ghost': hp = baseHp * 0.8; speed = 3.5; break;
-      case 'splitter': hp = baseHp * 0.4; speed = 3.0; scale = 0.8; break;
+      case 'rusher': hp = baseHp * 0.5; speed = 8.0; break;
+      case 'sniper': hp = baseHp * 0.7; speed = 3.0; break;
+      case 'tank': hp = baseHp * 3; speed = 3.5; scale = 1.4; break;
+      case 'bomber': hp = baseHp * 0.6; speed = 6.5; break;
+      case 'ghost': hp = baseHp * 0.8; speed = 6.0; break;
+      case 'splitter': hp = baseHp * 0.4; speed = 5.0; scale = 0.8; break;
     }
     return {
       type,

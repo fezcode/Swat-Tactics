@@ -2,9 +2,10 @@ import { useGameStore } from '../../game/store';
 import { positionCache } from '../../game/positionCache';
 import { SFX } from '../../game/sounds';
 import { PerkSelection } from './PerkSelection';
-import { PERKS } from '../../game/survivalPerks';
+import { PERKS, getActiveEvolutions } from '../../game/survivalPerks';
 import { getMutationLabel, getMutationColor } from '../../game/survivalWaves';
 import { useState, useEffect, useRef } from 'react';
+import type { RunTimelineEntry } from '../../game/store';
 
 function Minimap() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -14,7 +15,6 @@ function Minimap() {
     let lastDraw = 0;
     const draw = (time: number) => {
       rafRef.current = requestAnimationFrame(draw);
-      // Throttle to ~5 FPS — minimap doesn't need 60fps
       if (time - lastDraw < 200) return;
       lastDraw = time;
 
@@ -47,7 +47,6 @@ function Minimap() {
       ctx.lineWidth = 1.5;
       ctx.strokeRect(1, 1, size - 2, size - 2);
 
-      // XP Orbs
       if (survivalState) {
         ctx.fillStyle = 'rgba(6, 182, 212, 0.6)';
         survivalState.xpOrbs.forEach(orb => {
@@ -57,17 +56,21 @@ function Minimap() {
         });
       }
 
-      // Enemies - read from position cache for accurate positions
       enemies.forEach(e => {
         if (e.hp <= 0) return;
         const ep = positionCache.get(e.id) || e.pos;
-        ctx.fillStyle = e.color || '#ef4444';
+        ctx.fillStyle = e.isElite ? '#fbbf24' : e.isBoss ? '#ff0000' : e.color || '#ef4444';
+        const r = e.isBoss ? 4 : e.isElite ? 3.5 : 2.5;
         ctx.beginPath();
-        ctx.arc(ep.x * scale, ep.z * scale, 2.5, 0, Math.PI * 2);
+        ctx.arc(ep.x * scale, ep.z * scale, r, 0, Math.PI * 2);
         ctx.fill();
+        if (e.isElite) {
+          ctx.strokeStyle = '#fbbf24';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
       });
 
-      // Shadow clone
       if (survivalState?.clonePos) {
         ctx.fillStyle = '#818cf8';
         ctx.beginPath();
@@ -75,7 +78,6 @@ function Minimap() {
         ctx.fill();
       }
 
-      // Player
       if (player) {
         const pp = positionCache.get('player') || player.pos;
         ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
@@ -103,11 +105,107 @@ function Minimap() {
       <div className="absolute top-0 left-0 w-full px-2 py-0.5 bg-zinc-950/60">
         <span className="text-[8px] font-black text-zinc-500 tracking-[0.2em] uppercase">Tactical Map</span>
       </div>
-      {/* Legend */}
       <div className="flex gap-2 mt-1">
         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /><span className="text-[7px] text-zinc-600 font-bold">YOU</span></div>
         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500" /><span className="text-[7px] text-zinc-600 font-bold">FOE</span></div>
-        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-cyan-500" /><span className="text-[7px] text-zinc-600 font-bold">XP</span></div>
+        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-yellow-500" /><span className="text-[7px] text-zinc-600 font-bold">ELITE</span></div>
+      </div>
+    </div>
+  );
+}
+
+function DeathScreen({ survivalState }: { survivalState: any }) {
+  const handleClick = (action: () => void) => { SFX.buttonClick(); action(); };
+  const handleHover = () => { SFX.buttonHover(); };
+  const meta = useGameStore(s => s.meta);
+  const evolutions = getActiveEvolutions(survivalState.perkStacks);
+  const creditsEarned = Math.floor(survivalState.score / 10) + survivalState.wave * 5;
+  const isNewBest = survivalState.score >= survivalState.highScore && survivalState.score > 0;
+
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/90 text-white z-50 overflow-y-auto py-8">
+      <h1 className="text-9xl font-black italic tracking-tighter text-red-600 drop-shadow-[0_0_30px_rgba(220,38,38,0.8)] mb-4 survival-title-glow">TERMINATED</h1>
+      {isNewBest && (
+        <div className="text-2xl font-black text-yellow-400 animate-pulse mb-2">NEW PERSONAL BEST!</div>
+      )}
+      <div className="transform -skew-x-12 mb-6">
+        <p className="text-2xl font-bold text-zinc-400 tracking-widest uppercase">Operation Endless Night</p>
+      </div>
+
+      {/* Stats row */}
+      <div className="flex gap-8 mb-8 transform -skew-x-12">
+        <div className="text-center">
+          <div className="text-sm font-bold text-zinc-500 tracking-widest uppercase">Final Wave</div>
+          <div className="text-5xl font-black italic text-white neon-text">{survivalState.wave}</div>
+        </div>
+        <div className="text-center">
+          <div className="text-sm font-bold text-zinc-500 tracking-widest uppercase">Score</div>
+          <div className="text-5xl font-black italic text-yellow-400">{survivalState.score.toLocaleString()}</div>
+          {survivalState.scoreMultiplier > 1 && (
+            <div className="text-xs font-bold text-yellow-600">x{survivalState.scoreMultiplier.toFixed(1)} multiplier</div>
+          )}
+        </div>
+        <div className="text-center">
+          <div className="text-sm font-bold text-zinc-500 tracking-widest uppercase">Credits</div>
+          <div className="text-5xl font-black italic text-emerald-400">+{creditsEarned}</div>
+        </div>
+      </div>
+
+      {/* Perks acquired */}
+      {survivalState.activePerks.length > 0 && (
+        <div className="flex flex-wrap gap-2 max-w-lg justify-center mb-4">
+          {survivalState.activePerks.map((perkId: string) => {
+            const perk = PERKS.find(p => p.id === perkId);
+            if (!perk) return null;
+            const stacks = survivalState.perkStacks[perkId] || 1;
+            const isEvolved = survivalState.evolvedPerks.includes(perkId);
+            return (
+              <div key={perkId} className={`px-2 py-1 text-xs font-bold tracking-wider ${isEvolved ? 'ring-1 ring-yellow-400' : ''}`} style={{ background: `${perk.color}30`, color: perk.color, border: `1px solid ${perk.color}50` }}>
+                {isEvolved ? '★ ' : ''}{perk.name}{stacks > 1 ? ` x${stacks}` : ''}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Evolutions */}
+      {evolutions.length > 0 && (
+        <div className="flex gap-2 mb-4">
+          {evolutions.map(evo => (
+            <div key={evo.perkId} className="px-3 py-1 text-xs font-black tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/50">
+              {evo.name}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Run Timeline */}
+      {survivalState.timeline.length > 0 && (
+        <div className="max-w-md w-full mb-8 max-h-40 overflow-y-auto">
+          <div className="text-[10px] font-black text-zinc-600 tracking-widest uppercase mb-2 text-center">Run Timeline</div>
+          <div className="flex flex-col gap-1">
+            {survivalState.timeline.slice(-10).map((entry: RunTimelineEntry, i: number) => (
+              <div key={i} className="flex items-center gap-2 text-[10px]">
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: entry.color }} />
+                <span className="text-zinc-500 font-bold">W{entry.wave}</span>
+                <span className="font-bold" style={{ color: entry.color }}>{entry.event}</span>
+                <span className="text-zinc-600">{entry.detail}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Meta stats */}
+      <div className="flex gap-6 mb-8 text-xs text-zinc-600 font-bold tracking-widest uppercase">
+        <span>Best Wave: {meta.bestWave}</span>
+        <span>Best Score: {meta.bestScore.toLocaleString()}</span>
+        <span>Total Credits: {meta.credits.toLocaleString()}</span>
+      </div>
+
+      <div className="flex flex-col gap-4 items-center transform -skew-x-12">
+        <button className="px-12 py-4 bg-white text-black text-2xl font-black hover:bg-red-600 hover:text-white transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none" onClick={() => handleClick(() => useGameStore.getState().startSurvival())} onMouseEnter={handleHover}>ONE MORE RUN</button>
+        <button className="text-zinc-400 font-bold hover:text-white transition-colors cursor-pointer mt-4" onClick={() => handleClick(() => useGameStore.setState({ phase: 'main_menu', gameMode: 'campaign', survivalState: null }))} onMouseEnter={handleHover}>RETURN TO BASE</button>
       </div>
     </div>
   );
@@ -124,6 +222,7 @@ export function SurvivalHUD() {
   const arenaSize = survivalState?.arenaSize || 30;
   const [showDamageFlash, setShowDamageFlash] = useState(false);
   const [weaponSwitchAnim, setWeaponSwitchAnim] = useState(false);
+  const [perkFlash, setPerkFlash] = useState<{ color: string; name: string } | null>(null);
   const prevSlotRef = useRef(player?.activeWeaponSlot || 'primary');
 
   useEffect(() => {
@@ -143,78 +242,70 @@ export function SurvivalHUD() {
     }
   }, [player?.activeWeaponSlot]);
 
+  // Perk fanfare effect
+  useEffect(() => {
+    if (survivalState?.perkFanfare) {
+      setPerkFlash({ color: survivalState.perkFanfare.color, name: survivalState.perkFanfare.name });
+      const timer = setTimeout(() => setPerkFlash(null), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [survivalState?.perkFanfare?.time]);
+
   if (!survivalState) return null;
 
   const handleClick = (action: () => void) => { SFX.buttonClick(); action(); };
   const handleHover = () => { SFX.buttonHover(); };
 
-  // Perk selection screen
   if (phase === 'survival_perk_select') {
     return <PerkSelection />;
   }
 
-  // Game over screen
   if (phase === 'survival_game_over') {
-    return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/90 text-white z-50 overflow-hidden">
-        <h1 className="text-9xl font-black italic tracking-tighter text-red-600 drop-shadow-[0_0_30px_rgba(220,38,38,0.8)] mb-4 survival-title-glow">TERMINATED</h1>
-        <div className="transform -skew-x-12 mb-8">
-          <p className="text-2xl font-bold text-zinc-400 tracking-widest uppercase">Operation Endless Night</p>
-        </div>
-
-        <div className="flex gap-12 mb-12 transform -skew-x-12">
-          <div className="text-center">
-            <div className="text-sm font-bold text-zinc-500 tracking-widest uppercase">Final Wave</div>
-            <div className="text-5xl font-black italic text-white neon-text">{survivalState.wave}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm font-bold text-zinc-500 tracking-widest uppercase">Score</div>
-            <div className="text-5xl font-black italic text-yellow-400">{survivalState.score.toLocaleString()}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm font-bold text-zinc-500 tracking-widest uppercase">Perks</div>
-            <div className="text-5xl font-black italic text-purple-400">{survivalState.activePerks.length}</div>
-          </div>
-        </div>
-
-        {survivalState.activePerks.length > 0 && (
-          <div className="flex flex-wrap gap-2 max-w-lg justify-center mb-8">
-            {survivalState.activePerks.map(perkId => {
-              const perk = PERKS.find(p => p.id === perkId);
-              if (!perk) return null;
-              const stacks = survivalState.perkStacks[perkId] || 1;
-              return (
-                <div key={perkId} className="px-2 py-1 text-xs font-bold tracking-wider" style={{ background: `${perk.color}30`, color: perk.color, border: `1px solid ${perk.color}50` }}>
-                  {perk.name}{stacks > 1 ? ` x${stacks}` : ''}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="flex flex-col gap-4 items-center transform -skew-x-12">
-          <button className="px-12 py-4 bg-white text-black text-2xl font-black hover:bg-red-600 hover:text-white transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none" onClick={() => handleClick(() => useGameStore.getState().startSurvival())} onMouseEnter={handleHover}>TRY AGAIN</button>
-          <button className="text-zinc-400 font-bold hover:text-white transition-colors cursor-pointer mt-4" onClick={() => handleClick(() => useGameStore.setState({ phase: 'main_menu', gameMode: 'campaign', survivalState: null }))} onMouseEnter={handleHover}>RETURN TO BASE</button>
-        </div>
-      </div>
-    );
+    return <DeathScreen survivalState={survivalState} />;
   }
 
   const hasDualWeapons = player && player.secondaryWeapon !== null;
   const isPrimary = player?.activeWeaponSlot === 'primary';
   const isWaveIntro = phase === 'survival_wave_intro';
   const aliveEnemies = useGameStore.getState().enemies.filter(e => e.hp > 0).length;
+  const killCombo = survivalState.killCombo;
+
+  // Combo-based screen effects
+  const comboIntensity = Math.min(killCombo / 30, 1);
 
   return (
     <div className="absolute top-0 left-0 w-full h-full pointer-events-none p-6 flex flex-col justify-between z-10 overflow-hidden">
       <div className={`absolute inset-0 bg-red-600/20 transition-opacity duration-75 pointer-events-none z-0 ${showDamageFlash ? 'opacity-100' : 'opacity-0'}`} />
 
-      {/* Darkness mutation overlay */}
+      {/* Kill streak screen effects */}
+      {killCombo >= 10 && (
+        <div className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-300" style={{
+          boxShadow: `inset 0 0 ${60 + comboIntensity * 100}px rgba(236, 72, 153, ${comboIntensity * 0.3})`,
+          background: killCombo >= 20 ? `radial-gradient(circle, transparent 50%, rgba(236, 72, 153, ${comboIntensity * 0.15}) 100%)` : 'none',
+        }} />
+      )}
+
+      {/* Perk fanfare flash */}
+      {perkFlash && (
+        <div className="absolute inset-0 pointer-events-none z-40 flex items-center justify-center animate-countdown" style={{ background: `${perkFlash.color}20` }}>
+          <div className="text-4xl font-black italic tracking-tighter" style={{ color: perkFlash.color, textShadow: `0 0 30px ${perkFlash.color}` }}>
+            {perkFlash.name}
+          </div>
+        </div>
+      )}
+
+      {/* Mutation weather effects */}
       {survivalState.mutations.includes('darkness') && (
         <div className="absolute inset-0 bg-black/40 pointer-events-none z-0" />
       )}
+      {survivalState.mutations.includes('berserker') && (
+        <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(circle, transparent 60%, rgba(220, 38, 38, 0.15) 100%)' }} />
+      )}
+      {survivalState.mutations.includes('fast_forward') && (
+        <div className="absolute inset-0 pointer-events-none z-0 opacity-30" style={{ background: 'repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(34, 211, 238, 0.03) 40px, rgba(34, 211, 238, 0.03) 42px)' }} />
+      )}
 
-      {/* Wave intro overlay */}
+      {/* Wave intro overlay with boss entrance */}
       {isWaveIntro && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-50">
           <div className="animate-countdown transform -skew-x-12">
@@ -225,25 +316,61 @@ export function SurvivalHUD() {
           <div key={Math.ceil(survivalState.waveIntroTimer)} className="mt-4 animate-countdown">
             <span className="text-5xl font-black italic text-white/80 tracking-tighter">{Math.ceil(survivalState.waveIntroTimer)}</span>
           </div>
-          {survivalState.wave % 5 === 0 && survivalState.wave > 0 && (
-            <div className="mt-4 animate-pulse">
-              <span className="text-3xl font-black italic text-red-500 tracking-tighter">BOSS WAVE</span>
+          {/* Boss entrance */}
+          {survivalState.bossActive && (
+            <div className="mt-6" style={{ animation: 'boss-slam 0.8s ease-out forwards' }}>
+              <div className="px-8 py-3 bg-red-950/90 border-2 border-red-600">
+                <div className="text-[10px] font-black text-red-400 tracking-[0.3em] uppercase text-center">Boss Incoming</div>
+                <div className="text-4xl font-black italic text-red-500 tracking-tighter text-center" style={{ textShadow: '0 0 20px rgba(239, 68, 68, 0.8)' }}>
+                  {survivalState.bossActive.name}
+                </div>
+              </div>
             </div>
           )}
-          {survivalState.wave >= 5 && (
+          {survivalState.wave >= 5 && !survivalState.bossActive && (
             <div className="mt-3 text-sm font-bold text-zinc-400 tracking-widest uppercase animate-pulse">Arena expanding...</div>
           )}
           {survivalState.mutations.length > 0 && (
             <div className="mt-6 flex gap-3">
-              {survivalState.mutations.map(m => (
-                <div key={m} className="px-3 py-1 text-sm font-black tracking-widest uppercase" style={{ background: `${getMutationColor(m)}30`, color: getMutationColor(m), border: `1px solid ${getMutationColor(m)}` }}>
-                  {getMutationLabel(m)}
+              {survivalState.mutations.map((m: string) => (
+                <div key={m} className="px-3 py-1 text-sm font-black tracking-widest uppercase" style={{ background: `${getMutationColor(m as any)}30`, color: getMutationColor(m as any), border: `1px solid ${getMutationColor(m as any)}` }}>
+                  {getMutationLabel(m as any)}
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Run modifiers display */}
+          {survivalState.runModifiers.length > 0 && survivalState.wave <= 1 && (
+            <div className="mt-4 flex gap-2">
+              {survivalState.runModifiers.map((m: string) => (
+                <div key={m} className="px-2 py-1 text-[10px] font-black tracking-widest uppercase bg-yellow-500/20 text-yellow-400 border border-yellow-500/40">
+                  {m.replace(/_/g, ' ')}
                 </div>
               ))}
             </div>
           )}
         </div>
       )}
+
+      {/* Boss HP bar */}
+      {survivalState.bossActive && phase === 'survival_playing' && (() => {
+        const boss = useGameStore.getState().enemies.find(e => e.isBoss && e.hp > 0);
+        if (!boss) return null;
+        return (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 w-96">
+            <div className="text-center mb-1">
+              <span className="text-[10px] font-black text-red-400 tracking-[0.3em] uppercase">Boss</span>
+              <div className="text-lg font-black italic text-red-500">{boss.bossName || 'BOSS'}</div>
+            </div>
+            <div className="w-full h-3 bg-zinc-900 border border-red-800 relative overflow-hidden">
+              <div className="absolute top-0 left-0 h-full bg-red-600 transition-all duration-200" style={{ width: `${(boss.hp / boss.maxHp) * 100}%` }} />
+              {boss.shieldHp !== undefined && boss.shieldMaxHp && boss.shieldHp > 0 && (
+                <div className="absolute top-0 left-0 h-full bg-blue-400/50 transition-all duration-200" style={{ width: `${(boss.shieldHp / boss.shieldMaxHp) * 100}%` }} />
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Music Indicator */}
       {currentTrackName !== "None" && (
@@ -277,6 +404,9 @@ export function SurvivalHUD() {
             <div className="bg-zinc-950/80 p-2.5 transform -skew-x-12 border-l-4 border-yellow-500 shadow-2xl backdrop-blur-sm">
               <div className="text-[9px] font-bold text-zinc-600 tracking-widest uppercase">Score</div>
               <div className="text-xl font-black italic text-yellow-400 tracking-tighter">{survivalState.score.toLocaleString()}</div>
+              {survivalState.scoreMultiplier > 1 && (
+                <div className="text-[8px] font-bold text-yellow-600">x{survivalState.scoreMultiplier.toFixed(1)}</div>
+              )}
             </div>
             <div className="bg-zinc-950/80 p-2.5 transform -skew-x-12 border-l-4 border-red-600 shadow-2xl backdrop-blur-sm">
               <div className="text-[9px] font-bold text-zinc-600 tracking-widest uppercase">Hostiles</div>
@@ -284,13 +414,14 @@ export function SurvivalHUD() {
             </div>
           </div>
 
-          {survivalState.killCombo >= 3 && (
-            <div className="bg-zinc-950/80 p-2 transform -skew-x-12 border-l-4 border-pink-500 shadow-2xl backdrop-blur-sm animate-pulse">
-              <div className="text-lg font-black italic text-pink-400 tracking-tighter">{survivalState.killCombo}x COMBO</div>
+          {killCombo >= 3 && (
+            <div className={`bg-zinc-950/80 p-2 transform -skew-x-12 border-l-4 shadow-2xl backdrop-blur-sm ${killCombo >= 10 ? 'border-pink-400' : 'border-pink-500'} ${killCombo >= 10 ? 'animate-pulse' : ''}`}>
+              <div className={`font-black italic tracking-tighter ${killCombo >= 20 ? 'text-2xl text-pink-300' : killCombo >= 10 ? 'text-xl text-pink-400' : 'text-lg text-pink-400'}`}>
+                {killCombo}x COMBO{killCombo >= 20 ? '!!' : killCombo >= 10 ? '!' : ''}
+              </div>
             </div>
           )}
 
-          {/* Minimap */}
           <div className="mt-1 transform -skew-x-3">
             <Minimap />
           </div>
@@ -327,33 +458,43 @@ export function SurvivalHUD() {
 
       {/* Bottom section */}
       <div className="flex justify-between items-end">
-        {/* Active perks & mutations */}
         <div className="flex flex-col gap-1.5">
           {survivalState.mutations.length > 0 && (
             <div className="flex gap-1">
-              {survivalState.mutations.map(m => (
-                <div key={m} className="px-2 py-0.5 text-[9px] font-black tracking-widest uppercase" style={{ background: `${getMutationColor(m)}20`, color: getMutationColor(m) }}>
-                  {getMutationLabel(m)}
+              {survivalState.mutations.map((m: string) => (
+                <div key={m} className="px-2 py-0.5 text-[9px] font-black tracking-widest uppercase" style={{ background: `${getMutationColor(m as any)}20`, color: getMutationColor(m as any) }}>
+                  {getMutationLabel(m as any)}
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Run modifiers */}
+          {survivalState.runModifiers.length > 0 && (
+            <div className="flex gap-1">
+              {survivalState.runModifiers.map((m: string) => (
+                <div key={m} className="px-2 py-0.5 text-[8px] font-black tracking-widest uppercase bg-yellow-500/10 text-yellow-500">
+                  {m.replace(/_/g, ' ')}
                 </div>
               ))}
             </div>
           )}
           <div className="flex flex-wrap gap-1 max-w-sm">
-            {survivalState.activePerks.map(perkId => {
+            {survivalState.activePerks.map((perkId: string) => {
               const perk = PERKS.find(p => p.id === perkId);
               if (!perk) return null;
               const stacks = survivalState.perkStacks[perkId] || 1;
+              const isEvolved = survivalState.evolvedPerks.includes(perkId);
               return (
-                <div key={perkId} className="w-7 h-7 flex items-center justify-center relative" style={{ background: `${perk.color}25`, border: `1px solid ${perk.color}50` }} title={`${perk.name}${stacks > 1 ? ` x${stacks}` : ''}`}>
+                <div key={perkId} className={`w-7 h-7 flex items-center justify-center relative ${isEvolved ? 'ring-1 ring-yellow-400' : ''}`} style={{ background: `${perk.color}25`, border: `1px solid ${perk.color}50` }} title={`${perk.name}${stacks > 1 ? ` x${stacks}` : ''}${isEvolved ? ' (EVOLVED)' : ''}`}>
                   <div className="w-2.5 h-2.5 rounded-full" style={{ background: perk.color, boxShadow: `0 0 4px ${perk.color}` }} />
                   {stacks > 1 && <span className="absolute -top-1 -right-1 text-[7px] font-black text-white bg-zinc-900 px-0.5">{stacks}</span>}
+                  {isEvolved && <span className="absolute -bottom-1 -right-1 text-[6px] text-yellow-400">★</span>}
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Abilities & Controls */}
         <div className="flex flex-col gap-2 items-end">
           {player && (
             <div className="flex gap-2">

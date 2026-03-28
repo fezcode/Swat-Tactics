@@ -28,6 +28,12 @@ export interface EnemyState extends EntityState {
   unkillable?: boolean;
   lastHitTime?: number;
   lastSeenPlayerPos?: Position;
+  isElite?: boolean;
+  isBoss?: boolean;
+  bossName?: string;
+  bossMechanic?: string;
+  shieldHp?: number;
+  shieldMaxHp?: number;
 }
 
 export interface TurretState extends EntityState {
@@ -83,6 +89,8 @@ export interface ProjectileState {
   life: number;
   isEnemy: boolean;
   color?: string;
+  pierce?: boolean;
+  hitIds?: string[];
 }
 
 export type LevelTheme = 'industrial' | 'garden' | 'skyscraper' | 'desert' | 'space_station' | 'beach' | 'cemetery' | 'airport' | 'metro';

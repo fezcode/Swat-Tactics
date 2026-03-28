@@ -16,17 +16,20 @@ export interface PerkDef {
   color: string;
   stackable: boolean;
   maxStacks?: number;
+  evolveName?: string;
+  evolveDescription?: string;
+  evolveAt?: number;
 }
 
 export const PERKS: PerkDef[] = [
   // TIER 1
-  { id: 'iron_skin', name: 'IRON SKIN', description: '+25 Max HP & full heal', tier: 1, color: '#94a3b8', stackable: true },
-  { id: 'rapid_fire', name: 'RAPID FIRE', description: '-20% fire interval', tier: 1, color: '#f59e0b', stackable: true, maxStacks: 3 },
-  { id: 'extended_mag', name: 'EXTENDED MAG', description: '+50% max ammo', tier: 1, color: '#3b82f6', stackable: true },
-  { id: 'swift_feet', name: 'SWIFT FEET', description: '+15% movement speed', tier: 1, color: '#22c55e', stackable: true, maxStacks: 3 },
-  { id: 'scavenger', name: 'SCAVENGER', description: 'Pickups give 50% more', tier: 1, color: '#a855f7', stackable: true },
-  { id: 'combat_regen', name: 'COMBAT REGEN', description: 'Regenerate 2 HP/sec', tier: 1, color: '#ef4444', stackable: true },
-  { id: 'hollow_points', name: 'HOLLOW POINTS', description: '+25% bullet damage', tier: 1, color: '#dc2626', stackable: true },
+  { id: 'iron_skin', name: 'IRON SKIN', description: '+25 Max HP & full heal', tier: 1, color: '#94a3b8', stackable: true, evolveName: 'TITANIUM PLATING', evolveDescription: '+50% damage reduction', evolveAt: 5 },
+  { id: 'rapid_fire', name: 'RAPID FIRE', description: '-20% fire interval', tier: 1, color: '#f59e0b', stackable: true, maxStacks: 3, evolveName: 'MINIGUN MODE', evolveDescription: 'No fire interval cap', evolveAt: 3 },
+  { id: 'extended_mag', name: 'EXTENDED MAG', description: '+50% max ammo', tier: 1, color: '#3b82f6', stackable: true, evolveName: 'BOTTOMLESS MAG', evolveDescription: 'Infinite ammo', evolveAt: 4 },
+  { id: 'swift_feet', name: 'SWIFT FEET', description: '+15% movement speed', tier: 1, color: '#22c55e', stackable: true, maxStacks: 3, evolveName: 'SONIC RUSH', evolveDescription: 'Leave damaging trail', evolveAt: 3 },
+  { id: 'scavenger', name: 'SCAVENGER', description: 'Pickups give 50% more', tier: 1, color: '#a855f7', stackable: true, evolveName: 'HOARDER', evolveDescription: 'Enemies drop pickups', evolveAt: 4 },
+  { id: 'combat_regen', name: 'COMBAT REGEN', description: 'Regenerate 2 HP/sec', tier: 1, color: '#ef4444', stackable: true, evolveName: 'VAMPIRIC', evolveDescription: 'Heal 5% of damage dealt', evolveAt: 5 },
+  { id: 'hollow_points', name: 'HOLLOW POINTS', description: '+25% bullet damage', tier: 1, color: '#dc2626', stackable: true, evolveName: 'ARMOR PIERCING', evolveDescription: 'Bullets pierce enemies', evolveAt: 5 },
 
   // TIER 2
   { id: 'ricochet', name: 'RICOCHET', description: 'Bullets bounce off arena edges', tier: 2, color: '#06b6d4', stackable: false },
@@ -45,6 +48,27 @@ export const PERKS: PerkDef[] = [
   { id: 'phoenix', name: 'PHOENIX', description: 'Revive once with 50% HP + explosion', tier: 3, color: '#f97316', stackable: false },
   { id: 'bullet_hell', name: 'BULLET HELL', description: 'Fire 3 bullets in a spread', tier: 3, color: '#ec4899', stackable: false },
 ];
+
+export interface PerkEvolution {
+  perkId: PerkId;
+  name: string;
+  description: string;
+}
+
+export function getEvolution(perkId: PerkId, stacks: number): PerkEvolution | null {
+  const perk = PERKS.find(p => p.id === perkId);
+  if (!perk || !perk.evolveAt || !perk.evolveName || stacks < perk.evolveAt) return null;
+  return { perkId, name: perk.evolveName, description: perk.evolveDescription || '' };
+}
+
+export function getActiveEvolutions(perkStacks: Record<string, number>): PerkEvolution[] {
+  const evolutions: PerkEvolution[] = [];
+  for (const [id, stacks] of Object.entries(perkStacks)) {
+    const evo = getEvolution(id as PerkId, stacks);
+    if (evo) evolutions.push(evo);
+  }
+  return evolutions;
+}
 
 export function getAvailablePerks(wave: number, ownedPerks: PerkId[], perkStacks: Record<string, number>): PerkDef[] {
   const maxTier: PerkTier = wave >= 20 ? 3 : wave >= 10 ? 2 : 1;

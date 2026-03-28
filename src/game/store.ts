@@ -37,7 +37,7 @@ function getPlayerPos(state: { player: PlayerState | null }): Position {
   if (!state.player) return { x: 0, z: 0 };
   return positionCache.get('player') || state.player.pos;
 }
-import { pickRandomPerks } from './survivalPerks';
+import { pickRandomPerks, getEvolution, PERKS } from './survivalPerks';
 import type { WaveMutation, SurvivalEnemyDef } from './survivalWaves';
 import { generateWave, getSpawnPosition, getMutationsForWave } from './survivalWaves';
 
@@ -47,6 +47,49 @@ interface GameStats { kills: number; deaths: number; runs: number; }
 interface SpawnQueueItem {
   def: SurvivalEnemyDef;
   spawnPos: Position;
+}
+
+// --- Meta-progression persistence ---
+const META_KEY = 'swat-tactics-meta';
+interface MetaProgression {
+  credits: number;
+  bestWave: number;
+  bestScore: number;
+  totalKills: number;
+  totalRuns: number;
+  unlocks: string[]; // unlocked features
+}
+const defaultMeta: MetaProgression = { credits: 0, bestWave: 0, bestScore: 0, totalKills: 0, totalRuns: 0, unlocks: [] };
+function loadMeta(): MetaProgression {
+  try {
+    const raw = localStorage.getItem(META_KEY);
+    if (raw) return { ...defaultMeta, ...JSON.parse(raw) };
+  } catch {}
+  return { ...defaultMeta };
+}
+function saveMeta(m: Partial<MetaProgression>) {
+  try {
+    const current = loadMeta();
+    localStorage.setItem(META_KEY, JSON.stringify({ ...current, ...m }));
+  } catch {}
+}
+
+export type RunModifier = 'double_enemies' | 'no_pickups' | 'glass_cannon' | 'fast_start' | 'elite_only';
+interface RunModifierDef { id: RunModifier; name: string; description: string; scoreMultiplier: number; }
+export const RUN_MODIFIERS: RunModifierDef[] = [
+  { id: 'double_enemies', name: 'HORDE MODE', description: '2x enemy count', scoreMultiplier: 1.5 },
+  { id: 'no_pickups', name: 'SCARCITY', description: 'No health/ammo drops', scoreMultiplier: 1.3 },
+  { id: 'glass_cannon', name: 'GLASS CANNON', description: '50 HP max, 2x damage', scoreMultiplier: 1.4 },
+  { id: 'fast_start', name: 'FAST START', description: 'Start at wave 5', scoreMultiplier: 0.8 },
+  { id: 'elite_only', name: 'ELITE FORCES', description: 'All enemies are elite', scoreMultiplier: 2.0 },
+];
+
+export interface RunTimelineEntry {
+  wave: number;
+  event: string;
+  detail: string;
+  color: string;
+  timestamp: number;
 }
 
 export interface SurvivalState {
@@ -78,6 +121,12 @@ export interface SurvivalState {
   timeWarpTimer: number;
   waveStartTime: number;
   regenAccumulator: number;
+  runModifiers: RunModifier[];
+  scoreMultiplier: number;
+  timeline: RunTimelineEntry[];
+  perkFanfare: { color: string; name: string; time: number } | null;
+  bossActive: { name: string; id: string } | null;
+  evolvedPerks: string[];
 }
 
 interface GameState {
@@ -119,6 +168,7 @@ interface GameState {
   fps: number;
   stats: GameStats;
   survivalState: SurvivalState | null;
+  meta: MetaProgression;
   setPhase: (phase: GamePhase) => void;
   loadLevel: (index: number) => void;
   setMuted: (muted: boolean) => void;
@@ -155,6 +205,7 @@ interface GameState {
   survivalTick: (dt: number) => void;
   addXPOrb: (pos: Position, value: number) => void;
   addFloatingText: (text: string, pos: Position, color: string) => void;
+  startSurvivalWithModifiers: (modifiers: RunModifier[]) => void;
 }
 
 const defaultWeapon: Weapon = { name: 'Pistol', ammo: 24, maxAmmo: 24, damage: 10 };
@@ -207,6 +258,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   fps: 0,
   stats: { kills: 0, deaths: 0, runs: 1 },
   survivalState: null,
+  meta: loadMeta(),
   setTrainActive: (active) => set({ trainActive: active }),
   triggerShake: () => set({ lastShakeTime: Date.now() }),
   dodge: (direction: Position) => {
@@ -333,7 +385,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     if (id === 'player') {
       if (!state.player) return;
-      const hp = Math.max(0, state.player.hp - amount);
+      // Titanium Plating evolution: +50% damage reduction
+      let finalAmount = amount;
+      if (state.gameMode === 'survival' && state.survivalState?.evolvedPerks.includes('iron_skin')) {
+        finalAmount = Math.floor(amount * 0.5);
+      }
+      const hp = Math.max(0, state.player.hp - finalAmount);
       if (pos) mkParticle([pos.x, 0.5, pos.z], '#ff0000');
 
       if (hp === 0) {
@@ -369,7 +426,22 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
         // Death
         if (state.gameMode === 'survival') {
-          set({ player: { ...state.player, hp: 0 }, lastDamageTime: Date.now(), phase: 'survival_game_over', survivalState: state.survivalState ? { ...state.survivalState, highScore: Math.max(state.survivalState.highScore, state.survivalState.score) } : null, particles: [...state.particles, ...newParticles] });
+          const sv = state.survivalState;
+          const finalScore = sv ? Math.floor(sv.score * sv.scoreMultiplier) : 0;
+          // Save meta-progression
+          if (sv) {
+            const meta = loadMeta();
+            const creditsEarned = Math.floor(finalScore / 10) + sv.wave * 5;
+            saveMeta({
+              credits: meta.credits + creditsEarned,
+              bestWave: Math.max(meta.bestWave, sv.wave),
+              bestScore: Math.max(meta.bestScore, finalScore),
+              totalKills: meta.totalKills + state.stats.kills,
+              totalRuns: meta.totalRuns + 1,
+            });
+            set({ meta: loadMeta() });
+          }
+          set({ player: { ...state.player, hp: 0 }, lastDamageTime: Date.now(), phase: 'survival_game_over', survivalState: sv ? { ...sv, score: finalScore, highScore: Math.max(sv.highScore, finalScore), timeline: [...sv.timeline, { wave: sv.wave, event: 'Terminated', detail: `Final score: ${finalScore}`, color: '#ef4444', timestamp: Date.now() }] } : null, particles: [...state.particles, ...newParticles] });
         } else {
           set({ player: { ...state.player, hp: 0 }, lastDamageTime: Date.now(), phase: 'game_over', particles: [...state.particles, ...newParticles] });
         }
@@ -382,6 +454,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     // --- Enemy damage ---
     let hit = false; let killed = false; const killedRef: { enemy: EnemyState | null } = { enemy: null };
     const newBloodDecals: BloodDecal[] = [];
+    // Check for shield (Colossus boss)
+    let shieldBlocked = false;
     let enemies = state.enemies.map(e => {
       if (e.id === id && e.hp > 0) {
         hit = true;
@@ -391,9 +465,28 @@ export const useGameStore = create<GameState>((set, get) => ({
             newBloodDecals.push({ id: Math.random().toString(36).substr(2, 9), pos: { x: pos.x, z: pos.z }, rot: Math.random() * Math.PI * 2, scale: 0.5 + Math.random() * 1.5 });
           }
         }
+        // Per-hit damage number
+        if (pos && state.gameMode === 'survival' && state.survivalState) {
+          const dmgText = e.shieldHp && e.shieldHp > 0 ? 'SHIELD' : `${Math.min(amount, e.hp)}`;
+          const dmgColor = e.isElite ? '#fbbf24' : e.shieldHp && e.shieldHp > 0 ? '#60a5fa' : '#ff6666';
+          state.survivalState.floatingTexts.push({ id: Math.random().toString(36).substr(2, 9), text: dmgText, pos: { x: pos.x + (Math.random() - 0.5) * 0.5, z: pos.z - 0.3 }, color: dmgColor, life: 0.8 });
+        }
         if (e.unkillable) return { ...e, lastHitTime: Date.now() };
+        // Shield phase for boss
+        if (e.shieldHp && e.shieldHp > 0) {
+          const newShield = Math.max(0, e.shieldHp - amount);
+          shieldBlocked = true;
+          if (pos) mkParticle([pos.x, 0.8, pos.z], '#60a5fa');
+          return { ...e, shieldHp: newShield, lastHitTime: Date.now() };
+        }
         const hp = Math.max(0, e.hp - amount);
         if (hp === 0) { killed = true; killedRef.enemy = e; }
+        // Vampiric evolution: heal 5% of damage dealt
+        if (state.gameMode === 'survival' && state.survivalState?.evolvedPerks.includes('combat_regen') && state.player && state.player.hp > 0) {
+          const healAmt = Math.ceil(amount * 0.05);
+          const newHp = Math.min(state.player.maxHp, state.player.hp + healAmt);
+          if (newHp !== state.player.hp) set({ player: { ...state.player, hp: newHp } });
+        }
         return { ...e, hp, lastHitTime: Date.now() };
       }
       return e;
@@ -410,6 +503,31 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         if (state.gameMode === 'survival' && updatedSv && killedEnemy) {
           const ePos = getEnemyPos(killedEnemy);
+
+          // Death particle burst (8 particles matching enemy color)
+          for (let i = 0; i < 8; i++) {
+            mkParticle([ePos.x + (Math.random() - 0.5) * 0.5, 0.3 + Math.random() * 0.8, ePos.z + (Math.random() - 0.5) * 0.5], killedEnemy.color);
+          }
+
+          // Hoarder evolution: all enemies have 30% drop chance; Elites always drop
+          const hasHoarder = updatedSv.evolvedPerks.includes('scavenger');
+          if (killedEnemy.isElite || (hasHoarder && Math.random() < 0.3)) {
+            const dropType = Math.random() > 0.5 ? 'health' : 'ammo';
+            if (dropType === 'health') {
+              const hbox: HealthBoxState = { type: 'health_box', id: `elite_h_${Date.now()}`, pos: { x: ePos.x, z: ePos.z }, rotation: 0, hp: 1, maxHp: 1 };
+              set(s => ({ healthBoxes: [...s.healthBoxes, hbox] }));
+            } else {
+              const abox: AmmoBoxState = { type: 'ammo_box', id: `elite_a_${Date.now()}`, pos: { x: ePos.x, z: ePos.z }, rotation: 0, hp: 1, maxHp: 1 };
+              set(s => ({ ammoBoxes: [...s.ammoBoxes, abox] }));
+            }
+            // Extra XP burst for elites
+            for (let i = 0; i < 5; i++) mkParticle([ePos.x, 1.0, ePos.z], '#fbbf24');
+          }
+
+          // Boss kill: track in timeline
+          if (killedEnemy.isBoss && updatedSv) {
+            updatedSv = { ...updatedSv, bossActive: null, timeline: [...updatedSv.timeline, { wave: updatedSv.wave, event: 'Boss Killed', detail: killedEnemy.bossName || 'Boss', color: '#fbbf24', timestamp: Date.now() }] };
+          }
 
           // XP orb
           const orbId = Math.random().toString(36).substr(2, 9);
@@ -620,8 +738,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
   usePortal: () => { const state = get(); if (state.portal && !state.portal.used && state.player) { const ps: Particle[] = []; for (let i = 0; i < 10; i++) { ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posA.x, 0.5, state.portal.posA.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); ps.push({ id: Math.random().toString(36).substr(2, 9), pos: [state.portal.posB.x, 0.5, state.portal.posB.z], color: '#3b82f6', velocity: [(Math.random() - 0.5) * 4, Math.random() * 4, (Math.random() - 0.5) * 4], life: 1.0 }); } set({ portal: { ...state.portal, used: true }, particles: [...state.particles, ...ps] }); SFX.teleport(); } },
   toggleButton: (id, active) => { const state = get(); const button = state.buttons.find(b => b.id === id); if (!button) return; set(s => ({ buttons: s.buttons.map(b => b.id === id ? { ...b, active } : b), turrets: s.turrets.map(t => t.id === button.targetId ? { ...t, disabled: active } : t) })); },
-  playerShoot: (spawnPos, direction) => { const state = get(); const isSurvival = state.gameMode === 'survival'; const validPhase = isSurvival ? state.phase === 'survival_playing' : state.phase === 'playing'; if (!validPhase || !state.player || state.player.hp <= 0 || (state.countdown !== null && state.countdown > 0.5)) return; const activeWeapon = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? state.player.secondaryWeapon : state.player.weapon; if (activeWeapon.ammo <= 0) { SFX.gunEmpty(); return; } const updatedWeapon = { ...activeWeapon, ammo: activeWeapon.ammo - 1 }; const newPlayer = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? { ...state.player, secondaryWeapon: updatedWeapon } : { ...state.player, weapon: updatedWeapon }; set({ player: newPlayer }); const isSmg = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon; const hollowStacks = isSurvival ? (state.survivalState?.perkStacks['hollow_points'] || 0) : 0; const dmgMult = 1 + hollowStacks * 0.25; const hasBulletHell = isSurvival && state.survivalState?.activePerks.includes('bullet_hell'); const hasExplosiveRounds = isSurvival && state.survivalState?.activePerks.includes('explosive_rounds'); const bulletDamage = Math.floor(activeWeapon.damage * dmgMult); const bulletColor = hasExplosiveRounds ? '#ff6600' : isSmg ? '#22ff44' : undefined; if (hasBulletHell) { const angles = [-0.15, 0, 0.15]; angles.forEach(a => { const cos = Math.cos(a); const sin = Math.sin(a); const dx = direction.x * cos - direction.z * sin; const dz = direction.x * sin + direction.z * cos; get().addProjectile({ pos: { ...spawnPos }, velocity: { x: dx * 30, z: dz * 30 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor }); }); } else { get().addProjectile({ pos: spawnPos, velocity: { x: direction.x * 30, z: direction.z * 30 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor }); } },
-  enemyShoot: (spawnPos, direction, damage) => { get().addProjectile({ pos: spawnPos, velocity: { x: direction.x * 20, z: direction.z * 20 }, damage, life: 2.0, isEnemy: true }); },
+  playerShoot: (spawnPos, direction) => { const state = get(); const isSurvival = state.gameMode === 'survival'; const validPhase = isSurvival ? state.phase === 'survival_playing' : state.phase === 'playing'; if (!validPhase || !state.player || state.player.hp <= 0 || (state.countdown !== null && state.countdown > 0.5)) return; const activeWeapon = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? state.player.secondaryWeapon : state.player.weapon; const hasBottomlessMag = isSurvival && state.survivalState?.evolvedPerks.includes('extended_mag'); if (!hasBottomlessMag && activeWeapon.ammo <= 0) { SFX.gunEmpty(); return; } if (!hasBottomlessMag) { const updatedWeapon = { ...activeWeapon, ammo: activeWeapon.ammo - 1 }; const newPlayer = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon ? { ...state.player, secondaryWeapon: updatedWeapon } : { ...state.player, weapon: updatedWeapon }; set({ player: newPlayer }); } const isSmg = state.player.activeWeaponSlot === 'secondary' && state.player.secondaryWeapon; const hollowStacks = isSurvival ? (state.survivalState?.perkStacks['hollow_points'] || 0) : 0; const glassCannonMult = (isSurvival && state.survivalState?.runModifiers.includes('glass_cannon')) ? 2.0 : 1.0; const dmgMult = (1 + hollowStacks * 0.25) * glassCannonMult; const hasBulletHell = isSurvival && state.survivalState?.activePerks.includes('bullet_hell'); const hasExplosiveRounds = isSurvival && state.survivalState?.activePerks.includes('explosive_rounds'); const bulletDamage = Math.floor(activeWeapon.damage * dmgMult); const bulletColor = hasExplosiveRounds ? '#ff6600' : isSmg ? '#22ff44' : undefined; const hasArmorPiercing = isSurvival && state.survivalState?.evolvedPerks.includes('hollow_points'); if (hasBulletHell) { const angles = [-0.15, 0, 0.15]; angles.forEach(a => { const cos = Math.cos(a); const sin = Math.sin(a); const dx = direction.x * cos - direction.z * sin; const dz = direction.x * sin + direction.z * cos; get().addProjectile({ pos: { ...spawnPos }, velocity: { x: dx * 60, z: dz * 60 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor, pierce: hasArmorPiercing || false, hitIds: [] }); }); } else { get().addProjectile({ pos: spawnPos, velocity: { x: direction.x * 60, z: direction.z * 60 }, damage: bulletDamage, life: 2.0, isEnemy: false, color: bulletColor, pierce: hasArmorPiercing || false, hitIds: [] }); } },
+  enemyShoot: (spawnPos, direction, damage) => { get().addProjectile({ pos: spawnPos, velocity: { x: direction.x * 40, z: direction.z * 40 }, damage, life: 2.0, isEnemy: true }); },
   addProjectile: (proj) => { const id = Math.random().toString(36).substr(2, 9); set(state => ({ projectiles: [...state.projectiles, { ...proj, id }] })); },
   removeProjectile: (id) => set(state => ({ projectiles: state.projectiles.filter(p => p.id !== id) })),
   addParticle: (pos, color, count?: number) => {
@@ -758,11 +876,55 @@ export const useGameStore = create<GameState>((set, get) => ({
         timeWarpTimer: 0,
         waveStartTime: Date.now(),
         regenAccumulator: 0,
+        runModifiers: [],
+        scoreMultiplier: 1.0,
+        timeline: [],
+        perkFanfare: null,
+        bossActive: null,
+        evolvedPerks: [],
       }
     });
     SFX.levelStart();
     // Start first wave
     setTimeout(() => get().startSurvivalWave(), 100);
+  },
+
+  startSurvivalWithModifiers: (modifiers: RunModifier[]) => {
+    // Calculate score multiplier
+    let mult = 1.0;
+    modifiers.forEach(m => {
+      const def = RUN_MODIFIERS.find(r => r.id === m);
+      if (def) mult *= def.scoreMultiplier;
+    });
+    // Start survival normally, then patch in modifiers
+    get().startSurvival();
+    const sv = get().survivalState;
+    if (sv) {
+      let player = get().player;
+      if (modifiers.includes('glass_cannon') && player) {
+        player = { ...player, hp: 50, maxHp: 50 };
+        set({ player });
+      }
+      set({
+        survivalState: {
+          ...sv,
+          runModifiers: modifiers,
+          scoreMultiplier: mult,
+          timeline: [{ wave: 0, event: 'Run Started', detail: modifiers.length > 0 ? `Modifiers: ${modifiers.join(', ')}` : 'Standard run', color: '#22c55e', timestamp: Date.now() }],
+        }
+      });
+      if (modifiers.includes('fast_start')) {
+        // Skip to wave 5
+        for (let i = 0; i < 4; i++) {
+          const sv2 = get().survivalState;
+          if (sv2) set({ survivalState: { ...sv2, wave: sv2.wave + 1 } });
+        }
+      }
+    }
+    // Update meta
+    const meta = loadMeta();
+    saveMeta({ totalRuns: meta.totalRuns + 1 });
+    set({ meta: loadMeta() });
   },
 
   startSurvivalWave: () => {
@@ -786,7 +948,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     });
 
+    // Double enemies modifier
+    if (sv.runModifiers.includes('double_enemies')) {
+      const extra: SpawnQueueItem[] = [...spawnQueue];
+      extra.forEach(item => {
+        const sp = getSpawnPosition(waveConfig.spawnPattern, totalEnemies, totalEnemies + 1, sv.arenaSize);
+        spawnQueue.push({ def: item.def, spawnPos: sp });
+        totalEnemies++;
+      });
+    }
+
     // Add boss to spawn queue
+    let bossData: { name: string; id: string; mechanic: string } | null = null;
     if (waveConfig.boss) {
       const bossPos = getSpawnPosition('north_rush', 0, 1, sv.arenaSize);
       const bossDef: SurvivalEnemyDef = {
@@ -798,13 +971,22 @@ export const useGameStore = create<GameState>((set, get) => ({
         weapon: waveConfig.boss.weapon,
         scale: 1.8,
       };
+      (bossDef as any).isBoss = true;
+      (bossDef as any).bossName = waveConfig.boss.name;
+      (bossDef as any).bossMechanic = waveConfig.boss.mechanic;
+      // Colossus gets a shield
+      if (waveConfig.boss.mechanic === 'colossus') {
+        (bossDef as any).shieldHp = Math.floor(waveConfig.boss.hp * 0.4);
+        (bossDef as any).shieldMaxHp = Math.floor(waveConfig.boss.hp * 0.4);
+      }
       spawnQueue.push({ def: bossDef, spawnPos: bossPos });
       totalEnemies++;
+      bossData = { name: waveConfig.boss.name, id: waveConfig.boss.id, mechanic: waveConfig.boss.mechanic };
     }
 
-    // Cycle themes every 10 waves
-    const themes: LevelTheme[] = ['industrial', 'desert', 'space_station', 'cemetery', 'metro'];
-    const themeIndex = Math.floor((newWave - 1) / 10) % themes.length;
+    // Cycle themes every 5 waves
+    const themes: LevelTheme[] = ['industrial', 'desert', 'space_station', 'cemetery', 'metro', 'garden', 'beach', 'airport'];
+    const themeIndex = Math.floor((newWave - 1) / 5) % themes.length;
 
     set({
       phase: 'survival_wave_intro',
@@ -818,8 +1000,10 @@ export const useGameStore = create<GameState>((set, get) => ({
         spawnQueue,
         spawnTimer: 0,
         spawnDelay: waveConfig.spawnDelay,
-        waveIntroTimer: 2.5,
+        waveIntroTimer: bossData ? 3.5 : 2.5,
         waveStartTime: Date.now(),
+        bossActive: bossData ? { name: bossData.name, id: bossData.id } : null,
+        timeline: [...sv.timeline, { wave: newWave, event: bossData ? `Boss: ${bossData.name}` : `Wave ${newWave}`, detail: `${totalEnemies} enemies`, color: bossData ? '#ef4444' : '#6366f1', timestamp: Date.now() }],
       }
     });
 
@@ -832,14 +1016,18 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     set({ barrels: newBarrels, bloodDecals: [] });
 
-    // Spawn health/ammo boxes
-    const newHealthBoxes: HealthBoxState[] = [];
-    const newAmmoBoxes: AmmoBoxState[] = [];
-    for (let i = 0; i < 2; i++) {
-      newHealthBoxes.push({ type: 'health_box', id: `hbox_w${newWave}_${i}`, pos: { x: 4 + Math.random() * (sv.arenaSize - 8), z: 4 + Math.random() * (sv.arenaSize - 8) }, rotation: 0, hp: 1, maxHp: 1 });
-      newAmmoBoxes.push({ type: 'ammo_box', id: `abox_w${newWave}_${i}`, pos: { x: 4 + Math.random() * (sv.arenaSize - 8), z: 4 + Math.random() * (sv.arenaSize - 8) }, rotation: 0, hp: 1, maxHp: 1 });
+    // Spawn health/ammo boxes (unless no_pickups modifier)
+    if (!sv.runModifiers.includes('no_pickups')) {
+      const newHealthBoxes: HealthBoxState[] = [];
+      const newAmmoBoxes: AmmoBoxState[] = [];
+      for (let i = 0; i < 2; i++) {
+        newHealthBoxes.push({ type: 'health_box', id: `hbox_w${newWave}_${i}`, pos: { x: 4 + Math.random() * (sv.arenaSize - 8), z: 4 + Math.random() * (sv.arenaSize - 8) }, rotation: 0, hp: 1, maxHp: 1 });
+        newAmmoBoxes.push({ type: 'ammo_box', id: `abox_w${newWave}_${i}`, pos: { x: 4 + Math.random() * (sv.arenaSize - 8), z: 4 + Math.random() * (sv.arenaSize - 8) }, rotation: 0, hp: 1, maxHp: 1 });
+      }
+      set({ healthBoxes: newHealthBoxes, ammoBoxes: newAmmoBoxes });
+    } else {
+      set({ healthBoxes: [], ammoBoxes: [] });
     }
-    set({ healthBoxes: newHealthBoxes, ammoBoxes: newAmmoBoxes });
   },
 
   selectPerk: (perkId: PerkId) => {
@@ -889,6 +1077,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
 
+    // Check for perk evolution
+    const perkDef = PERKS.find(p => p.id === perkId);
+    const evo = getEvolution(perkId, newStacks[perkId]);
+    const evolvedPerks = [...sv.evolvedPerks];
+    const timeline = [...sv.timeline, { wave: sv.wave, event: 'Perk Selected', detail: perkDef?.name || perkId, color: perkDef?.color || '#ffffff', timestamp: Date.now() }];
+    if (evo && !evolvedPerks.includes(perkId)) {
+      evolvedPerks.push(perkId);
+      timeline.push({ wave: sv.wave, event: 'EVOLUTION', detail: `${evo.name}: ${evo.description}`, color: '#fbbf24', timestamp: Date.now() });
+    }
+
     set({
       player: newPlayer,
       survivalState: {
@@ -896,6 +1094,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         activePerks: newPerks,
         perkStacks: newStacks,
         hasPhoenix: newPerks.includes('phoenix'),
+        perkFanfare: { color: perkDef?.color || '#fbbf24', name: evo ? `EVOLVED: ${evo.name}` : perkDef?.name || '', time: Date.now() },
+        evolvedPerks,
+        timeline,
       }
     });
 
@@ -953,6 +1154,23 @@ export const useGameStore = create<GameState>((set, get) => ({
         (newEnemy as any).explodesOnDeath = item.def.explodesOnDeath || false;
         (newEnemy as any).splitsOnDeath = item.def.splitsOnDeath || false;
         (newEnemy as any).spawnTime = Date.now();
+        // Boss properties
+        if ((item.def as any).isBoss) {
+          newEnemy.isBoss = true;
+          newEnemy.bossName = (item.def as any).bossName;
+          (newEnemy as any).bossMechanic = (item.def as any).bossMechanic;
+          if ((item.def as any).shieldHp) {
+            newEnemy.shieldHp = (item.def as any).shieldHp;
+            newEnemy.shieldMaxHp = (item.def as any).shieldMaxHp;
+          }
+        }
+        // Elite enemy: 10% chance for regular enemies, or 100% with elite_only modifier
+        const isEliteRoll = newSv.runModifiers.includes('elite_only') || (!newEnemy.isBoss && Math.random() < 0.10);
+        if (isEliteRoll && !newEnemy.isBoss) {
+          newEnemy.isElite = true;
+          newEnemy.hp = Math.floor(newEnemy.hp * 3);
+          newEnemy.maxHp = newEnemy.hp;
+        }
         spawnedEnemies.push(newEnemy);
       }
     }
@@ -986,6 +1204,25 @@ export const useGameStore = create<GameState>((set, get) => ({
         newSv.killCombo = 0;
         newSv.comboTimer = 0;
       }
+    }
+
+    // --- Sonic Rush trail (swift_feet evolution: damage enemies near player) ---
+    if (newSv.evolvedPerks.includes('swift_feet') && state.player.hp > 0) {
+      const trailDps = 15;
+      const trailDmg = trailDps * effectiveDt;
+      const trailRadius = 1.5;
+      const updatedEnemies = state.enemies.map(e => {
+        if (e.hp > 0) {
+          const ep = getEnemyPos(e);
+          const dx = ep.x - pPos.x;
+          const dz = ep.z - pPos.z;
+          if (Math.sqrt(dx * dx + dz * dz) <= trailRadius) {
+            return { ...e, hp: Math.max(0, e.hp - trailDmg) };
+          }
+        }
+        return e;
+      });
+      set({ enemies: updatedEnemies });
     }
 
     // --- Death aura (batch damage into enemies array directly) ---
@@ -1075,7 +1312,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         if (now - newSv.cloneLastFireTime > 500 && dist < 12) {
           newSv.cloneLastFireTime = now;
           const dir = { x: dx / dist, z: dz / dist };
-          get().addProjectile({ pos: { x: cPos.x + dir.x * 0.6, z: cPos.z + dir.z * 0.6 }, velocity: { x: dir.x * 25, z: dir.z * 25 }, damage: 8, life: 2.0, isEnemy: false, color: '#818cf8' });
+          get().addProjectile({ pos: { x: cPos.x + dir.x * 0.6, z: cPos.z + dir.z * 0.6 }, velocity: { x: dir.x * 55, z: dir.z * 55 }, damage: 8, life: 2.0, isEnemy: false, color: '#818cf8' });
         }
       } else {
         const dx = pPos.x + 2 - cPos.x;

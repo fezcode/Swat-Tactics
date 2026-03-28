@@ -13,12 +13,15 @@ const THEME_COLORS: Record<string, { floor: string; floor2: string; grid: string
   space_station: { floor: '#0c1020', floor2: '#080c18', grid: '#c026d3', obelisk: '#a855f7', glow: '#a855f7', fog: '#050510', accent: '#4c1d95' },
   cemetery:   { floor: '#1e1e24', floor2: '#18181e', grid: '#6b7280', obelisk: '#6366f1', glow: '#6366f1', fog: '#0a0a0c', accent: '#374151' },
   metro:      { floor: '#161620', floor2: '#101018', grid: '#eab308', obelisk: '#ef4444', glow: '#ef4444', fog: '#080808', accent: '#78716c' },
+  garden:     { floor: '#1a2e1a', floor2: '#152815', grid: '#4ade80', obelisk: '#22c55e', glow: '#22c55e', fog: '#0a1a0a', accent: '#166534' },
+  beach:      { floor: '#3d3828', floor2: '#342f20', grid: '#fbbf24', obelisk: '#f59e0b', glow: '#38bdf8', fog: '#1a1608', accent: '#ca8a04' },
+  airport:    { floor: '#1e2028', floor2: '#181a22', grid: '#60a5fa', obelisk: '#3b82f6', glow: '#60a5fa', fog: '#0c0e14', accent: '#1e40af' },
 };
 
-function Obelisk({ position, color, glowColor }: { position: [number, number, number]; color: string; glowColor: string }) {
+// --- Only obelisks get useFrame (4 total, always present) ---
+function Obelisk({ position, color }: { position: [number, number, number]; color: string }) {
   const ref = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
-
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     if (ref.current) {
@@ -30,74 +33,213 @@ function Obelisk({ position, color, glowColor }: { position: [number, number, nu
       ringRef.current.rotation.x = Math.sin(t) * 0.3;
     }
   });
-
   return (
     <RigidBody type="fixed" position={position} colliders={false} userData={{ type: 'wall' }}>
       <CuboidCollider args={[0.6, 2, 0.6]} position={[0, 1, 0]} />
-      {/* Base pillar */}
-      <mesh castShadow receiveShadow position={[0, 0.75, 0]}>
+      <mesh position={[0, 0.75, 0]}>
         <boxGeometry args={[0.8, 1.5, 0.8]} />
         <meshStandardMaterial color="#1e293b" metalness={0.9} roughness={0.1} />
       </mesh>
-      {/* Pillar top cap */}
       <mesh position={[0, 1.55, 0]}>
         <boxGeometry args={[1.0, 0.1, 1.0]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} metalness={1} roughness={0} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
       </mesh>
-      {/* Floating crystal */}
-      <mesh ref={ref} castShadow>
+      <mesh ref={ref}>
         <octahedronGeometry args={[0.45, 0]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={6} metalness={1} roughness={0} />
       </mesh>
-      {/* Orbiting ring */}
       <mesh ref={ringRef} position={[0, 2.0, 0]}>
         <torusGeometry args={[0.7, 0.03, 8, 32]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={8} transparent opacity={0.7} /> 
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={8} transparent opacity={0.7} />
       </mesh>
-    </RigidBody>
-  );}
-
-// Decoration: Dead Tree
-function DeadTree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
-  return (
-    <RigidBody type="fixed" position={position} colliders={false} userData={{ type: 'wall' }}>
-      <CuboidCollider args={[0.2 * scale, 1.5 * scale, 0.2 * scale]} position={[0, 0.8 * scale, 0]} />
-      <group scale={[scale, scale, scale]}>
-        <mesh castShadow position={[0, 0.8, 0]}>
-          <cylinderGeometry args={[0.08, 0.15, 1.6, 6]} />
-          <meshStandardMaterial color="#3e2723" roughness={0.9} />
-        </mesh>
-        <mesh castShadow position={[0.15, 1.3, 0]} rotation={[0, 0, 0.5]}>
-          <cylinderGeometry args={[0.03, 0.06, 0.6, 4]} />
-          <meshStandardMaterial color="#4e342e" roughness={0.9} />
-        </mesh>
-        <mesh castShadow position={[-0.1, 1.5, 0.05]} rotation={[0, 0, -0.4]}>
-          <cylinderGeometry args={[0.02, 0.05, 0.5, 4]} />
-          <meshStandardMaterial color="#4e342e" roughness={0.9} />
-        </mesh>
-      </group>
     </RigidBody>
   );
 }
 
-// Decoration: Lamp Post
+// --- Static decorations (NO RigidBody, NO useFrame, NO castShadow) ---
+
+function DeadTree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  return (
+    <group position={position} scale={[scale, scale, scale]}>
+      <mesh position={[0, 0.8, 0]}>
+        <cylinderGeometry args={[0.08, 0.15, 1.6, 5]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.9} />
+      </mesh>
+      <mesh position={[0.15, 1.3, 0]} rotation={[0, 0, 0.5]}>
+        <cylinderGeometry args={[0.03, 0.06, 0.6, 4]} />
+        <meshStandardMaterial color="#4e342e" roughness={0.9} />
+      </mesh>
+      <mesh position={[-0.1, 1.5, 0.05]} rotation={[0, 0, -0.4]}>
+        <cylinderGeometry args={[0.02, 0.05, 0.5, 4]} />
+        <meshStandardMaterial color="#4e342e" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
 function LampPost({ position, color }: { position: [number, number, number]; color: string }) {
   return (
-    <RigidBody type="fixed" position={position} colliders={false} userData={{ type: 'wall' }}>
-      <CuboidCollider args={[0.2, 2.4, 0.2]} position={[0, 1.2, 0]} />
-      <mesh castShadow position={[0, 1.2, 0]}>
-        <cylinderGeometry args={[0.04, 0.06, 2.4, 8]} />
+    <group position={position}>
+      <mesh position={[0, 1.2, 0]}>
+        <cylinderGeometry args={[0.04, 0.06, 2.4, 6]} />
         <meshStandardMaterial color="#374151" metalness={0.8} roughness={0.3} />
       </mesh>
       <mesh position={[0, 2.5, 0]}>
         <boxGeometry args={[0.3, 0.15, 0.3]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={4} />
       </mesh>
-    </RigidBody>
+    </group>
   );
 }
 
-// Decoration: Cargo Container
+function Rubble({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.1 * scale, 0]} scale={[scale, scale * 0.6, scale]}>
+        <dodecahedronGeometry args={[0.25, 0]} />
+        <meshStandardMaterial color="#57534e" roughness={0.95} />
+      </mesh>
+    </group>
+  );
+}
+
+function Cactus({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  return (
+    <group position={position} scale={[scale, scale, scale]}>
+      <mesh position={[0, 0.7, 0]}>
+        <cylinderGeometry args={[0.12, 0.15, 1.4, 6]} />
+        <meshStandardMaterial color="#2d5a27" roughness={0.8} />
+      </mesh>
+      <mesh position={[0.2, 1.1, 0]} rotation={[0, 0, -0.8]}>
+        <cylinderGeometry args={[0.07, 0.09, 0.5, 5]} />
+        <meshStandardMaterial color="#3a7a32" roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+function SandDune({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  return (
+    <mesh position={position} scale={[scale * 2, scale * 0.3, scale * 1.5]}>
+      <sphereGeometry args={[1, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
+      <meshStandardMaterial color="#c4a35a" roughness={0.95} />
+    </mesh>
+  );
+}
+
+function Tombstone({ position, rotation, scale = 1 }: { position: [number, number, number]; rotation: number; scale?: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]} scale={[scale, scale, scale]}>
+      <mesh position={[0, 0.4, 0]}>
+        <boxGeometry args={[0.4, 0.8, 0.12]} />
+        <meshStandardMaterial color="#6b7280" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+function FogPillar({ position, color }: { position: [number, number, number]; color: string }) {
+  return (
+    <mesh position={[position[0], 1.5, position[2]]}>
+      <cylinderGeometry args={[0.8, 1.2, 3, 6]} />
+      <meshBasicMaterial color={color} transparent opacity={0.08} />
+    </mesh>
+  );
+}
+
+function PalmTree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  return (
+    <group position={position} scale={[scale, scale, scale]}>
+      <mesh position={[0, 1.0, 0]}>
+        <cylinderGeometry args={[0.08, 0.12, 2.0, 6]} />
+        <meshStandardMaterial color="#8B6914" roughness={0.9} />
+      </mesh>
+      {[0, 1.5, 3.0, 4.5].map((a, i) => (
+        <mesh key={i} position={[Math.cos(a) * 0.5, 2.1, Math.sin(a) * 0.5]} rotation={[0.6 * Math.sin(a), a, -0.6 * Math.cos(a)]}>
+          <boxGeometry args={[0.8, 0.04, 0.3]} />
+          <meshStandardMaterial color="#2d7a2d" roughness={0.7} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function BeachUmbrella({ position, color }: { position: [number, number, number]; color: string }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.8, 0]}>
+        <cylinderGeometry args={[0.03, 0.03, 1.6, 5]} />
+        <meshStandardMaterial color="#d4d4d8" metalness={0.7} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 1.65, 0]}>
+        <coneGeometry args={[0.8, 0.4, 6]} />
+        <meshStandardMaterial color={color} roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
+function TechPillar({ position, color }: { position: [number, number, number]; color: string }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 1.0, 0]}>
+        <boxGeometry args={[0.4, 2.0, 0.4]} />
+        <meshStandardMaterial color="#0f172a" metalness={0.95} roughness={0.1} />
+      </mesh>
+      <mesh position={[0, 1.0, 0.21]}>
+        <planeGeometry args={[0.3, 1.5]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} transparent opacity={0.6} />
+      </mesh>
+      <mesh position={[0, 2.1, 0]}>
+        <boxGeometry args={[0.5, 0.08, 0.5]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={4} />
+      </mesh>
+    </group>
+  );
+}
+
+function HoloRing({ position, color }: { position: [number, number, number]; color: string }) {
+  return (
+    <mesh position={[position[0], 1.5, position[2]]}>
+      <torusGeometry args={[0.6, 0.02, 6, 16]} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} transparent opacity={0.5} />
+    </mesh>
+  );
+}
+
+function FlowerPatch({ position, color }: { position: [number, number, number]; color: string }) {
+  return (
+    <group position={position}>
+      {[0, 1.2, 2.4, 3.6].map((a, i) => (
+        <mesh key={i} position={[Math.cos(a) * 0.3, 0.2, Math.sin(a) * 0.3]}>
+          <sphereGeometry args={[0.06, 4, 4]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function GardenBush({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  return (
+    <mesh position={[position[0], 0.4 * scale, position[2]]} scale={[scale, scale * 0.8, scale]}>
+      <sphereGeometry args={[0.5, 6, 6]} />
+      <meshStandardMaterial color="#166534" roughness={0.85} />
+    </mesh>
+  );
+}
+
+function RunwayLight({ position }: { position: [number, number, number] }) {
+  return (
+    <mesh position={position}>
+      <boxGeometry args={[0.15, 0.02, 0.15]} />
+      <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={2} />
+    </mesh>
+  );
+}
+
+// --- Obstacles with physics (RigidBody) - only these need collision ---
+
 function CargoContainer({ position, rotation, color }: { position: [number, number, number]; rotation: number; color: string }) {
   return (
     <RigidBody type="fixed" position={position} rotation={[0, rotation, 0]} colliders={false} userData={{ type: 'wall' }}>
@@ -106,108 +248,18 @@ function CargoContainer({ position, rotation, color }: { position: [number, numb
         <boxGeometry args={[2.4, 1.2, 1.0]} />
         <meshStandardMaterial color={color} roughness={0.6} metalness={0.7} />
       </mesh>
-      {/* Container ribs */}
-      {[-0.8, 0, 0.8].map((x, i) => (
-        <mesh key={i} position={[x, 0.6, 0.51]} castShadow>
-          <boxGeometry args={[0.05, 1.1, 0.02]} />
-          <meshStandardMaterial color="#1e293b" metalness={0.9} roughness={0.2} />
-        </mesh>
-      ))}
     </RigidBody>
   );
 }
 
-// Decoration: Billboard / Sign
-function Billboard({ position, color }: { position: [number, number, number]; color: string }) {
-  return (
-    <RigidBody type="fixed" position={position} colliders={false} userData={{ type: 'wall' }}>
-      <CuboidCollider args={[0.8, 1.5, 0.1]} position={[0, 1.0, 0]} />
-      {/* Poles */}
-      <mesh castShadow position={[-0.6, 1.0, 0]}>
-        <cylinderGeometry args={[0.04, 0.04, 2.0, 6]} />
-        <meshStandardMaterial color="#374151" metalness={0.8} roughness={0.3} />
-      </mesh>
-      <mesh castShadow position={[0.6, 1.0, 0]}>
-        <cylinderGeometry args={[0.04, 0.04, 2.0, 6]} />
-        <meshStandardMaterial color="#374151" metalness={0.8} roughness={0.3} />
-      </mesh>
-      {/* Sign board */}
-      <mesh position={[0, 2.1, 0]}>
-        <boxGeometry args={[1.6, 0.6, 0.08]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.5} />
-      </mesh>
-      {/* Glowing border */}
-      <mesh position={[0, 2.1, 0.05]}>
-        <planeGeometry args={[1.5, 0.5]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} transparent opacity={0.4} /> 
-      </mesh>
-    </RigidBody>
-  );
-}
-// Decoration: Train Wreckage
-function TrainWreckage({ position, rotation }: { position: [number, number, number]; rotation: number }) {      
-  return (
-    <RigidBody type="fixed" position={position} rotation={[0, rotation, 0]} colliders={false} userData={{ type: 'wall' }}>
-      <CuboidCollider args={[2, 0.5, 0.6]} position={[0, 0.5, 0]} />
-      {/* Main body */}
-      <mesh castShadow receiveShadow position={[0, 0.5, 0]}>
-        <boxGeometry args={[4, 1.0, 1.2]} />
-        <meshStandardMaterial color="#44403c" roughness={0.8} metalness={0.6} />
-      </mesh>
-      {/* Roof */}
-      <mesh castShadow position={[0, 1.1, 0]}>
-        <boxGeometry args={[3.8, 0.15, 1.3]} />
-        <meshStandardMaterial color="#57534e" roughness={0.7} metalness={0.5} />
-      </mesh>
-      {/* Wheels */}
-      {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
-        <mesh key={i} position={[x, 0.15, 0.65]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.15, 0.15, 0.08, 12]} />
-          <meshStandardMaterial color="#1c1917" metalness={0.9} roughness={0.3} />
-        </mesh>
-      ))}
-      {/* Broken window */}
-      <mesh position={[0.8, 0.7, 0.61]}>
-        <planeGeometry args={[0.5, 0.3]} />
-        <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={1} transparent opacity={0.3} />
-      </mesh>
-    </RigidBody>
-  );
-}
-// Decoration: Track rail
-function TrackRail({ position, length, rotation }: { position: [number, number, number]; length: number; rotation: number }) {
-  return (
-    <group position={position} rotation={[0, rotation, 0]}>
-      {/* Rails */}
-      <mesh position={[0, 0.02, -0.3]}>
-        <boxGeometry args={[length, 0.04, 0.06]} />
-        <meshStandardMaterial color="#78716c" metalness={0.9} roughness={0.3} />
-      </mesh>
-      <mesh position={[0, 0.02, 0.3]}>
-        <boxGeometry args={[length, 0.04, 0.06]} />
-        <meshStandardMaterial color="#78716c" metalness={0.9} roughness={0.3} />
-      </mesh>
-      {/* Ties */}
-      {Array.from({ length: Math.floor(length / 0.8) }, (_, i) => (
-        <mesh key={i} position={[-length / 2 + 0.4 + i * 0.8, 0.01, 0]}>
-          <boxGeometry args={[0.15, 0.02, 0.8]} />
-          <meshStandardMaterial color="#44403c" roughness={0.9} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-// Decoration: Concrete Barrier
 function Barrier({ position, rotation }: { position: [number, number, number]; rotation: number }) {
   return (
     <RigidBody type="fixed" position={position} rotation={[0, rotation, 0]} colliders={false} userData={{ type: 'wall' }}>
       <CuboidCollider args={[0.8, 0.3, 0.25]} position={[0, 0.3, 0]} />
-      <mesh castShadow receiveShadow position={[0, 0.3, 0]}>
+      <mesh receiveShadow position={[0, 0.3, 0]}>
         <boxGeometry args={[1.6, 0.6, 0.5]} />
         <meshStandardMaterial color="#6b7280" roughness={0.9} metalness={0.1} />
       </mesh>
-      {/* Yellow warning stripe */}
       <mesh position={[0, 0.3, 0.26]}>
         <planeGeometry args={[1.5, 0.1]} />
         <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.5} />
@@ -216,21 +268,98 @@ function Barrier({ position, rotation }: { position: [number, number, number]; r
   );
 }
 
-// Decoration: Rubble / Rocks
-function Rubble({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+function TrainWreckage({ position, rotation }: { position: [number, number, number]; rotation: number }) {
   return (
-    <group position={position}>
-      <mesh castShadow position={[0, 0.1 * scale, 0]} scale={[scale, scale * 0.6, scale]}>
-        <dodecahedronGeometry args={[0.25, 0]} />
-        <meshStandardMaterial color="#57534e" roughness={0.95} />
+    <RigidBody type="fixed" position={position} rotation={[0, rotation, 0]} colliders={false} userData={{ type: 'wall' }}>
+      <CuboidCollider args={[2, 0.5, 0.6]} position={[0, 0.5, 0]} />
+      <mesh castShadow receiveShadow position={[0, 0.5, 0]}>
+        <boxGeometry args={[4, 1.0, 1.2]} />
+        <meshStandardMaterial color="#44403c" roughness={0.8} metalness={0.6} />
       </mesh>
-      <mesh castShadow position={[0.2 * scale, 0.06 * scale, 0.15 * scale]} scale={[scale * 0.6, scale * 0.4, scale * 0.6]}>
-        <dodecahedronGeometry args={[0.2, 0]} />
-        <meshStandardMaterial color="#44403c" roughness={0.95} />
+      <mesh position={[0, 1.1, 0]}>
+        <boxGeometry args={[3.8, 0.15, 1.3]} />
+        <meshStandardMaterial color="#57534e" roughness={0.7} metalness={0.5} />
+      </mesh>
+    </RigidBody>
+  );
+}
+
+function Billboard({ position, color }: { position: [number, number, number]; color: string }) {
+  return (
+    <RigidBody type="fixed" position={position} colliders={false} userData={{ type: 'wall' }}>
+      <CuboidCollider args={[0.8, 1.5, 0.1]} position={[0, 1.0, 0]} />
+      <mesh position={[-0.6, 1.0, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 2.0, 5]} />
+        <meshStandardMaterial color="#374151" metalness={0.8} roughness={0.3} />
+      </mesh>
+      <mesh position={[0.6, 1.0, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 2.0, 5]} />
+        <meshStandardMaterial color="#374151" metalness={0.8} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 2.1, 0]}>
+        <boxGeometry args={[1.6, 0.6, 0.08]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.5} />
+      </mesh>
+      <mesh position={[0, 2.1, 0.05]}>
+        <planeGeometry args={[1.5, 0.5]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} transparent opacity={0.4} />
+      </mesh>
+    </RigidBody>
+  );
+}
+
+function SecurityGate({ position, rotation }: { position: [number, number, number]; rotation: number }) {
+  return (
+    <RigidBody type="fixed" position={position} rotation={[0, rotation, 0]} colliders={false} userData={{ type: 'wall' }}>
+      <CuboidCollider args={[0.6, 1.0, 0.1]} position={[0, 1.0, 0]} />
+      <mesh position={[-0.5, 1.0, 0]}>
+        <boxGeometry args={[0.12, 2.0, 0.15]} />
+        <meshStandardMaterial color="#d4d4d8" metalness={0.8} roughness={0.2} />
+      </mesh>
+      <mesh position={[0.5, 1.0, 0]}>
+        <boxGeometry args={[0.12, 2.0, 0.15]} />
+        <meshStandardMaterial color="#d4d4d8" metalness={0.8} roughness={0.2} />
+      </mesh>
+      <mesh position={[0, 2.05, 0]}>
+        <boxGeometry args={[1.1, 0.1, 0.15]} />
+        <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={2} />
+      </mesh>
+    </RigidBody>
+  );
+}
+
+function LuggageCart({ position, rotation }: { position: [number, number, number]; rotation: number }) {
+  return (
+    <RigidBody type="fixed" position={position} rotation={[0, rotation, 0]} colliders={false} userData={{ type: 'wall' }}>
+      <CuboidCollider args={[0.5, 0.35, 0.3]} position={[0, 0.35, 0]} />
+      <mesh receiveShadow position={[0, 0.25, 0]}>
+        <boxGeometry args={[1.0, 0.1, 0.6]} />
+        <meshStandardMaterial color="#374151" metalness={0.8} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0.5, 0]}>
+        <boxGeometry args={[0.7, 0.4, 0.5]} />
+        <meshStandardMaterial color="#1e40af" roughness={0.6} />
+      </mesh>
+    </RigidBody>
+  );
+}
+
+// Track rail - static, no physics
+function TrackRail({ position, length, rotation }: { position: [number, number, number]; length: number; rotation: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh position={[0, 0.02, -0.3]}>
+        <boxGeometry args={[length, 0.04, 0.06]} />
+        <meshStandardMaterial color="#78716c" metalness={0.9} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0.02, 0.3]}>
+        <boxGeometry args={[length, 0.04, 0.06]} />
+        <meshStandardMaterial color="#78716c" metalness={0.9} roughness={0.3} />
       </mesh>
     </group>
   );
 }
+
 interface DecoItem {
   type: string;
   pos: [number, number, number];
@@ -239,7 +368,7 @@ interface DecoItem {
   color: string;
 }
 
-// Isolated list components — prevent SurvivalArena re-render when items change
+// Isolated list components
 function HealthBoxList() {
   const healthBoxes = useGameStore(s => s.healthBoxes);
   return <>{healthBoxes.map(h => <HealthBox key={h.id} state={h} />)}</>;
@@ -259,7 +388,7 @@ export function SurvivalArena() {
   const theme = useGameStore(s => s.theme);
   const colors = THEME_COLORS[theme] || THEME_COLORS.industrial;
 
-  // Generate decorations procedurally based on wave
+  // Generate decorations — lean counts, physics only on obstacles
   const decorations = useMemo(() => {
     const decos: DecoItem[] = [];
     let seed = wave * 7777.777;
@@ -267,20 +396,19 @@ export function SurvivalArena() {
     const margin = 2.5;
     const sz = arenaSize;
 
-    // Corner region trees (8-12 trees scattered in quadrants)
-    for (let i = 0; i < 10; i++) {
-      const quadrant = i % 4;
-      const qx = quadrant < 2 ? margin + rand() * (sz * 0.25) : sz * 0.75 + rand() * (sz * 0.25 - margin);
-      const qz = quadrant % 2 === 0 ? margin + rand() * (sz * 0.25) : sz * 0.75 + rand() * (sz * 0.25 - margin);
-      decos.push({ type: 'tree', pos: [qx, 0, qz], rot: rand() * Math.PI * 2, scale: 0.8 + rand() * 0.6, color: '' });
-    }
+    const randPos = (minDist = 5): [number, number, number] | null => {
+      for (let a = 0; a < 5; a++) {
+        const x = margin + 2 + rand() * (sz - margin * 2 - 4);
+        const z = margin + 2 + rand() * (sz - margin * 2 - 4);
+        if (Math.sqrt((x - sz / 2) ** 2 + (z - sz / 2) ** 2) > minDist) return [x, 0, z];
+      }
+      return null;
+    };
 
-    // Lamp posts around mid-edges
-    const lampSpacing = Math.max(6, sz / 5);
-    for (let i = 0; i < 4; i++) {
-      const side = i;
-      for (let j = 1; j < Math.floor(sz / lampSpacing); j++) {
-        const t = j * lampSpacing;
+    // Edge lamp posts (visual only, no physics — 2 per side max)
+    for (let side = 0; side < 4; side++) {
+      for (let j = 0; j < 2; j++) {
+        const t = sz * (0.3 + j * 0.4);
         let px = 0, pz = 0;
         if (side === 0) { px = t; pz = margin; }
         else if (side === 1) { px = t; pz = sz - margin; }
@@ -290,52 +418,130 @@ export function SurvivalArena() {
       }
     }
 
-    // Cargo containers (2-4)
+    // Barriers (physics, 2-3)
     for (let i = 0; i < 3; i++) {
-      const cx = margin + 3 + rand() * (sz - margin * 2 - 6);
-      const cz = margin + 3 + rand() * (sz - margin * 2 - 6);
-      // Avoid center area where player spawns
-      const distCenter = Math.sqrt((cx - sz / 2) ** 2 + (cz - sz / 2) ** 2);
-      if (distCenter > 5) {
-        const containerColors = ['#991b1b', '#1e3a5f', '#374151', '#065f46', '#78350f'];
-        decos.push({ type: 'container', pos: [cx, 0, cz], rot: rand() * Math.PI, scale: 1, color: containerColors[Math.floor(rand() * containerColors.length)] });
-      }
+      const p = randPos(4);
+      if (p) decos.push({ type: 'barrier', pos: p, rot: rand() * Math.PI, scale: 1, color: '' });
     }
 
-    // Billboards (2)
-    decos.push({ type: 'billboard', pos: [sz * 0.25, 0, margin + 1], rot: 0, scale: 1, color: colors.glow });
-    decos.push({ type: 'billboard', pos: [sz * 0.75, 0, sz - margin - 1], rot: Math.PI, scale: 1, color: colors.accent });
-
-    // Train wreckage (1, if wave > 3)
-    if (wave > 3) {
-      decos.push({ type: 'train', pos: [sz * 0.3 + rand() * sz * 0.4, 0, sz * 0.15 + rand() * 3], rot: rand() * 0.3 - 0.15, scale: 1, color: '' });
-    }
-
-    // Track rails across the field
-    decos.push({ type: 'track', pos: [sz / 2, 0, sz * 0.2], rot: 0, scale: sz * 0.6, color: '' });
-    if (wave > 7) {
-      decos.push({ type: 'track', pos: [sz / 2, 0, sz * 0.8], rot: 0, scale: sz * 0.5, color: '' });
-    }
-
-    // Barriers scattered (4-6)
+    // Rubble (visual, 4-6)
     for (let i = 0; i < 5; i++) {
-      const bx = margin + 2 + rand() * (sz - margin * 2 - 4);
-      const bz = margin + 2 + rand() * (sz - margin * 2 - 4);
-      const distCenter = Math.sqrt((bx - sz / 2) ** 2 + (bz - sz / 2) ** 2);
-      if (distCenter > 4) {
-        decos.push({ type: 'barrier', pos: [bx, 0, bz], rot: rand() * Math.PI, scale: 1, color: '' });
-      }
-    }
-
-    // Rubble clusters
-    for (let i = 0; i < 12; i++) {
       decos.push({ type: 'rubble', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 0.6 + rand() * 1.0, color: '' });
     }
 
+    switch (theme) {
+      case 'industrial':
+      case 'metro': {
+        for (let i = 0; i < 4; i++) {
+          const q = i;
+          const qx = q < 2 ? margin + rand() * (sz * 0.25) : sz * 0.75 + rand() * (sz * 0.25 - margin);
+          const qz = q % 2 === 0 ? margin + rand() * (sz * 0.25) : sz * 0.75 + rand() * (sz * 0.25 - margin);
+          decos.push({ type: 'tree', pos: [qx, 0, qz], rot: rand() * Math.PI * 2, scale: 0.8 + rand() * 0.6, color: '' });
+        }
+        for (let i = 0; i < 2; i++) {
+          const p = randPos(5);
+          if (p) decos.push({ type: 'container', pos: p, rot: rand() * Math.PI, scale: 1, color: ['#991b1b', '#1e3a5f', '#374151'][Math.floor(rand() * 3)] });
+        }
+        decos.push({ type: 'billboard', pos: [sz * 0.25, 0, margin + 1], rot: 0, scale: 1, color: colors.glow });
+        decos.push({ type: 'track', pos: [sz / 2, 0, sz * 0.2], rot: 0, scale: sz * 0.5, color: '' });
+        if (wave > 3) decos.push({ type: 'train', pos: [sz * 0.35, 0, sz * 0.15 + rand() * 3], rot: rand() * 0.2, scale: 1, color: '' });
+        break;
+      }
+      case 'desert': {
+        for (let i = 0; i < 6; i++) {
+          const p = randPos(3);
+          if (p) decos.push({ type: 'cactus', pos: p, rot: 0, scale: 0.7 + rand() * 0.8, color: '' });
+        }
+        for (let i = 0; i < 4; i++) {
+          decos.push({ type: 'sand_dune', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 1 + rand() * 2, color: '' });
+        }
+        const p = randPos(5);
+        if (p) decos.push({ type: 'container', pos: p, rot: rand() * Math.PI, scale: 1, color: '#78350f' });
+        break;
+      }
+      case 'space_station': {
+        for (let i = 0; i < 4; i++) {
+          const p = randPos(4);
+          if (p) decos.push({ type: 'tech_pillar', pos: p, rot: 0, scale: 1, color: colors.glow });
+        }
+        for (let i = 0; i < 3; i++) {
+          decos.push({ type: 'holo_ring', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 1, color: colors.glow });
+        }
+        decos.push({ type: 'billboard', pos: [sz * 0.3, 0, margin + 1], rot: 0, scale: 1, color: colors.glow });
+        break;
+      }
+      case 'cemetery': {
+        for (let i = 0; i < 8; i++) {
+          const p = randPos(3);
+          if (p) decos.push({ type: 'tombstone', pos: p, rot: rand() * 0.3 - 0.15, scale: 0.7 + rand() * 0.5, color: '' });
+        }
+        for (let i = 0; i < 4; i++) {
+          const q = i;
+          const qx = q < 2 ? margin + rand() * (sz * 0.3) : sz * 0.7 + rand() * (sz * 0.3 - margin);
+          const qz = q % 2 === 0 ? margin + rand() * (sz * 0.3) : sz * 0.7 + rand() * (sz * 0.3 - margin);
+          decos.push({ type: 'tree', pos: [qx, 0, qz], rot: rand() * Math.PI * 2, scale: 0.9 + rand() * 0.5, color: '' });
+        }
+        for (let i = 0; i < 3; i++) {
+          decos.push({ type: 'fog_pillar', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 1, color: '#6366f1' });
+        }
+        break;
+      }
+      case 'garden': {
+        for (let i = 0; i < 5; i++) {
+          const p = randPos(3);
+          if (p) decos.push({ type: 'garden_bush', pos: p, rot: 0, scale: 0.6 + rand() * 0.8, color: '' });
+        }
+        for (let i = 0; i < 6; i++) {
+          const fc = ['#ec4899', '#f59e0b', '#a855f7', '#ef4444'];
+          decos.push({ type: 'flower', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 1, color: fc[Math.floor(rand() * fc.length)] });
+        }
+        break;
+      }
+      case 'beach': {
+        for (let i = 0; i < 5; i++) {
+          const p = randPos(3);
+          if (p) decos.push({ type: 'palm_tree', pos: p, rot: 0, scale: 0.8 + rand() * 0.5, color: '' });
+        }
+        const uc = ['#ef4444', '#3b82f6', '#fbbf24', '#22c55e'];
+        for (let i = 0; i < 3; i++) {
+          const p = randPos(4);
+          if (p) decos.push({ type: 'umbrella', pos: p, rot: 0, scale: 1, color: uc[Math.floor(rand() * uc.length)] });
+        }
+        for (let i = 0; i < 3; i++) {
+          decos.push({ type: 'sand_dune', pos: [margin + rand() * (sz - margin * 2), 0, margin + rand() * (sz - margin * 2)], rot: 0, scale: 0.8 + rand() * 1.5, color: '' });
+        }
+        break;
+      }
+      case 'airport': {
+        for (let i = 0; i < 3; i++) {
+          const p = randPos(4);
+          if (p) decos.push({ type: 'luggage_cart', pos: p, rot: rand() * Math.PI, scale: 1, color: '' });
+        }
+        for (let i = 0; i < 2; i++) {
+          const p = randPos(5);
+          if (p) decos.push({ type: 'security_gate', pos: p, rot: rand() * Math.PI, scale: 1, color: '' });
+        }
+        // A few runway lights (static, just meshes)
+        for (let i = 0; i < 6; i++) {
+          decos.push({ type: 'runway_light', pos: [sz * 0.2 + i * (sz * 0.1), 0.02, sz * 0.25], rot: 0, scale: 1, color: '' });
+        }
+        decos.push({ type: 'billboard', pos: [sz * 0.3, 0, margin + 1], rot: 0, scale: 1, color: colors.glow });
+        const p = randPos(5);
+        if (p) decos.push({ type: 'container', pos: p, rot: rand() * Math.PI, scale: 1, color: '#1e40af' });
+        break;
+      }
+      default: {
+        for (let i = 0; i < 4; i++) {
+          const p = randPos(4);
+          if (p) decos.push({ type: 'tree', pos: p, rot: rand() * Math.PI * 2, scale: 0.8 + rand() * 0.6, color: '' });
+        }
+        break;
+      }
+    }
     return decos;
-  }, [wave, arenaSize, colors.glow, colors.accent]);
+  }, [wave, arenaSize, theme, colors.glow, colors.accent]);
 
-  // Checkerboard floor tiles - use two InstancedMeshes (one per color) instead of hundreds of individual meshes
+  // Instanced floor
   const floorTileSize = 2;
   const floorCount = Math.ceil(arenaSize / floorTileSize);
   const floorData = useMemo(() => {
@@ -344,8 +550,7 @@ export function SurvivalArena() {
     for (let x = 0; x < floorCount; x++) {
       for (let z = 0; z < floorCount; z++) {
         const pos: [number, number, number] = [x * floorTileSize + floorTileSize / 2, -0.01, z * floorTileSize + floorTileSize / 2];
-        if ((x + z) % 2 === 0) tilesA.push(pos);
-        else tilesB.push(pos);
+        if ((x + z) % 2 === 0) tilesA.push(pos); else tilesB.push(pos);
       }
     }
     return { tilesA, tilesB };
@@ -378,17 +583,14 @@ export function SurvivalArena() {
 
   return (
     <>
-      {/* Tiled floor - instanced for performance */}
       <instancedMesh ref={floorInstancedA} args={[floorGeo, floorMatA, floorData.tilesA.length]} receiveShadow />
       <instancedMesh ref={floorInstancedB} args={[floorGeo, floorMatB, floorData.tilesB.length]} receiveShadow />
 
-      {/* Grid overlay - subtle */}
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[arenaSize / 2, 0.005, arenaSize / 2]}>
         <planeGeometry args={[arenaSize, arenaSize]} />
         <meshStandardMaterial color={colors.grid} transparent opacity={0.03} />
       </mesh>
 
-      {/* Invisible boundary walls */}
       <RigidBody type="fixed" colliders={false} userData={{ type: 'wall' }}>
         <CuboidCollider args={[arenaSize / 2 + 5, 2, 0.5]} position={[arenaSize / 2, 1, -0.5]} />
         <CuboidCollider args={[arenaSize / 2 + 5, 2, 0.5]} position={[arenaSize / 2, 1, arenaSize + 0.5]} />
@@ -396,7 +598,7 @@ export function SurvivalArena() {
         <CuboidCollider args={[0.5, 2, arenaSize / 2 + 5]} position={[arenaSize + 0.5, 1, arenaSize / 2]} />
       </RigidBody>
 
-      {/* Arena edge glow strips */}
+      {/* Arena edge glow */}
       {[
         { pos: [arenaSize / 2, 0.02, 0] as [number, number, number], rot: 0, w: arenaSize + 1 },
         { pos: [arenaSize / 2, 0.02, arenaSize] as [number, number, number], rot: 0, w: arenaSize + 1 },
@@ -409,13 +611,12 @@ export function SurvivalArena() {
         </mesh>
       ))}
 
-      {/* Corner obelisks */}
-      <Obelisk position={[2.5, 0, 2.5]} color={colors.obelisk} glowColor={colors.glow} />
-      <Obelisk position={[arenaSize - 2.5, 0, 2.5]} color={colors.obelisk} glowColor={colors.glow} />
-      <Obelisk position={[2.5, 0, arenaSize - 2.5]} color={colors.obelisk} glowColor={colors.glow} />
-      <Obelisk position={[arenaSize - 2.5, 0, arenaSize - 2.5]} color={colors.obelisk} glowColor={colors.glow} />
+      {/* Corner obelisks (only 4 — the only animated decorations) */}
+      <Obelisk position={[2.5, 0, 2.5]} color={colors.obelisk} />
+      <Obelisk position={[arenaSize - 2.5, 0, 2.5]} color={colors.obelisk} />
+      <Obelisk position={[2.5, 0, arenaSize - 2.5]} color={colors.obelisk} />
+      <Obelisk position={[arenaSize - 2.5, 0, arenaSize - 2.5]} color={colors.obelisk} />
 
-      {/* Scene Decorations */}
       {decorations.map((d, i) => {
         switch (d.type) {
           case 'tree': return <DeadTree key={`t${i}`} position={d.pos} scale={d.scale} />;
@@ -426,6 +627,19 @@ export function SurvivalArena() {
           case 'track': return <TrackRail key={`tr${i}`} position={d.pos} length={d.scale} rotation={d.rot} />;
           case 'barrier': return <Barrier key={`br${i}`} position={d.pos} rotation={d.rot} />;
           case 'rubble': return <Rubble key={`r${i}`} position={d.pos} scale={d.scale} />;
+          case 'cactus': return <Cactus key={`ca${i}`} position={d.pos} scale={d.scale} />;
+          case 'sand_dune': return <SandDune key={`sd${i}`} position={d.pos} scale={d.scale} />;
+          case 'tombstone': return <Tombstone key={`ts${i}`} position={d.pos} rotation={d.rot} scale={d.scale} />;
+          case 'fog_pillar': return <FogPillar key={`fp${i}`} position={d.pos} color={d.color} />;
+          case 'palm_tree': return <PalmTree key={`pt${i}`} position={d.pos} scale={d.scale} />;
+          case 'umbrella': return <BeachUmbrella key={`bu${i}`} position={d.pos} color={d.color} />;
+          case 'tech_pillar': return <TechPillar key={`tp${i}`} position={d.pos} color={d.color} />;
+          case 'holo_ring': return <HoloRing key={`hr${i}`} position={d.pos} color={d.color} />;
+          case 'flower': return <FlowerPatch key={`fl${i}`} position={d.pos} color={d.color} />;
+          case 'garden_bush': return <GardenBush key={`gb${i}`} position={d.pos} scale={d.scale} />;
+          case 'runway_light': return <RunwayLight key={`rl${i}`} position={d.pos} />;
+          case 'luggage_cart': return <LuggageCart key={`lc${i}`} position={d.pos} rotation={d.rot} />;
+          case 'security_gate': return <SecurityGate key={`sg${i}`} position={d.pos} rotation={d.rot} />;
           default: return null;
         }
       })}
@@ -434,7 +648,6 @@ export function SurvivalArena() {
       <AmmoBoxList />
       <BarrelList />
 
-      {/* Fog/atmosphere - dark outer ring */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[arenaSize / 2, -0.05, arenaSize / 2]}>
         <planeGeometry args={[arenaSize + 40, arenaSize + 40]} />
         <meshBasicMaterial color={colors.fog} />

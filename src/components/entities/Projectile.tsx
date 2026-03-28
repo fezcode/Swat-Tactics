@@ -1,65 +1,104 @@
-import { useRef, useEffect } from 'react';
-import { RigidBody, BallCollider, RapierRigidBody } from '@react-three/rapier';
+import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
 import { useGameStore } from '../../game/store';
+import { positionCache } from '../../game/positionCache';
 import type { ProjectileState } from '../../types';
 
+const HIT_RADIUS = 0.45;
+const HIT_RADIUS_SQ = HIT_RADIUS * HIT_RADIUS;
+
+const _v = new THREE.Vector3();
+
 function ProjectileItem({ p }: { p: ProjectileState }) {
-  const rb = useRef<RapierRigidBody>(null);
-  const removeProjectile = useGameStore(s => s.removeProjectile);
-  const damageEntity = useGameStore(s => s.damageEntity);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const alive = useRef(true);
+  // Track position locally to avoid store reads every frame
+  const pos = useRef({ x: p.pos.x, z: p.pos.z });
   const theme = useGameStore(s => s.theme);
-  const hasHit = useRef(false);
 
-  useEffect(() => {
-    if (rb.current) {
-      rb.current.setLinvel({ x: p.velocity.x, y: 0, z: p.velocity.z }, true);
+  useFrame((_, delta) => {
+    if (!alive.current || !meshRef.current) return;
+
+    // Clamp delta to avoid huge jumps on tab-switch
+    const dt = Math.min(delta, 0.05);
+
+    // Move
+    pos.current.x += p.velocity.x * dt;
+    pos.current.z += p.velocity.z * dt;
+
+    // Update mesh position
+    meshRef.current.position.set(pos.current.x, 0.5, pos.current.z);
+
+    // Bounds check — remove if out of arena (generous margin)
+    const arenaSize = useGameStore.getState().survivalState?.arenaSize || 60;
+    if (
+      pos.current.x < -5 || pos.current.x > arenaSize + 5 ||
+      pos.current.z < -5 || pos.current.z > arenaSize + 5
+    ) {
+      alive.current = false;
+      useGameStore.getState().removeProjectile(p.id);
+      return;
     }
-  }, []);
 
-  const playerBulletColor = theme === 'beach' ? "#000000" : "#ffffff";
+    // Life expiry is handled by the store tick — just check
+    if (p.life <= 0) {
+      alive.current = false;
+      return;
+    }
+
+    // Hit detection
+    const px = pos.current.x;
+    const pz = pos.current.z;
+
+    if (p.isEnemy) {
+      // Enemy bullet → check player
+      const playerPos = positionCache.get('player');
+      if (playerPos) {
+        const dx = px - playerPos.x;
+        const dz = pz - playerPos.z;
+        if (dx * dx + dz * dz < HIT_RADIUS_SQ) {
+          alive.current = false;
+          useGameStore.getState().damageEntity('player', p.damage, { x: px, z: pz });
+          useGameStore.getState().removeProjectile(p.id);
+          return;
+        }
+      }
+    } else {
+      // Player bullet → check enemies
+      const allPositions = positionCache.getAll();
+      for (const [id, ePos] of allPositions) {
+        if (id === 'player') continue;
+
+        // Pierce: skip already-hit enemies
+        if (p.pierce && p.hitIds?.includes(id)) continue;
+
+        const dx = px - ePos.x;
+        const dz = pz - ePos.z;
+        if (dx * dx + dz * dz < HIT_RADIUS_SQ) {
+          useGameStore.getState().damageEntity(id, p.damage, { x: px, z: pz });
+
+          if (p.pierce) {
+            if (!p.hitIds) p.hitIds = [];
+            p.hitIds.push(id);
+            // Continue — don't remove piercing bullet
+          } else {
+            alive.current = false;
+            useGameStore.getState().removeProjectile(p.id);
+            return;
+          }
+        }
+      }
+    }
+  });
+
+  const playerBulletColor = theme === 'beach' ? '#000000' : '#ffffff';
 
   return (
-    <RigidBody 
-      ref={rb}
-      type="dynamic"
-      position={[p.pos.x, 0.5, p.pos.z]}
-      ccd={true}
-      gravityScale={0}
-      sensor
-      userData={{ type: 'projectile' }}
-      onIntersectionEnter={({ other }) => {
-        if (hasHit.current) return;
-        
-        const otherRb = other.rigidBodyObject;
-        const userData = otherRb?.userData as any;
-        
-        if (!userData) return;
-        
-        if (userData.type === 'floor' || userData.type === 'projectile' || userData.type === 'exit' || userData.type === 'health_box' || userData.type === 'ammo_box' || userData.type === 'train') return;
-        if (p.isEnemy && (userData.type === 'enemy' || userData.type === 'turret')) return;
-        if (!p.isEnemy && userData.type === 'player') return;
-        
-        // Mark as hit immediately to prevent double-processing in the same physics step
-        hasHit.current = true;
-        
-        // Get current physics position for precise impact reporting
-        const currentPos = rb.current ? rb.current.translation() : p.pos;
-
-        if (userData.id) {
-          damageEntity(userData.id, p.damage, { x: currentPos.x, z: currentPos.z });
-        } else if (userData.type === 'player') {
-          damageEntity('player', p.damage, { x: currentPos.x, z: currentPos.z });
-        }
-        
-        removeProjectile(p.id);
-      }}
-    >
-      <BallCollider args={[0.1]} />
-      <mesh>
-        <sphereGeometry args={[0.1, 8, 8]} />
-        <meshBasicMaterial color={p.isEnemy ? "#ff4444" : (p.color || playerBulletColor)} />
-      </mesh>
-    </RigidBody>
+    <mesh ref={meshRef} position={[p.pos.x, 0.5, p.pos.z]}>
+      <sphereGeometry args={[0.1, 6, 6]} />
+      <meshBasicMaterial color={p.isEnemy ? '#ff4444' : (p.color || playerBulletColor)} />
+    </mesh>
   );
 }
 

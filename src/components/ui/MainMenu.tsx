@@ -1,9 +1,10 @@
-import { useGameStore } from '../../game/store';
+import { useGameStore, RUN_MODIFIERS } from '../../game/store';
+import type { RunModifier } from '../../game/store';
 import { useState, useEffect } from 'react';
 import { LEVELS } from '../../game/levels';
 import { SFX } from '../../game/sounds';
 
-type MenuState = 'main' | 'level_select' | 'options' | 'credits';
+type MenuState = 'main' | 'level_select' | 'options' | 'credits' | 'survival_setup';
 
 export function MainMenu() {
   const loadLevel = useGameStore(s => s.loadLevel);
@@ -44,10 +45,12 @@ export function MainMenu() {
     action();
   };
 
-  const startSurvival = useGameStore(s => s.startSurvival);
+  const startSurvivalWithModifiers = useGameStore(s => s.startSurvivalWithModifiers);
+  const meta = useGameStore(s => s.meta);
+  const [selectedModifiers, setSelectedModifiers] = useState<RunModifier[]>([]);
 
   const mainMenuItems = [
-    { id: 'survival', label: 'SURVIVAL MODE', action: () => startSurvival() },
+    { id: 'survival', label: 'SURVIVAL MODE', action: () => setView('survival_setup') },
     { id: 'start', label: 'CAMPAIGN', action: () => loadLevel(0) },
     { id: 'levels', label: 'LEVEL SELECT', action: () => setView('level_select') },
     { id: 'options', label: 'OPTIONS', action: () => setView('options') },
@@ -169,6 +172,105 @@ export function MainMenu() {
           </div>
         </div>
         <button className="mt-12 text-xl font-bold text-zinc-500 hover:text-white transition-colors cursor-pointer transform -skew-x-12 relative z-10" onClick={() => handleClick(() => setView('main'))}>BACK TO HQ</button>
+      </div>
+    );
+  }
+
+  if (view === 'survival_setup') {
+    const toggleModifier = (id: RunModifier) => {
+      SFX.buttonClick();
+      setSelectedModifiers(prev => prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]);
+    };
+    const scoreMult = selectedModifiers.reduce((acc, id) => {
+      const def = RUN_MODIFIERS.find(r => r.id === id);
+      return acc * (def?.scoreMultiplier || 1);
+    }, 1.0);
+
+    return (
+      <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
+        {crtEnabled && <div className="menu-crt" />}
+        <div className="relative z-10 flex flex-col items-center">
+          <h2 className="text-5xl font-black italic text-white mb-4 neon-text transform -skew-x-12 tracking-tighter">DEPLOY</h2>
+
+          {/* Meta stats */}
+          <div className="flex gap-8 mb-8 transform -skew-x-12">
+            <div className="text-center">
+              <div className="text-[10px] font-bold text-zinc-600 tracking-widest uppercase">Best Wave</div>
+              <div className="text-2xl font-black text-blue-400">{meta.bestWave}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-[10px] font-bold text-zinc-600 tracking-widest uppercase">Best Score</div>
+              <div className="text-2xl font-black text-pink-400">{meta.bestScore.toLocaleString()}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-[10px] font-bold text-zinc-600 tracking-widest uppercase">Total Kills</div>
+              <div className="text-2xl font-black text-red-400">{meta.totalKills.toLocaleString()}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-[10px] font-bold text-zinc-600 tracking-widest uppercase">Runs</div>
+              <div className="text-2xl font-black text-zinc-400">{meta.totalRuns}</div>
+            </div>
+          </div>
+
+          {/* Modifiers */}
+          <div className="mb-6">
+            <h3 className="text-sm font-bold text-zinc-500 tracking-widest uppercase mb-4 transform -skew-x-12 text-center">Run Modifiers</h3>
+            <div className="flex flex-wrap gap-3 justify-center max-w-lg">
+              {RUN_MODIFIERS.map(mod => {
+                const isActive = selectedModifiers.includes(mod.id);
+                return (
+                  <button
+                    key={mod.id}
+                    onClick={() => toggleModifier(mod.id)}
+                    onMouseEnter={() => handleHover(mod.id)}
+                    onMouseLeave={() => setHovered(null)}
+                    className={`px-4 py-3 border-2 transition-all cursor-pointer transform -skew-x-6 ${
+                      isActive
+                        ? 'border-pink-500 bg-pink-500/20 text-white scale-105'
+                        : 'border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-500'
+                    }`}
+                  >
+                    <div className="text-sm font-black tracking-tight">{mod.name}</div>
+                    <div className="text-[10px] text-zinc-500 mt-1">{mod.description}</div>
+                    <div className={`text-[10px] font-bold mt-1 ${mod.scoreMultiplier > 1 ? 'text-green-400' : 'text-red-400'}`}>
+                      {mod.scoreMultiplier > 1 ? '+' : ''}{Math.round((mod.scoreMultiplier - 1) * 100)}% score
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Score multiplier */}
+          {selectedModifiers.length > 0 && (
+            <div className="mb-6 text-center transform -skew-x-12">
+              <span className="text-sm font-bold text-zinc-500">Score Multiplier: </span>
+              <span className="text-xl font-black text-pink-400">{scoreMult.toFixed(1)}x</span>
+            </div>
+          )}
+
+          {/* Start button */}
+          <button
+            onClick={() => handleClick(() => startSurvivalWithModifiers(selectedModifiers))}
+            onMouseEnter={() => handleHover('go')}
+            onMouseLeave={() => setHovered(null)}
+            className={`px-12 py-4 text-3xl font-black italic tracking-tight border-2 transition-all cursor-pointer transform -skew-x-12 ${
+              hovered === 'go'
+                ? 'border-white bg-white text-black scale-110'
+                : 'border-pink-500 text-pink-500 hover:bg-pink-500/10'
+            }`}
+            style={{ boxShadow: hovered === 'go' ? '0 0 40px rgba(255,255,255,0.5)' : '0 0 20px rgba(236,72,153,0.3)' }}
+          >
+            ENGAGE
+          </button>
+
+          <button
+            className="mt-8 text-lg font-bold text-zinc-600 hover:text-white transition-colors cursor-pointer transform -skew-x-12"
+            onClick={() => handleClick(() => { setView('main'); setSelectedModifiers([]); })}
+          >
+            {'<<'} BACK TO HQ
+          </button>
+        </div>
       </div>
     );
   }

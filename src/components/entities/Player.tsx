@@ -28,6 +28,7 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
   
   const [slashActive, setSlashActive] = useState(false);
   const [dodgeActive, setDodgeActive] = useState(false);
+  const [muzzleFlash, setMuzzleFlash] = useState(false);
   const dodgeDir = useRef({ x: 0, z: 0 });
   const prevPos = useRef(state.pos);
   
@@ -164,7 +165,8 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
         // Apply survival perk modifiers
         if (gm === 'survival' && sv) {
           const rapidStacks = sv.perkStacks['rapid_fire'] || 0;
-          fireInterval *= Math.max(0.4, 1 - rapidStacks * 0.2);
+          const hasMinigun = sv.evolvedPerks?.includes('rapid_fire');
+          fireInterval *= hasMinigun ? Math.max(0.05, 1 - rapidStacks * 0.2) : Math.max(0.4, 1 - rapidStacks * 0.2);
           // Adrenaline: below 30% HP boost
           if (sv.activePerks.includes('adrenaline') && player.hp < player.maxHp * 0.3) {
             fireInterval *= 0.5;
@@ -180,12 +182,14 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
             const spawnPos = { x: pos.x + direction.x * 0.6, z: pos.z + direction.z * 0.6 };
             playerShoot(spawnPos, { x: direction.x, z: direction.z });
             SFX.playerShoot();
+            setMuzzleFlash(true);
+            setTimeout(() => setMuzzleFlash(false), 50);
           }
         }
       }
     }
 
-    let speed = gm === 'survival' ? 12 : 10;
+    let speed = gm === 'survival' ? 16 : 10;
     // Apply survival perk modifiers to speed
     if (gm === 'survival' && sv) {
       const swiftStacks = sv.perkStacks['swift_feet'] || 0;
@@ -300,6 +304,13 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
             <boxGeometry args={[0.1, 0.1, 0.6]} />
             <meshStandardMaterial color={isPrimary ? '#1e3a8a' : '#0f1d45'} emissive={isPrimary ? '#1e3a8a' : '#000000'} emissiveIntensity={isPrimary ? 0.3 : 0} />
           </mesh>
+          {/* Muzzle flash */}
+          {muzzleFlash && isPrimary && (
+            <mesh position={[0, 0, -0.4]}>
+              <sphereGeometry args={[0.12, 6, 6]} />
+              <meshBasicMaterial color="#ffaa00" />
+            </mesh>
+          )}
         </group>
         {state.secondaryWeapon && (
           <group ref={secondaryGunRef} position={[-0.2, 0.1, -0.4]}>
@@ -307,6 +318,12 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
               <boxGeometry args={[0.1, 0.1, 0.55]} />
               <meshStandardMaterial color={!isPrimary ? '#1e5a1e' : '#0f2d0f'} emissive={!isPrimary ? '#1e5a1e' : '#000000'} emissiveIntensity={!isPrimary ? 0.3 : 0} />
             </mesh>
+            {muzzleFlash && !isPrimary && (
+              <mesh position={[0, 0, -0.35]}>
+                <sphereGeometry args={[0.1, 6, 6]} />
+                <meshBasicMaterial color="#44ff44" />
+              </mesh>
+            )}
           </group>
         )}
       </group>

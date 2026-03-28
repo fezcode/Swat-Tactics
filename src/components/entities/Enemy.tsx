@@ -226,6 +226,9 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
   const barWidth = 0.8 * Math.pow(state.maxHp / 40, 0.5);
   const enemyScale = (state as any).scale as number || 1.0;
   const isGhost = (state as any).transparent as boolean || false;
+  const isElite = state.isElite || false;
+  const isBoss = state.isBoss || false;
+  const hasShield = (state.shieldHp || 0) > 0;
 
   return (
     <RigidBody
@@ -253,13 +256,40 @@ export const Enemy = memo(function Enemy({ state }: { state: EnemyState }) {
           <planeGeometry args={[barWidth * (state.hp / state.maxHp), 0.08]} />
           <meshBasicMaterial color={state.hp > (state.maxHp * 0.3) ? state.color : "#ff0000"} />
         </mesh>
+        {/* Shield bar for bosses */}
+        {hasShield && state.shieldMaxHp && (
+          <>
+            <mesh position={[0, -0.12, 0]}>
+              <planeGeometry args={[barWidth, 0.08]} />
+              <meshBasicMaterial color="#111" />
+            </mesh>
+            <mesh position={[-(barWidth * (1 - (state.shieldHp || 0) / state.shieldMaxHp)) / 2, -0.12, 0.01]}>
+              <planeGeometry args={[barWidth * ((state.shieldHp || 0) / state.shieldMaxHp), 0.06]} />
+              <meshBasicMaterial color="#60a5fa" />
+            </mesh>
+          </>
+        )}
       </Billboard>
 
       <group ref={meshRef} scale={[enemyScale, enemyScale, enemyScale]}>
         <mesh position={[0, -0.45, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.4, 0.5, 32]} />
-          <meshBasicMaterial color={state.color} transparent opacity={0.3} />
+          <meshBasicMaterial color={isElite ? '#fbbf24' : state.color} transparent opacity={isElite ? 0.6 : 0.3} />
         </mesh>
+        {/* Elite glow ring */}
+        {isElite && (
+          <mesh position={[0, -0.44, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.5, 0.7, 32]} />
+            <meshBasicMaterial color="#fbbf24" transparent opacity={0.4} />
+          </mesh>
+        )}
+        {/* Boss shield sphere */}
+        {hasShield && (
+          <mesh>
+            <sphereGeometry args={[0.6, 16, 16]} />
+            <meshBasicMaterial color="#60a5fa" transparent opacity={0.15} wireframe />
+          </mesh>
+        )}
 
         <mesh castShadow receiveShadow>
           <capsuleGeometry args={[0.3, 0.4, 4, 16]} />

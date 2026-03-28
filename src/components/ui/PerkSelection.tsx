@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '../../game/store';
-import { PERKS, getTierLabel, getTierBorderColor } from '../../game/survivalPerks';
+import { PERKS, getTierLabel, getTierBorderColor, getEvolution } from '../../game/survivalPerks';
 import type { PerkId } from '../../game/survivalPerks';
 import { SFX } from '../../game/sounds';
 
@@ -114,8 +114,34 @@ export function PerkSelection() {
                   {perk.description}
                 </p>
 
-                {/* Stackable indicator */}
-                {perk.stackable && (
+                {/* Evolution progress */}
+                {perk.stackable && perk.evolveAt && (() => {
+                  const nextStacks = stacks + 1;
+                  const willEvolve = nextStacks >= perk.evolveAt;
+                  const evo = getEvolution(perk.id, nextStacks);
+                  return (
+                    <div className="mt-3 w-full">
+                      {willEvolve && evo ? (
+                        <div className="text-center animate-pulse">
+                          <div className="text-[10px] font-black text-yellow-400 tracking-widest">EVOLVES INTO</div>
+                          <div className="text-xs font-black text-yellow-300">{evo.name}</div>
+                          <div className="text-[10px] text-yellow-400/70">{evo.description}</div>
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <div className="text-[10px] font-bold text-zinc-600 tracking-widest uppercase">
+                            {stacks + 1}/{perk.evolveAt} to evolve
+                          </div>
+                          {perk.evolveName && (
+                            <div className="text-[10px] text-zinc-700 mt-0.5">{perk.evolveName}</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                {/* Stackable indicator (non-evolvable) */}
+                {perk.stackable && !perk.evolveAt && (
                   <div className="mt-3 text-[10px] font-bold text-zinc-600 tracking-widest uppercase">
                     Stackable
                   </div>
