@@ -7,7 +7,6 @@ const bloodGeo = new THREE.CircleGeometry(0.3, 16);
 const bloodMat = new THREE.MeshBasicMaterial({ color: "#7f1d1d", transparent: true, opacity: 0.6, depthWrite: false });
 
 const particleGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-const _trailGeo = new THREE.PlaneGeometry(0.3, 0.06);
 
 // Cache materials by color to avoid creating new ones every frame
 const materialCache = new Map<string, THREE.MeshBasicMaterial>();
@@ -16,17 +15,6 @@ function getParticleMaterial(color: string): THREE.MeshBasicMaterial {
   if (!mat) {
     mat = new THREE.MeshBasicMaterial({ color, transparent: true, depthWrite: false });
     materialCache.set(color, mat);
-  }
-  return mat;
-}
-
-// Emissive material cache for glowing particles
-const emissiveCache = new Map<string, THREE.MeshStandardMaterial>();
-function _getEmissiveMaterial(color: string): THREE.MeshStandardMaterial {
-  let mat = emissiveCache.get(color);
-  if (!mat) {
-    mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 4, transparent: true, depthWrite: false });
-    emissiveCache.set(color, mat);
   }
   return mat;
 }
