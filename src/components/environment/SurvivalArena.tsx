@@ -288,7 +288,11 @@ function TrainWreckage({ position, rotation }: { position: [number, number, numb
 function Billboard({ position, color }: { position: [number, number, number]; color: string }) {
   return (
     <RigidBody type="fixed" position={position} colliders={false} userData={{ type: 'wall' }}>
-      <CuboidCollider args={[0.8, 1.5, 0.1]} position={[0, 1.0, 0]} />
+      {/* Two leg colliders — gap between is passable */}
+      <CuboidCollider args={[0.08, 1.0, 0.08]} position={[-0.6, 1.0, 0]} />
+      <CuboidCollider args={[0.08, 1.0, 0.08]} position={[0.6, 1.0, 0]} />
+      {/* Sign panel collider at top only */}
+      <CuboidCollider args={[0.8, 0.3, 0.06]} position={[0, 2.1, 0]} />
       <mesh position={[-0.6, 1.0, 0]}>
         <cylinderGeometry args={[0.04, 0.04, 2.0, 5]} />
         <meshStandardMaterial color="#374151" metalness={0.8} roughness={0.3} />
@@ -936,7 +940,9 @@ export function SurvivalArena() {
           addAABB(cx, cz, 2, 0.6, d.rot);
           break;
         case 'billboard':
-          addAABB(cx, cz, 0.8, 0.1);
+          // Two narrow leg AABBs + sign panel at top (gap between legs is passable)
+          addAABB(cx - 0.6, cz, 0.08, 0.08);
+          addAABB(cx + 0.6, cz, 0.08, 0.08);
           break;
         case 'security_gate':
           addAABB(cx, cz, 0.6, 0.1, d.rot);
