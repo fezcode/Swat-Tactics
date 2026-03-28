@@ -508,14 +508,15 @@ export function SurvivalHUD() {
                 const ready = elapsed >= cooldown;
                 const progress = ready ? 100 : (elapsed / cooldown) * 100;
                 return (
-                  <div key={ability.name} className="bg-zinc-950/80 p-1.5 transform -skew-x-12 backdrop-blur-sm w-20">
+                  <div key={ability.name} className="bg-zinc-950/80 p-2.5 transform -skew-x-12 backdrop-blur-sm w-28" style={{ border: ready ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.05)' }}>
                     <div className="flex justify-between items-center">
-                      <span className="text-[9px] font-black text-zinc-500 tracking-widest uppercase">{ability.name}</span>
-                      <span className="text-[8px] font-bold text-yellow-400 bg-zinc-800 px-1">{ability.key}</span>
+                      <span className="text-[11px] font-black text-zinc-400 tracking-widest uppercase">{ability.name}</span>
+                      <span className="text-[10px] font-bold text-yellow-400 bg-zinc-800 px-1.5 py-0.5">{ability.key}</span>
                     </div>
-                    <div className="w-full h-1 bg-zinc-800 mt-1 relative overflow-hidden">
-                      <div className={`absolute top-0 left-0 h-full transition-all duration-100 ${ready ? 'bg-white shadow-[0_0_6px_white]' : 'bg-zinc-600'}`} style={{ width: `${progress}%` }} />
+                    <div className="w-full h-1.5 bg-zinc-800 mt-1.5 relative overflow-hidden">
+                      <div className={`absolute top-0 left-0 h-full transition-all duration-100 ${ready ? 'bg-white shadow-[0_0_8px_white]' : 'bg-zinc-600'}`} style={{ width: `${progress}%` }} />
                     </div>
+                    {ready && <div className="text-[8px] font-bold text-green-400 mt-1 text-center tracking-widest">READY</div>}
                   </div>
                 );
               })}

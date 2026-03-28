@@ -26,6 +26,8 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
   const mouseDown = useRef(false);
   const lastFireTime = useRef(0);
   
+  const hasDodgeMaster = useGameStore(s => s.survivalState?.activePerks.includes('dodge_master') ?? false);
+  const dodgeRadius = hasDodgeMaster ? 3.5 : 2.5;
   const [slashActive, setSlashActive] = useState(false);
   const [dodgeActive, setDodgeActive] = useState(false);
   const [muzzleFlash, setMuzzleFlash] = useState(false);
@@ -340,6 +342,19 @@ export const Player = memo(function Player({ state }: { state: PlayerState }) {
             </mesh>
           );
         })}
+        {/* Dodge damage area ring */}
+        {dodgeActive && (
+          <>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+              <torusGeometry args={[dodgeRadius, 0.08, 8, 32]} />
+              <meshBasicMaterial color="#22d3ee" transparent opacity={0.7} />
+            </mesh>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
+              <circleGeometry args={[dodgeRadius, 32]} />
+              <meshBasicMaterial color="#22d3ee" transparent opacity={0.12} />
+            </mesh>
+          </>
+        )}
       </group>
     </RigidBody>
   );});

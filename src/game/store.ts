@@ -291,6 +291,38 @@ export const useGameStore = create<GameState>((set, get) => ({
     set(s => ({ player: s.player ? { ...s.player, pos: newPos, lastDodgeTime: now } : null, isDodging: true }));
     setTimeout(() => set({ isDodging: false }), 200);
     for (let i = 0; i < 10; i++) get().addParticle([player.pos.x, 0.5, player.pos.z], '#ffffff');
+
+    // Dodge area damage — damages enemies near landing position
+    const dodgeRadius = hasDodgeMaster ? 3.5 : 2.5;
+    const dodgeDamage = hasDodgeMaster ? 30 : 15;
+    const dodgeParticles: Particle[] = [];
+    state.enemies.forEach(e => {
+      if (e.hp > 0) {
+        const ePos = getEnemyPos(e);
+        const dx = ePos.x - newPos.x;
+        const dz = ePos.z - newPos.z;
+        if (Math.sqrt(dx * dx + dz * dz) <= dodgeRadius) get().damageEntity(e.id, dodgeDamage, ePos);
+      }
+    });
+    state.barrels.forEach(b => {
+      if (b.hp > 0) {
+        const dx = b.pos.x - newPos.x;
+        const dz = b.pos.z - newPos.z;
+        if (Math.sqrt(dx * dx + dz * dz) <= dodgeRadius) get().damageEntity(b.id, dodgeDamage, b.pos);
+      }
+    });
+    for (let i = 0; i < 20; i++) {
+      const angle = (i / 20) * Math.PI * 2;
+      const dist = 0.5 + Math.random() * (dodgeRadius * 0.7);
+      dodgeParticles.push({
+        id: Math.random().toString(36).substr(2, 9),
+        pos: [newPos.x + Math.cos(angle) * dist, 0.3, newPos.z + Math.sin(angle) * dist],
+        color: '#22d3ee',
+        velocity: [(Math.random() - 0.5) * 3, Math.random() * 3, (Math.random() - 0.5) * 3],
+        life: 0.6,
+      });
+    }
+    set(s => ({ particles: [...s.particles, ...dodgeParticles] }));
     SFX.enemyShoot();
   },
   slash: () => {
